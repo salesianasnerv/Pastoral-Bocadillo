@@ -1,0 +1,1704 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bocadillo solidario | Pastoral Salesianas Nervión</title>
+<meta name="description" content="Recuento del Bocadillo solidario para tutores y responsables de Pastoral de Salesianas Nervión">
+<meta name="theme-color" content="#009abb">
+<link rel="icon" href="favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js" defer></script>
+
+<style>
+  :root {
+    --azul: #009abb;
+    --azul-oscuro: #007791;
+    --azul-suave: rgba(0, 154, 187, 0.1);
+    --verde: #b4be00;
+    --verde-oscuro: #939b00;
+    --naranja: #ee712a;
+    --naranja-hover: #d35a15;
+    --rojo: #c2410c;
+    --bg: #F8FAFC;
+    --card: #FFFFFF;
+    --text: #1E293B;
+    --text-muted: #64748B;
+    --border: #E2E8F0;
+    --fila-alt: #F8FAFC;
+    --radius: 16px;
+    --shadow: 0 10px 25px -5px rgba(0, 154, 187, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.03);
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0F1720; --card: #17212C; --text: #E7ECF2; --text-muted: #93A2B3; --border: #263340;
+      --fila-alt: #1B2733; --azul-suave: rgba(0, 154, 187, 0.18); --rojo: #fb923c;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0F1720; --card: #17212C; --text: #E7ECF2; --text-muted: #93A2B3; --border: #263340;
+    --fila-alt: #1B2733; --azul-suave: rgba(0, 154, 187, 0.18); --rojo: #fb923c;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: 'Fira Sans', system-ui, sans-serif; line-height: 1.5;
+  }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 2rem 1rem 6rem; }
+  .narrow { max-width: 680px; margin: 0 auto; }
+  [hidden] { display: none !important; }
+
+  header.page-head { text-align: center; margin-bottom: 1.5rem; }
+  .logo { height: 54px; width: auto; display: block; margin: 0 auto 1rem; }
+  .eyebrow {
+    display: inline-block; background: var(--azul-suave); color: var(--azul);
+    font-weight: 700; font-size: 0.78rem; letter-spacing: 0.06em; text-transform: uppercase;
+    padding: 0.3rem 0.8rem; border-radius: 999px; margin-bottom: 0.8rem;
+  }
+  h1 { font-size: 1.9rem; color: var(--azul); margin: 0 0 0.4rem; }
+  h2 { font-size: 1.2rem; margin: 0 0 0.8rem; color: var(--text); }
+  h3 { font-size: 1rem; margin: 1.2rem 0 0.6rem; color: var(--azul); }
+  .subtitle { color: var(--text-muted); margin: 0; }
+  .muted { color: var(--text-muted); }
+  .small { font-size: 0.86rem; }
+
+  .demo {
+    background: rgba(238, 113, 42, 0.12); border: 1px solid rgba(238, 113, 42, 0.4);
+    color: var(--text); border-radius: 12px; padding: 0.7rem 1rem; margin-bottom: 1.2rem; font-size: 0.9rem;
+    display: flex; gap: 0.8rem; align-items: center; justify-content: space-between; flex-wrap: wrap;
+  }
+
+  /* Pestañas */
+  .roles { display: flex; gap: 0.6rem; max-width: 560px; margin: 0 auto 1.6rem; }
+  .role-tab, .subtab {
+    flex: 1; padding: 0.7rem 0.9rem; border-radius: 12px; border: 2px solid var(--border);
+    background: var(--card); color: var(--text-muted); font: 700 0.92rem 'Fira Sans', sans-serif; cursor: pointer;
+  }
+  .role-tab.active { background: var(--azul); border-color: var(--azul); color: #fff; box-shadow: 0 4px 12px rgba(0,154,187,.3); }
+  .subtabs { display: flex; gap: 0.4rem; flex-wrap: wrap; margin: 1rem 0 1.2rem; }
+  .subtab { flex: 0 1 auto; border-radius: 999px; border-width: 1px; padding: 0.5rem 0.95rem; font-size: 0.86rem; font-weight: 600; }
+  .subtab.active { background: var(--verde); border-color: var(--verde); color: #fff; }
+  .btn-editar {
+    margin-left: auto; padding: 0.5rem 0.95rem; border-radius: 999px; cursor: pointer;
+    border: 1px dashed var(--naranja); background: transparent; color: var(--naranja); font: 700 0.86rem 'Fira Sans', sans-serif;
+  }
+  .btn-editar.active { background: var(--naranja); color: #fff; border-style: solid; }
+  .editar-opciones {
+    margin-top: -0.6rem; padding: 0.6rem 0.8rem; border-radius: 12px; align-items: center;
+    background: rgba(238, 113, 42, 0.08); border: 1px solid rgba(238, 113, 42, 0.3); justify-content: flex-end;
+  }
+  .editar-opciones .subtab.active { background: var(--naranja); border-color: var(--naranja); }
+  .chips { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 1rem; }
+  .chip {
+    border: 1px solid rgba(0,154,187,.35); background: var(--azul-suave); color: var(--azul);
+    border-radius: 999px; padding: 0.35rem 0.8rem; font: 600 0.84rem 'Fira Sans', sans-serif; cursor: pointer;
+  }
+  .chip.active { background: var(--azul); color: #fff; border-color: var(--azul); }
+  .chip.pend { background: transparent; border-color: var(--border); color: var(--text-muted); cursor: default; }
+
+  .card {
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+    box-shadow: var(--shadow); padding: 1.2rem; margin-bottom: 1rem;
+  }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; }
+  @media (max-width: 560px) { .grid2 { grid-template-columns: 1fr; } }
+
+  label { display: block; font-weight: 600; font-size: 0.88rem; margin-bottom: 0.8rem; }
+  input, select, textarea {
+    display: block; width: 100%; margin-top: 0.3rem; padding: 0.6rem 0.7rem; border-radius: 10px;
+    border: 1px solid var(--border); background: var(--bg); color: var(--text); font: 400 1rem 'Fira Sans', sans-serif;
+  }
+  textarea { min-height: 70px; resize: vertical; }
+  input:focus, select:focus, textarea:focus { outline: 2px solid var(--azul); outline-offset: 1px; }
+
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem;
+    padding: 0.6rem 1.1rem; border-radius: 10px; border: none; cursor: pointer;
+    background: var(--naranja); color: #fff; font: 700 0.92rem 'Fira Sans', sans-serif;
+  }
+  .btn:hover { background: var(--naranja-hover); }
+  .btn:disabled { opacity: .55; cursor: wait; }
+  .btn.sec { background: var(--azul-suave); color: var(--azul); }
+  .btn.sec:hover { background: rgba(0,154,187,.22); }
+  .btn.peligro { background: transparent; color: var(--rojo); border: 1px solid var(--border); }
+  .btn.mini { padding: 0.3rem 0.6rem; font-size: 0.8rem; border-radius: 8px; }
+  .acciones { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
+
+  .aviso { border-radius: 12px; padding: 0.8rem 1rem; margin-bottom: 1rem; font-size: 0.93rem; }
+  .aviso.info { background: var(--azul-suave); border: 1px solid rgba(0,154,187,.3); }
+  .aviso.ok { background: rgba(180,190,0,.15); border: 1px solid rgba(147,155,0,.45); }
+  .aviso.error { background: rgba(194,65,12,.1); border: 1px solid rgba(194,65,12,.4); }
+
+  /* Formulario tutores */
+  .camp-title { font-size: 1.25rem; font-weight: 700; color: var(--azul); }
+  .cat-head { font-size: 0.78rem; text-transform: uppercase; letter-spacing: .06em; color: var(--text-muted); font-weight: 700; margin: 1rem 0 0.3rem; }
+  .prod { display: flex; align-items: center; justify-content: space-between; gap: 0.8rem; padding: 0.55rem 0; border-bottom: 1px solid var(--border); }
+  .prod:last-child { border-bottom: none; }
+  .prod-nombre { font-weight: 600; }
+  .prod-precio { font-size: 0.85rem; color: var(--text-muted); }
+  .stepper { display: flex; align-items: center; gap: 0.3rem; flex-shrink: 0; }
+  .stepper button {
+    width: 38px; height: 38px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg);
+    color: var(--azul); font-size: 1.3rem; font-weight: 700; cursor: pointer; line-height: 1;
+  }
+  .stepper input { width: 58px; margin: 0; text-align: center; padding: 0.45rem 0.2rem; font-weight: 700; }
+  .stepper input.pos { border-color: var(--azul); color: var(--azul); }
+  .barra {
+    position: fixed; left: 0; right: 0; bottom: 0; background: var(--card); border-top: 1px solid var(--border);
+    box-shadow: 0 -6px 20px rgba(0,0,0,.06); padding: 0.75rem 1rem; z-index: 10;
+  }
+  .barra-in { max-width: 680px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+  .barra strong { font-size: 1.25rem; color: var(--azul); display: block; }
+
+  /* Panel */
+  .toolbar { display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: flex-end; }
+  .toolbar label { margin: 0; flex: 1 1 220px; }
+  .sesion { display: flex; gap: 0.5rem; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 0.7rem; }
+  .curso-escolar { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+  .curso-escolar label { margin: 0; display: flex; align-items: center; gap: 0.4rem; font-size: 1.05rem; color: var(--azul); }
+  .curso-escolar select { margin: 0; width: auto; font-weight: 700; color: var(--azul); padding: 0.4rem 0.6rem; }
+  .estado-caja {
+    display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
+    margin-top: 1rem; padding: 0.8rem 1rem; border-radius: 12px;
+  }
+  .estado-caja.abierta { background: rgba(180,190,0,.14); border: 1px solid rgba(147,155,0,.45); }
+  .estado-caja.cerrada { background: var(--fila-alt); border: 1px solid var(--border); }
+  .estado { display: inline-block; padding: 0.15rem 0.6rem; border-radius: 999px; font-size: 0.78rem; font-weight: 700; }
+  .estado.abierta { background: rgba(180,190,0,.2); color: var(--verde-oscuro); }
+  .estado.cerrada { background: var(--border); color: var(--text-muted); }
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.7rem; margin-bottom: 1rem; }
+  @media (max-width: 760px) { .kpis { grid-template-columns: repeat(2, 1fr); } }
+  .kpi { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 0.9rem 1rem; }
+  .kpi .v { font-size: 1.55rem; font-weight: 700; color: var(--azul); font-variant-numeric: tabular-nums; }
+  .kpi .l { font-size: 0.82rem; color: var(--text-muted); }
+
+  .tabla-wrap { overflow-x: auto; margin-bottom: 0.8rem; border: 1px solid var(--border); border-radius: 12px; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.88rem; }
+  th, td { padding: 0.5rem 0.65rem; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  th { background: var(--azul); color: #fff; font-weight: 600; font-size: 0.8rem; white-space: normal; min-width: 64px; vertical-align: bottom; }
+  td.n { text-align: right; font-variant-numeric: tabular-nums; }
+  table.fija { table-layout: fixed; }
+  table.fija td { overflow: hidden; text-overflow: ellipsis; }
+  table.fija th { padding: 0.5rem 0.15rem; font-size: 0.72rem; line-height: 1.25; }
+  table.fija td:last-child { overflow: visible; }
+  /* Primera columna fija al desplazar tablas anchas en el móvil */
+  table.fija thead tr:first-child > th:first-child, table.fija tbody td:first-child, table.fija tfoot td:first-child { position: sticky; left: 0; z-index: 1; }
+  table.fija tbody td:first-child { background: var(--card); box-shadow: 1px 0 0 var(--border); }
+  table.fija tbody tr:nth-child(even) td:first-child { background: var(--fila-alt); }
+  table.fija tfoot td:first-child { background: var(--card); background-image: linear-gradient(var(--azul-suave), var(--azul-suave)); }
+  table.fija tr.pend td:first-child { background: var(--card); }
+  th.grupo { background: var(--azul-oscuro); border-left: 1px solid rgba(255,255,255,.35); border-right: 1px solid rgba(255,255,255,.35); }
+  th, th.n { text-align: center; }
+  tbody tr:nth-child(even) td { background: var(--fila-alt); }
+  tfoot td { font-weight: 700; background: var(--azul-suave); border-bottom: none; }
+  tr.pend td { color: var(--text-muted); font-style: italic; }
+  td.cero { color: var(--text-muted); }
+
+  /* Editor */
+  .ed-prod { border: 1px solid var(--border); border-radius: 12px; padding: 0.8rem; margin-bottom: 0.7rem; background: var(--bg); }
+  .ed-fila { display: grid; grid-template-columns: 2fr 90px 1fr 1fr auto; gap: 0.5rem; align-items: end; }
+  @media (max-width: 640px) { .ed-fila { grid-template-columns: 1fr 1fr; } }
+  .ed-fila label { margin: 0; font-size: 0.78rem; }
+  .ed-menus { display: flex; gap: 1rem; flex-wrap: wrap; margin: 0.6rem 0; font-size: 0.85rem; }
+  .ed-menus label, .check { display: inline-flex; align-items: center; gap: 0.35rem; margin: 0; font-weight: 500; }
+  .ed-menus input, .check input { width: auto; margin: 0; }
+  .ed-compra { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; font-size: 0.85rem; }
+  .ed-compra .item { display: inline-flex; gap: 0.3rem; align-items: center; background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 0.25rem 0.4rem; }
+  .ed-compra select, .ed-compra input { margin: 0; padding: 0.25rem 0.4rem; font-size: 0.85rem; width: auto; }
+  .ed-compra input { width: 64px; }
+  .x { background: none; border: none; color: var(--rojo); cursor: pointer; font-size: 1.1rem; padding: 0 0.3rem; }
+  .ed-art { display: grid; grid-template-columns: 2fr 1fr 80px auto auto; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem; }
+  .ed-art input { margin: 0; }
+  @media (max-width: 640px) { .ed-art { grid-template-columns: 1fr 1fr; } }
+  .guardar-barra { position: sticky; bottom: 0; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 0.7rem; display: flex; gap: 0.5rem; justify-content: flex-end; flex-wrap: wrap; align-items: center; }
+
+  .cargando { text-align: center; color: var(--text-muted); padding: 2rem 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="page-head">
+    <img class="logo" src="logo.svg" alt="Salesianas Nervión">
+    <div class="eyebrow">Pastoral</div>
+    <h1>🥪 Bocadillo solidario</h1>
+    <p class="subtitle">Recuento de pedidos por clase y lista de la compra</p>
+  </header>
+
+  <div id="demo" class="demo" hidden>
+    <span><strong>Modo prueba:</strong> todavía no está conectada a la hoja de Google. Los datos se guardan solo en este navegador. La contraseña de Pastoral en modo prueba es <code>prueba</code>.</span>
+    <button class="btn mini sec" id="demo-reset">Reiniciar datos de prueba</button>
+  </div>
+
+  <div class="roles">
+    <button class="role-tab active" data-rol="tutores">🧑‍🏫 Tutores</button>
+    <button class="role-tab" data-rol="pastoral">🗂️ Responsables de Pastoral</button>
+  </div>
+
+  <!-- ===================== TUTORES ===================== -->
+  <section id="rol-tutores" class="narrow">
+    <div id="t-cargando" class="cargando">Cargando…</div>
+    <div id="t-error" class="aviso error" hidden></div>
+    <div id="t-sin" class="card" hidden>
+      <h2>No hay ningún bocadillo solidario abierto</h2>
+      <p class="muted" style="margin:0">Cuando Pastoral abra el próximo, podrás enviar aquí el recuento de tu clase.</p>
+    </div>
+
+    <div id="t-form" hidden>
+      <div class="card">
+        <div id="t-camp"></div>
+        <div class="grid2" style="margin-top:1rem">
+          <label>Etapa <select id="t-etapa"></select></label>
+          <label>Clase <select id="t-curso"></select></label>
+        </div>
+        <label style="margin-bottom:0">Tutor o tutora <input id="t-tutor" autocomplete="name" placeholder="Nombre y apellidos"></label>
+      </div>
+
+      <div id="t-previo" class="aviso info" hidden></div>
+      <div id="t-ok" class="aviso ok" hidden></div>
+
+      <div id="t-productos-card" class="card" hidden>
+        <h2 style="margin-bottom:0.2rem">¿Cuántos se han apuntado?</h2>
+        <p class="muted small" style="margin:0">Escribe el número total de cada producto para toda la clase.</p>
+        <div id="t-productos"></div>
+        <label style="margin:1rem 0 0">Observaciones (opcional)
+          <textarea id="t-obs" placeholder="Por ejemplo: alergias o cambios de última hora"></textarea>
+        </label>
+      </div>
+    </div>
+  </section>
+
+  <div class="barra" id="t-barra" hidden>
+    <div class="barra-in">
+      <div><strong id="t-total">0,00 €</strong><span class="muted small" id="t-uds">0 productos</span></div>
+      <button class="btn" id="t-enviar">Enviar recuento</button>
+    </div>
+  </div>
+
+  <!-- ===================== PASTORAL ===================== -->
+  <section id="rol-pastoral" hidden>
+    <div id="p-login" class="card narrow" style="max-width:420px">
+      <h2>Acceso de Pastoral</h2>
+      <form id="p-login-form">
+        <label>Contraseña <input type="password" id="p-clave" autocomplete="current-password"></label>
+        <div id="p-login-error" class="aviso error" hidden></div>
+        <button class="btn" type="submit" style="width:100%">Entrar</button>
+      </form>
+    </div>
+
+    <div id="p-app" hidden>
+      <div class="sesion" id="p-sesion">
+        <div class="curso-escolar">
+          <label>📅 <select id="p-anio" aria-label="Curso escolar"></select></label>
+          <button class="btn sec mini" data-acc="nuevoCurso" id="p-nuevo-curso" title="Se hace solo el 1 de septiembre. Úsalo solo si queréis empezar el curso antes.">Empezar curso nuevo</button>
+        </div>
+        <div class="acciones">
+          <button class="btn sec mini" data-acc="recargar" title="Volver a cargar los recuentos que hayan llegado">↻ Actualizar datos</button>
+          <button class="btn peligro mini" data-acc="salir">Salir</button>
+        </div>
+      </div>
+      <div class="card" id="p-cabecera">
+        <div class="toolbar">
+          <label>Bocadillo solidario <select id="p-camp"></select></label>
+          <button class="btn" data-acc="nueva">➕ Nuevo bocadillo</button>
+        </div>
+        <div id="p-estado"></div>
+        <div id="p-nueva" hidden style="margin-top:1rem; border-top:1px solid var(--border); padding-top:1rem">
+          <h3 style="margin-top:0">Nuevo bocadillo solidario</h3>
+          <div class="grid2">
+            <label>Título <input id="n-titulo" placeholder="Por ejemplo: Noviembre 2026"></label>
+            <label>Fecha del bocadillo <input type="date" id="n-fecha"></label>
+          </div>
+          <label>Productos <select id="n-base"></select></label>
+          <div class="acciones">
+            <button class="btn" id="n-crear">Crear y abrir a los tutores</button>
+            <button class="btn sec" id="n-cancelar">Cancelar</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="p-msg"></div>
+      <div id="p-sin" class="card" hidden>
+        <h2>Todavía no hay ningún bocadillo solidario</h2>
+        <p class="muted">Crea el primero con el botón <strong>➕ Nuevo</strong>. Se abrirá para que los tutores envíen su recuento.</p>
+      </div>
+
+      <div id="p-main" hidden>
+        <div id="p-subtabs">
+          <div class="subtabs">
+            <button class="subtab active" data-sub="resumen">📊 Resumen</button>
+            <button class="subtab" data-sub="clases">🏫 Por clase</button>
+            <button class="subtab" data-sub="compra">🛒 Lista de la compra</button>
+            <button class="btn-editar" id="p-editar" aria-expanded="false">✏️ Editar</button>
+          </div>
+          <div class="subtabs editar-opciones" id="p-editar-opciones" hidden>
+            <span class="muted small">Editar:</span>
+            <button class="subtab" data-sub="productos">🥪 Productos y precios</button>
+            <button class="subtab" data-sub="cursos">📋 Clases</button>
+            <button class="btn peligro mini" data-acc="borrar">🗑 Borrar este bocadillo</button>
+          </div>
+        </div>
+        <div id="p-contenido"></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+/* =========================================================================
+   CONFIGURACIÓN
+   Pega aquí la URL de la aplicación web de Apps Script (termina en /exec).
+   Mientras esté vacía, la web funciona en modo prueba (datos solo en este navegador).
+   ========================================================================= */
+const API_URL = 'https://script.google.com/macros/s/AKfycbwCl8ZL32r6O4wsZkVO6rmeca23ruYoAP71LHzo93YKabG-iF1J67URKCxZSRw5nFI2dQ/exec';
+
+const DEMO = !API_URL;
+
+const MENUS = [
+  { id: 'infantil', nombre: 'Infantil' },
+  { id: 'primaria', nombre: '1º-3º Primaria' },
+  { id: 'primaria-grande', nombre: '4º-6º Primaria' },
+  { id: 'mayores', nombre: 'ESO · Bach. · CCFF · Prof.' }
+];
+const ETAPAS = [
+  { id: 'Infantil', menu: 'infantil' },
+  { id: 'Primaria', menu: 'primaria' },
+  { id: 'ESO', menu: 'mayores' },
+  { id: 'Bachillerato', menu: 'mayores' },
+  { id: 'CCFF', menu: 'mayores' },
+  { id: 'Profesorado', menu: 'mayores' }
+];
+const CATEGORIAS = [
+  { id: 'comida', nombre: 'Bocadillos y sándwiches' },
+  { id: 'fruta', nombre: 'Fruta' },
+  { id: 'bebida', nombre: 'Bebidas' }
+];
+
+/* ---------- Datos por defecto ---------- */
+function slug(s) {
+  return String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
+const menuDe = etapa => (ETAPAS.find(e => e.id === etapa) || { menu: 'mayores' }).menu;
+// Grupos de clases con el mismo menú (Primaria se divide: 1º-3º bocadillo pequeño, 4º-6º bocadillo grande)
+const GRUPOS = [
+  { etapa: 'Infantil', menu: 'infantil', nombre: 'Infantil' },
+  { etapa: 'Primaria', menu: 'primaria', nombre: 'Primaria · bocadillo pequeño (1º-3º)' },
+  { etapa: 'Primaria', menu: 'primaria-grande', nombre: 'Primaria · bocadillo grande (4º-6º)' },
+  { etapa: 'ESO', menu: 'mayores', nombre: 'ESO' },
+  { etapa: 'Bachillerato', menu: 'mayores', nombre: 'Bachillerato' },
+  { etapa: 'CCFF', menu: 'mayores', nombre: 'CCFF' },
+  { etapa: 'Profesorado', menu: 'mayores', nombre: 'Profesorado' }
+];
+
+function cursosPorDefecto() {
+  const l = [];
+  const add = (etapa, nombre, menu = menuDe(etapa)) => l.push({ id: slug(etapa + '-' + nombre), nombre, etapa, menu });
+  const ab = (etapa, cursos, txt, menu) => cursos.forEach(n => ['A', 'B'].forEach(x => add(etapa, `${n} ${txt} ${x}`, menu)));
+  ab('Infantil', ['1º', '2º', '3º'], 'Infantil');
+  ab('Primaria', ['1º', '2º', '3º'], 'Primaria', 'primaria');
+  ab('Primaria', ['4º', '5º', '6º'], 'Primaria', 'primaria-grande');
+  ab('ESO', ['1º', '2º', '3º', '4º'], 'ESO');
+  ab('Bachillerato', ['1º', '2º'], 'Bachillerato');
+  ['DAM', 'Enfermería', 'Farmacia', 'Administrativo'].forEach(c => ['1º', '2º'].forEach(n => add('CCFF', `${n} ${c}`)));
+  add('Profesorado', 'Profesorado');
+  return l;
+}
+
+function catalogoPorDefecto() {
+  const A = (id, nombre, unidad, pack = 0, porClase = false) => ({ id, nombre, unidad, pack, porClase });
+  const P = (id, nombre, precio, categoria, menus, compra, grupo = '') => ({ id, nombre, precio, categoria, menus, grupo, compra: compra.map(([articulo, cantidad]) => ({ articulo, cantidad })) });
+  const todos = ['infantil', 'primaria', 'primaria-grande', 'mayores'];
+  const grandes = ['primaria-grande', 'mayores'];
+  return {
+    articulos: [
+      A('pan-molde', 'Pan de molde', 'rebanadas'),
+      A('pan-pequeno', 'Pan para bocadillo pequeño', 'piezas'),
+      A('pan-grande', 'Pan para bocadillo grande', 'piezas'),
+      A('chopped', 'Chopped', 'lonchas'),
+      A('chorizo', 'Chorizo', 'lonchas'),
+      A('tortilla', 'Tortilla', 'tortillas'),
+      A('nocilla', 'Nocilla', 'botes'),
+      A('platano', 'Plátanos', 'unidades'),
+      A('zumo', 'Zumos', 'unidades'),
+      A('leche', 'Leche', 'unidades', 6),
+      A('yogur', 'Yogur bebible', 'unidades', 12),
+      A('batido-choco', 'Batido de chocolate', 'unidades', 6),
+      A('batido-vainilla', 'Batido de vainilla', 'unidades', 6),
+      A('cocacola', 'Coca-Cola', 'latas'),
+      A('cocacola-zero', 'Coca-Cola Zero', 'latas'),
+      A('nestea', 'Nestea de limón', 'latas'),
+      A('aquarius', 'Aquarius de naranja', 'latas')
+    ],
+    productos: [
+      P('sandwich-chopped', 'Sándwich de chopped', 1.5, 'comida', ['infantil'], [['pan-molde', 2], ['chopped', 4]]),
+      P('sandwich-nocilla', 'Sándwich de Nocilla', 1.5, 'comida', ['infantil'], [['pan-molde', 2]]),
+      P('boc-peq-chopped', 'Bocadillo pequeño de chopped', 1.5, 'comida', ['primaria'], [['pan-pequeno', 1], ['chopped', 4]]),
+      P('boc-peq-nocilla', 'Bocadillo pequeño de Nocilla', 1.5, 'comida', ['primaria'], [['pan-pequeno', 1]]),
+      P('boc-peq-chorizo', 'Bocadillo pequeño de chorizo', 1.5, 'comida', ['primaria'], [['pan-pequeno', 1], ['chorizo', 6]]),
+      P('boc-gr-chopped', 'Bocadillo grande de chopped', 1.5, 'comida', grandes, [['pan-grande', 1], ['chopped', 6]]),
+      P('boc-gr-nocilla', 'Bocadillo grande de Nocilla', 1.5, 'comida', grandes, [['pan-grande', 1], ['nocilla', 0.1]]),
+      P('boc-gr-chorizo', 'Bocadillo grande de chorizo', 1.5, 'comida', grandes, [['pan-grande', 1], ['chorizo', 6]]),
+      P('boc-gr-tortilla', 'Bocadillo grande de tortilla', 2, 'comida', ['mayores'], [['pan-grande', 1], ['tortilla', 0.2]]),
+      P('platano', 'Plátano', 1, 'fruta', todos, [['platano', 1]], 'Fruta'),
+      P('zumo', 'Zumo', 1, 'bebida', todos, [['zumo', 1]], 'Bebidas'),
+      P('leche', 'Leche', 1, 'bebida', todos, [['leche', 1]], 'Bebidas'),
+      P('yogur', 'Yogur bebible', 1, 'bebida', ['infantil', 'primaria', 'primaria-grande'], [['yogur', 1]], 'Bebidas'),
+      P('batido-choco', 'Batido de chocolate', 1, 'bebida', ['mayores'], [['batido-choco', 1]], 'Batidos'),
+      P('batido-vainilla', 'Batido de vainilla', 1, 'bebida', ['mayores'], [['batido-vainilla', 1]], 'Batidos'),
+      P('cocacola', 'Coca-Cola', 1.5, 'bebida', ['mayores'], [['cocacola', 1]], 'Refrescos'),
+      P('cocacola-zero', 'Coca-Cola Zero', 1.5, 'bebida', ['mayores'], [['cocacola-zero', 1]], 'Refrescos'),
+      P('nestea', 'Nestea de limón', 1.5, 'bebida', ['mayores'], [['nestea', 1]], 'Refrescos'),
+      P('aquarius', 'Aquarius de naranja', 1.5, 'bebida', ['mayores'], [['aquarius', 1]], 'Refrescos')
+    ]
+  };
+}
+
+/* ---------- Utilidades ---------- */
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const cent = precio => Math.round(Number(precio) * 100);
+const eur = c => (c / 100).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' });
+const num = n => Number(n).toLocaleString('es-ES');
+const clone = o => JSON.parse(JSON.stringify(o));
+const nuevoId = p => p + '-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+function fechaLarga(f) {
+  if (!f) return '';
+  const [y, m, d] = String(f).slice(0, 10).split('-').map(Number);
+  const t = new Date(y, m - 1, d).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  return t.charAt(0).toUpperCase() + t.slice(1);
+}
+function fechaHora(iso) {
+  if (!iso) return '';
+  return new Date(iso).toLocaleString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+}
+const store = {
+  get(k, def) { try { const v = localStorage.getItem(k); return v === null ? def : JSON.parse(v); } catch { return def; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }
+};
+const sesion = {
+  get() { try { return sessionStorage.getItem('bs-clave'); } catch { return null; } },
+  set(v) { try { v ? sessionStorage.setItem('bs-clave', v) : sessionStorage.removeItem('bs-clave'); } catch {} }
+};
+
+/* ---------- Conexión con la hoja (o modo prueba) ---------- */
+async function api(action, data = {}) {
+  if (DEMO) {
+    await new Promise(r => setTimeout(r, 150));
+    return clone(demoApi(action, clone(data)));
+  }
+  let res;
+  try {
+    res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action, ...data }) });
+  } catch {
+    throw new Error('No hay conexión. Comprueba internet e inténtalo de nuevo.');
+  }
+  const json = await res.json();
+  if (!json.ok) throw new Error(json.error || 'Ha ocurrido un error.');
+  return json;
+}
+
+// Copia del script de Apps Script que guarda los datos en este navegador (solo modo prueba)
+function demoDb() {
+  let db = store.get('bs-demo', null);
+  if (!db) {
+    db = { cursos: null, campanas: [], recuentos: [] };
+    const cursos = cursosPorDefecto();
+    db.cursos = cursos;
+    const cat = catalogoPorDefecto();
+    db.campanas.push({ id: 'demo1', titulo: 'Octubre 2026 (prueba)', fecha: '2026-10-23', estado: 'abierta', catalogo: cat });
+    const nombres = ['Ana Ruiz', 'Carmen López', 'José Martín', 'Lucía Romero', 'Pablo Gil', 'María Torres', 'Rocío Vega'];
+    cursos.forEach((c, i) => {
+      if (Math.random() < 0.25) return;
+      const cantidades = {};
+      cat.productos.filter(p => p.menus.includes(c.menu)).forEach(p => {
+        const n = Math.floor(Math.random() * (c.etapa === 'Profesorado' ? 6 : 9));
+        if (n) cantidades[p.id] = n;
+      });
+      const t = new Date(Date.now() - Math.random() * 4 * 864e5).toISOString();
+      db.recuentos.push({ campana: 'demo1', cursoId: c.id, curso: c.nombre, etapa: c.etapa, tutor: nombres[i % nombres.length], cantidades, observaciones: '', enviado: t, actualizado: t });
+    });
+    store.set('bs-demo', db);
+  }
+  return db;
+}
+function demoApi(action, d) {
+  const db = demoDb();
+  const guardar = () => store.set('bs-demo', db);
+  const auth = () => { if (d.clave !== 'prueba') throw new Error('Contraseña incorrecta.'); };
+  // Igual que en el script: el 1 de septiembre se empieza solo el curso nuevo
+  const hoy = cursoEscolar(new Date().toISOString().slice(0, 10));
+  if (['publico', 'panel', 'enviar'].includes(action) && (!db.cursoActual || db.cursoActual < hoy)) {
+    db.campanas.forEach(c => { if ((c.cursoEscolar || cursoEscolar(c.fecha)) < hoy && c.estado === 'abierta' && db.cursoActual) c.estado = 'cerrada'; });
+    db.cursoActual = hoy;
+    guardar();
+  }
+  switch (action) {
+    case 'publico': return { cursos: db.cursos, campanas: db.campanas.filter(c => c.estado === 'abierta') };
+    case 'miRecuento': return { recuento: db.recuentos.find(r => r.campana === d.campana && r.cursoId === d.curso) || null };
+    case 'enviar': {
+      const camp = db.campanas.find(c => c.id === d.campana);
+      if (!camp || camp.estado !== 'abierta') throw new Error('El plazo de este bocadillo solidario está cerrado. Habla con Pastoral.');
+      const curso = db.cursos.find(c => c.id === d.curso);
+      if (!curso) throw new Error('No encuentro esa clase.');
+      if (!String(d.tutor || '').trim()) throw new Error('Falta el nombre del tutor o tutora.');
+      const cantidades = {};
+      camp.catalogo.productos.filter(p => p.menus.includes(curso.menu)).forEach(p => {
+        const n = Math.floor(Number(d.cantidades[p.id]) || 0);
+        if (n > 0) cantidades[p.id] = n;
+      });
+      const ahora = new Date().toISOString();
+      let r = db.recuentos.find(x => x.campana === camp.id && x.cursoId === curso.id);
+      if (!r) { r = { campana: camp.id, cursoId: curso.id, enviado: ahora }; db.recuentos.push(r); }
+      Object.assign(r, { curso: curso.nombre, etapa: curso.etapa, tutor: d.tutor.trim(), cantidades, observaciones: d.observaciones || '', actualizado: ahora });
+      guardar();
+      return { recuento: r };
+    }
+    case 'login': auth(); return {};
+    case 'panel': {
+      auth();
+      const actual = db.cursoActual || cursoEscolar(new Date().toISOString().slice(0, 10));
+      const anio = d.anio || actual;
+      db.campanas.forEach(c => { c.cursoEscolar = c.cursoEscolar || cursoEscolar(c.fecha); });
+      const campanas = anio === 'todos' ? db.campanas : db.campanas.filter(c => c.cursoEscolar === anio);
+      const ids = new Set(campanas.map(c => c.id));
+      const anios = [...new Set([...db.campanas.map(c => c.cursoEscolar), actual])].sort().reverse();
+      return { cursos: db.cursos, cursoActual: actual, anio, anios, campanas, recuentos: db.recuentos.filter(x => ids.has(x.campana)) };
+    }
+    case 'nuevoCurso': {
+      auth();
+      const actual = db.cursoActual || cursoEscolar(new Date().toISOString().slice(0, 10));
+      db.campanas.forEach(c => { if ((c.cursoEscolar || cursoEscolar(c.fecha)) === actual && c.estado === 'abierta') c.estado = 'cerrada'; });
+      const y = Number(actual.slice(0, 4)) + 1;
+      db.cursoActual = `${y}-${y + 1}`;
+      guardar();
+      return { cursoActual: db.cursoActual };
+    }
+    case 'guardarCampana': {
+      auth();
+      const c = d.campana;
+      if (!String(c.titulo || '').trim()) throw new Error('Falta el título.');
+      if (!c.fecha) throw new Error('Falta la fecha.');
+      c.id = c.id || nuevoId('c');
+      c.cursoEscolar = c.cursoEscolar || db.cursoActual || cursoEscolar(new Date().toISOString().slice(0, 10));
+      const i = db.campanas.findIndex(x => x.id === c.id);
+      if (i >= 0) db.campanas[i] = c; else db.campanas.push(c);
+      guardar();
+      return { id: c.id };
+    }
+    case 'borrarCampana':
+      auth();
+      db.campanas = db.campanas.filter(c => c.id !== d.id);
+      db.recuentos = db.recuentos.filter(r => r.campana !== d.id);
+      guardar(); return {};
+    case 'guardarCursos': auth(); db.cursos = d.cursos; guardar(); return {};
+    case 'borrarRecuento':
+      auth();
+      db.recuentos = db.recuentos.filter(r => !(r.campana === d.campana && r.cursoId === d.curso));
+      guardar(); return {};
+  }
+  throw new Error('Acción desconocida');
+}
+
+/* =========================================================================
+   TUTORES
+   ========================================================================= */
+const T = { datos: null, camp: null, curso: null, previo: null, cant: {} };
+
+async function iniciarTutores() {
+  $('t-cargando').hidden = false;
+  $('t-error').hidden = true;
+  try {
+    T.datos = await api('publico');
+  } catch (e) {
+    $('t-cargando').hidden = true;
+    $('t-error').textContent = e.message;
+    $('t-error').hidden = false;
+    return;
+  }
+  $('t-cargando').hidden = true;
+  const camps = T.datos.campanas.sort((a, b) => a.fecha.localeCompare(b.fecha));
+  const cursos = T.datos.cursos || [];
+  if (!camps.length || !cursos.length) { $('t-sin').hidden = false; $('t-form').hidden = true; return; }
+  $('t-sin').hidden = true;
+  $('t-form').hidden = false;
+
+  const guardada = store.get('bs-tutor', {});
+  T.camp = camps.find(c => c.id === guardada.camp) || camps[0];
+  if (camps.length > 1) {
+    $('t-camp').innerHTML = `<label style="margin:0">Bocadillo solidario <select id="t-camp-sel">${camps.map(c => `<option value="${esc(c.id)}" ${c.id === T.camp.id ? 'selected' : ''}>${esc(c.titulo)} · ${esc(fechaLarga(c.fecha))}</option>`).join('')}</select></label>`;
+    $('t-camp-sel').onchange = e => { T.camp = camps.find(c => c.id === e.target.value); cargarCurso(); };
+  } else {
+    $('t-camp').innerHTML = `<div class="camp-title">${esc(T.camp.titulo)}</div><div class="muted">${esc(fechaLarga(T.camp.fecha))}</div>`;
+  }
+
+  const etapas = ETAPAS.filter(e => cursos.some(c => c.etapa === e.id));
+  $('t-etapa').innerHTML = `<option value="">Elige la etapa</option>` + etapas.map(e => `<option>${esc(e.id)}</option>`).join('');
+  const cursoGuardado = cursos.find(c => c.id === guardada.curso);
+  if (cursoGuardado) $('t-etapa').value = cursoGuardado.etapa;
+  rellenarCursos(cursoGuardado ? cursoGuardado.id : '');
+  if (guardada.tutor) $('t-tutor').value = guardada.tutor;
+  cargarCurso();
+}
+
+function rellenarCursos(sel) {
+  const etapa = $('t-etapa').value;
+  const cursos = (T.datos.cursos || []).filter(c => c.etapa === etapa);
+  $('t-curso').disabled = !etapa;
+  $('t-curso').innerHTML = etapa
+    ? (cursos.length === 1 ? '' : `<option value="">Elige la clase</option>`) + cursos.map(c => `<option value="${esc(c.id)}">${esc(c.nombre)}</option>`).join('')
+    : `<option value="">Primero elige la etapa</option>`;
+  if (sel) $('t-curso').value = sel;
+}
+
+async function cargarCurso() {
+  $('t-ok').hidden = true;
+  const id = $('t-curso').value;
+  T.curso = (T.datos.cursos || []).find(c => c.id === id) || null;
+  T.previo = null;
+  T.cant = {};
+  if (!T.curso) {
+    $('t-productos-card').hidden = true; $('t-barra').hidden = true; $('t-previo').hidden = true;
+    return;
+  }
+  store.set('bs-tutor', { ...store.get('bs-tutor', {}), curso: T.curso.id, camp: T.camp.id });
+  $('t-productos').innerHTML = '<div class="cargando">Cargando…</div>';
+  $('t-productos-card').hidden = false;
+  try {
+    const r = await api('miRecuento', { campana: T.camp.id, curso: T.curso.id });
+    T.previo = r.recuento;
+  } catch (e) { T.previo = null; }
+  if (T.previo) {
+    T.cant = { ...T.previo.cantidades };
+    $('t-obs').value = T.previo.observaciones || '';
+    if (!$('t-tutor').value) $('t-tutor').value = T.previo.tutor;
+  } else {
+    $('t-obs').value = '';
+  }
+  pintarPrevio();
+  pintarProductos();
+}
+
+function pintarPrevio() {
+  const p = T.previo;
+  $('t-previo').hidden = !p;
+  if (p) $('t-previo').innerHTML = `✅ <strong>${esc(p.curso)}</strong> ya envió su recuento (${esc(p.tutor)}, ${esc(fechaHora(p.actualizado))}). Si cambias algo y vuelves a enviarlo, se sustituye el anterior.`;
+}
+
+function pintarProductos() {
+  const prods = T.camp.catalogo.productos.filter(p => p.menus.includes(T.curso.menu));
+  $('t-productos').innerHTML = CATEGORIAS.map(cat => {
+    const ps = prods.filter(p => p.categoria === cat.id);
+    if (!ps.length) return '';
+    return `<div class="cat-head">${esc(cat.nombre)}</div>` + ps.map(p => {
+      const n = T.cant[p.id] || 0;
+      return `<div class="prod" data-id="${esc(p.id)}">
+        <div><div class="prod-nombre">${esc(p.nombre)}</div><div class="prod-precio">${eur(cent(p.precio))}</div></div>
+        <div class="stepper">
+          <button type="button" data-d="-1" aria-label="Quitar uno">−</button>
+          <input type="number" inputmode="numeric" min="0" max="500" value="${n}" class="${n ? 'pos' : ''}" aria-label="${esc(p.nombre)}">
+          <button type="button" data-d="1" aria-label="Añadir uno">+</button>
+        </div></div>`;
+    }).join('');
+  }).join('');
+  $('t-barra').hidden = $('rol-tutores').hidden;
+  actualizarTotal();
+}
+
+function actualizarTotal() {
+  let c = 0, u = 0;
+  T.camp.catalogo.productos.forEach(p => {
+    if (!T.curso.menu || !p.menus.includes(T.curso.menu)) return;
+    const n = T.cant[p.id] || 0;
+    u += n; c += n * cent(p.precio);
+  });
+  $('t-total').textContent = eur(c);
+  $('t-uds').textContent = `${num(u)} producto${u === 1 ? '' : 's'}`;
+  $('t-enviar').textContent = T.previo ? 'Enviar corrección' : 'Enviar recuento';
+}
+
+$('t-productos').addEventListener('click', e => {
+  const b = e.target.closest('button[data-d]');
+  if (!b) return;
+  const fila = b.closest('.prod');
+  const inp = fila.querySelector('input');
+  const n = Math.max(0, Math.min(500, (parseInt(inp.value) || 0) + Number(b.dataset.d)));
+  inp.value = n;
+  inp.classList.toggle('pos', n > 0);
+  T.cant[fila.dataset.id] = n;
+  actualizarTotal();
+});
+$('t-productos').addEventListener('input', e => {
+  if (e.target.tagName !== 'INPUT') return;
+  const n = Math.max(0, Math.min(500, parseInt(e.target.value) || 0));
+  e.target.classList.toggle('pos', n > 0);
+  T.cant[e.target.closest('.prod').dataset.id] = n;
+  actualizarTotal();
+});
+$('t-productos').addEventListener('focusin', e => { if (e.target.tagName === 'INPUT') e.target.select(); });
+$('t-etapa').onchange = () => { rellenarCursos(''); cargarCurso(); };
+$('t-curso').onchange = cargarCurso;
+$('t-tutor').onchange = () => store.set('bs-tutor', { ...store.get('bs-tutor', {}), tutor: $('t-tutor').value.trim() });
+
+$('t-enviar').onclick = async () => {
+  const tutor = $('t-tutor').value.trim();
+  if (!tutor) { $('t-tutor').focus(); alert('Escribe el nombre del tutor o tutora.'); return; }
+  const total = Object.values(T.cant).reduce((a, b) => a + (b || 0), 0);
+  if (!total && !confirm('No has puesto ningún producto. ¿Enviar el recuento vacío (nadie se ha apuntado)?')) return;
+  const btn = $('t-enviar');
+  btn.disabled = true; btn.textContent = 'Enviando…';
+  try {
+    const r = await api('enviar', { campana: T.camp.id, curso: T.curso.id, tutor, cantidades: T.cant, observaciones: $('t-obs').value.trim() });
+    store.set('bs-tutor', { ...store.get('bs-tutor', {}), tutor });
+    const corr = !!T.previo;
+    T.previo = r.recuento;
+    pintarPrevio();
+    $('t-previo').hidden = true;
+    $('t-ok').innerHTML = `🎉 <strong>¡Recuento ${corr ? 'corregido' : 'enviado'}!</strong> ${esc(T.curso.nombre)}: ${esc($('t-uds').textContent)}, ${esc($('t-total').textContent)}. Gracias. Si necesitas cambiar algo, modifícalo y vuelve a enviarlo.`;
+    $('t-ok').hidden = false;
+    $('t-ok').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  } catch (e) {
+    alert(e.message);
+  } finally {
+    btn.disabled = false;
+    actualizarTotal();
+  }
+};
+
+/* =========================================================================
+   PASTORAL: cálculos
+   ========================================================================= */
+const P = { clave: sesion.get(), datos: null, anio: null, campId: null, sub: 'resumen', etapa: 'Infantil', ambito: 'colegio', edit: null, editCamp: null };
+
+const campActual = () => P.datos.campanas.find(c => c.id === P.campId);
+const recsDe = campId => P.datos.recuentos.filter(r => r.campana === campId);
+const ordenEtapa = e => { const i = ETAPAS.findIndex(x => x.id === e); return i < 0 ? 99 : i; };
+
+// Clases actuales + las que aparezcan en recuentos antiguos (por si se renombraron)
+function cursosDe(camp) {
+  const lista = (P.datos.cursos || []).map(c => ({ ...c }));
+  const ids = new Set(lista.map(c => c.id));
+  recsDe(camp.id).forEach(r => {
+    if (!ids.has(r.cursoId)) { lista.push({ id: r.cursoId, nombre: r.curso, etapa: r.etapa, menu: menuDe(r.etapa) }); ids.add(r.cursoId); }
+  });
+  const pos = new Map(lista.map((c, i) => [c.id, i]));
+  return lista.sort((a, b) => ordenEtapa(a.etapa) - ordenEtapa(b.etapa) || pos.get(a.id) - pos.get(b.id));
+}
+const etapasCon = cursos => ETAPAS.filter(e => cursos.some(c => c.etapa === e.id)).map(e => e.id);
+function productosEtapa(camp, etapa) {
+  const menus = new Set(cursosDe(camp).filter(c => c.etapa === etapa).map(c => c.menu));
+  if (!menus.size) menus.add(menuDe(etapa));
+  return camp.catalogo.productos.filter(p => p.menus.some(m => menus.has(m)));
+}
+const productosDeCursos = (camp, cursos) => camp.catalogo.productos.filter(p => cursos.some(c => p.menus.includes(c.menu)));
+
+function sumar(camp, cursos) {
+  const recs = new Map(recsDe(camp.id).map(r => [r.cursoId, r]));
+  const prods = new Map(camp.catalogo.productos.map(p => [p.id, p]));
+  const porProducto = {}, porCat = { comida: 0, fruta: 0, bebida: 0 };
+  let centimos = 0, enviados = 0;
+  cursos.forEach(c => {
+    const r = recs.get(c.id);
+    if (!r) return;
+    enviados++;
+    Object.entries(r.cantidades).forEach(([pid, n]) => {
+      const p = prods.get(pid);
+      if (!p) return;
+      porProducto[pid] = (porProducto[pid] || 0) + n;
+      porCat[p.categoria] = (porCat[p.categoria] || 0) + n;
+      centimos += n * cent(p.precio);
+    });
+  });
+  return { porProducto, porCat, centimos, enviados, total: cursos.length };
+}
+
+function importeRecuento(camp, r) {
+  return camp.catalogo.productos.reduce((s, p) => s + (r.cantidades[p.id] || 0) * cent(p.precio), 0);
+}
+
+function listaCompra(camp, cursos) {
+  const { porProducto } = sumar(camp, cursos);
+  const bruto = {};
+  camp.catalogo.productos.forEach(p => {
+    const n = porProducto[p.id] || 0;
+    if (!n) return;
+    p.compra.forEach(({ articulo, cantidad }) => { bruto[articulo] = (bruto[articulo] || 0) + n * Number(cantidad); });
+  });
+  return camp.catalogo.articulos.map(a => {
+    const total = Math.ceil(Math.round((bruto[a.id] || 0) * 1000) / 1000);
+    const pack = Number(a.pack) || 0;
+    return { ...a, total, packs: pack ? Math.ceil(total / pack) : null };
+  }).filter(a => a.total > 0);
+}
+
+function repartoPorClase(camp, cursos) {
+  const arts = camp.catalogo.articulos.filter(a => a.porClase);
+  if (!arts.length) return null;
+  const recs = new Map(recsDe(camp.id).map(r => [r.cursoId, r]));
+  const filas = [];
+  cursos.forEach(c => {
+    const r = recs.get(c.id);
+    if (!r) return;
+    const v = arts.map(a => {
+      let t = 0;
+      camp.catalogo.productos.forEach(p => p.compra.forEach(x => { if (x.articulo === a.id) t += (r.cantidades[p.id] || 0) * Number(x.cantidad); }));
+      return Math.ceil(t - 1e-9);
+    });
+    if (v.some(x => x > 0)) filas.push({ curso: c.nombre, v });
+  });
+  if (!filas.length) return null;
+  return { arts, filas, totales: arts.map((_, i) => filas.reduce((s, f) => s + f.v[i], 0)) };
+}
+
+/* =========================================================================
+   PASTORAL: interfaz
+   ========================================================================= */
+async function iniciarPastoral() {
+  if (!P.clave) { $('p-login').hidden = false; $('p-app').hidden = true; return; }
+  $('p-login').hidden = true; $('p-app').hidden = false;
+  if (!P.datos) await recargarPanel();
+}
+
+async function recargarPanel(mantener = true) {
+  $('p-contenido').innerHTML = '<div class="cargando">Cargando recuentos…</div>';
+  try {
+    P.datos = await api('panel', { clave: P.clave, anio: P.anio || undefined });
+    P.anio = P.datos.anio;
+  } catch (e) {
+    if (/contraseña/i.test(e.message)) { P.clave = null; sesion.set(null); iniciarPastoral(); return; }
+    $('p-contenido').innerHTML = `<div class="aviso error">${esc(e.message)}</div>`;
+    return;
+  }
+  if (!P.datos.cursos) {
+    P.datos.cursos = cursosPorDefecto();
+    api('guardarCursos', { clave: P.clave, cursos: P.datos.cursos }).catch(e => mensaje(e.message, 'error'));
+  }
+  P.datos.campanas.sort((a, b) => b.fecha.localeCompare(a.fecha));
+  if (!mantener || !(P.campId === TOTAL && P.datos.campanas.length) && !P.datos.campanas.some(c => c.id === P.campId)) P.campId = P.datos.campanas[0]?.id || null;
+  pintarPanel();
+}
+
+function mensaje(txt, tipo = 'ok') {
+  $('p-msg').innerHTML = `<div class="aviso ${tipo}">${esc(txt)}</div>`;
+  clearTimeout(mensaje.t);
+  mensaje.t = setTimeout(() => { $('p-msg').innerHTML = ''; }, 5000);
+}
+
+function pintarPanel() {
+  const camps = P.datos.campanas;
+  const actual = P.datos.cursoActual;
+  $('p-anio').innerHTML = P.datos.anios.map(a => `<option value="${a}">Curso ${a}${a === actual ? ' (actual)' : ''}</option>`).join('') +
+    `<option value="todos">Todos los cursos</option>`;
+  $('p-anio').value = P.anio;
+  $('p-nuevo-curso').hidden = P.anio !== actual;
+  document.querySelector('[data-acc="nueva"]').hidden = P.anio !== actual;
+  $('p-camp').innerHTML = (camps.map(c => `<option value="${esc(c.id)}">${esc(c.titulo)} · ${esc(c.estado === 'abierta' ? 'abierto' : 'cerrado')}</option>`).join('') || '<option>—</option>') +
+    (camps.length ? `<option disabled>──────────</option><option value="${TOTAL}">📈 Total acumulado ${P.anio === 'todos' ? 'de todos los cursos' : 'del curso'}</option>` : '');
+  $('p-camp').value = P.campId || '';
+  $('p-camp').disabled = !camps.length;
+  const total = P.campId === TOTAL && camps.length > 0;
+  $('p-subtabs').hidden = total;
+  if (total) {
+    $('p-estado').innerHTML = `<div class="estado-caja cerrada"><div><strong>📈 Total acumulado · ${P.anio === 'todos' ? 'todos los cursos' : 'curso ' + esc(P.anio)}</strong><div class="small muted">Suma de los bocadillos solidarios ${P.anio === 'todos' ? 'de todos los cursos' : 'de este curso'}. Solo es un resumen: no se edita.</div></div></div>`;
+    $('p-sin').hidden = true;
+    $('p-main').hidden = false;
+    $('p-contenido').innerHTML = vistaTotal();
+    return;
+  }
+  const camp = campActual();
+  $('p-estado').innerHTML = camp ? (camp.estado === 'abierta'
+    ? `<div class="estado-caja abierta">
+        <div><strong>🟢 Abierto a los tutores</strong><div class="small muted">${esc(fechaLarga(camp.fecha))} · Los tutores pueden enviar y corregir su recuento.</div></div>
+        <button class="btn sec" data-acc="estado">🔒 Cerrar plazo</button></div>`
+    : `<div class="estado-caja cerrada">
+        <div><strong>🔒 Plazo cerrado</strong><div class="small muted">${esc(fechaLarga(camp.fecha))} · Los tutores ya no pueden enviar ni corregir.</div></div>
+        <button class="btn sec" data-acc="estado">🔓 Reabrir plazo</button></div>`) : '';
+  $('p-sin').hidden = !!camp;
+  $('p-sin').innerHTML = P.anio === actual
+    ? `<h2>Todavía no hay ningún bocadillo solidario en el curso ${esc(actual)}</h2><p class="muted" style="margin:0">Crea el primero con el botón <strong>➕ Nuevo bocadillo</strong>. Se abrirá para que los tutores envíen su recuento.</p>`
+    : `<h2>No hay bocadillos solidarios guardados en este curso</h2>`;
+  $('p-main').hidden = !camp;
+  document.querySelectorAll('#p-subtabs .subtab').forEach(b => b.classList.toggle('active', b.dataset.sub === P.sub));
+  const editando = P.sub === 'productos' || P.sub === 'cursos';
+  $('p-editar-opciones').hidden = !editando && !P.menuEditar;
+  $('p-editar').classList.toggle('active', !!(editando || P.menuEditar));
+  $('p-editar').setAttribute('aria-expanded', String(!$('p-editar-opciones').hidden));
+  if (camp) pintarSub();
+}
+
+function pintarSub() {
+  const camp = campActual();
+  const f = { resumen: vistaResumen, clases: vistaClases, compra: vistaCompra, productos: vistaProductos, cursos: vistaCursos }[P.sub];
+  $('p-contenido').innerHTML = f(camp);
+}
+
+// Tabla con la primera columna más ancha y el resto a partes iguales
+function tabla(head, filas, pie, clasesCol = [], op = {}) {
+  const cls = i => clasesCol[i] ? ` class="${clasesCol[i]}"` : '';
+  const primera = op.primera || 150, derecha = op.derecha || [], minCol = 52;
+  const iguales = head.length - 1 - derecha.length;
+  const cols = `<colgroup><col style="width:${primera}px">${'<col>'.repeat(iguales)}${derecha.map(w => `<col style="width:${w}px">`).join('')}</colgroup>`;
+  const min = primera + derecha.reduce((a, b) => a + b, 0) + iguales * minCol;
+  return `<div class="tabla-wrap"><table class="fija" style="min-width:${min}px">${cols}
+    ${op.thead || `<thead><tr>${head.map((h, i) => `<th${cls(i)}>${h}</th>`).join('')}</tr></thead>`}
+    <tbody>${filas.join('')}</tbody>
+    ${pie ? `<tfoot><tr>${pie.map((h, i) => `<td${cls(i)}>${h}</td>`).join('')}</tr></tfoot>` : ''}
+  </table></div>`;
+}
+const celdaN = n => `<td class="n${n ? '' : ' cero'}">${n ? num(n) : '·'}</td>`;
+
+function vistaResumen(camp) {
+  const cursos = cursosDe(camp);
+  const tot = sumar(camp, cursos);
+  const etapas = etapasCon(cursos);
+  const recs = new Set(recsDe(camp.id).map(r => r.cursoId));
+  const filas = etapas.map(e => {
+    const cs = cursos.filter(c => c.etapa === e);
+    const s = sumar(camp, cs);
+    return `<tr><td><strong>${esc(e)}</strong></td><td class="n">${s.enviados} / ${s.total}</td>${celdaN(s.porCat.comida)}${celdaN(s.porCat.fruta)}${celdaN(s.porCat.bebida)}<td class="n"><strong>${eur(s.centimos)}</strong></td></tr>`;
+  });
+  const pend = etapas.map(e => {
+    const p = cursos.filter(c => c.etapa === e && !recs.has(c.id));
+    return p.length ? `<div style="margin-bottom:.5rem"><strong class="small">${esc(e)}:</strong> ${p.map(c => `<span class="chip pend">${esc(c.nombre)}</span>`).join(' ')}</div>` : '';
+  }).join('');
+  const prods = camp.catalogo.productos.filter(p => tot.porProducto[p.id]);
+  const compra = listaCompra(camp, cursos);
+  return `
+    <div class="kpis">
+      <div class="kpi"><div class="v">${eur(tot.centimos)}</div><div class="l">Recaudado</div></div>
+      <div class="kpi"><div class="v">${num(tot.porCat.comida)}</div><div class="l">Bocadillos y sándwiches</div></div>
+      <div class="kpi"><div class="v">${num(tot.porCat.bebida)}</div><div class="l">Bebidas</div></div>
+      <div class="kpi"><div class="v">${tot.enviados}<span class="muted" style="font-size:1rem"> / ${tot.total}</span></div><div class="l">Clases que han enviado</div></div>
+    </div>
+    <div class="card">
+      <div class="acciones" style="justify-content:space-between;margin-bottom:.8rem">
+        <h2 style="margin:0">Por etapa</h2>
+        <button class="btn" data-pdf="colegio">📄 PDF del colegio</button>
+      </div>
+      ${tabla(['Etapa', 'Clases', 'Bocadillos', 'Fruta', 'Bebidas', 'Dinero'], filas,
+        ['Total colegio', `${tot.enviados} / ${tot.total}`, num(tot.porCat.comida), num(tot.porCat.fruta), num(tot.porCat.bebida), eur(tot.centimos)],
+        ['', 'n', 'n', 'n', 'n', 'n'])}
+    </div>
+    <div class="card">
+      <h2>Faltan por enviar ${tot.total - tot.enviados ? `(${tot.total - tot.enviados})` : ''}</h2>
+      ${pend || '<p class="muted" style="margin:0">🎉 Todas las clases han enviado su recuento.</p>'}
+    </div>
+    <div class="card">
+      <h2>Total de cada producto en el colegio</h2>
+      ${prods.length ? tabla(['Producto', 'Precio', 'Unidades', 'Importe'],
+        prods.map(p => `<tr><td>${esc(p.nombre)}</td><td class="n">${eur(cent(p.precio))}</td><td class="n">${num(tot.porProducto[p.id])}</td><td class="n">${eur(tot.porProducto[p.id] * cent(p.precio))}</td></tr>`),
+        ['Total', '', num(Object.values(tot.porProducto).reduce((a, b) => a + b, 0)), eur(tot.centimos)], ['', 'n', 'n', 'n'])
+      : '<p class="muted" style="margin:0">Todavía no hay recuentos.</p>'}
+    </div>
+    <div class="card">
+      <div class="acciones" style="justify-content:space-between;margin-bottom:.8rem">
+        <h2 style="margin:0">Lista de la compra del colegio</h2>
+        <button class="btn sec" data-ir-compra>Ver por etapas →</button>
+      </div>
+      ${compra.length ? tablaCompra(compra) : '<p class="muted" style="margin:0">Todavía no hay recuentos.</p>'}
+    </div>`;
+}
+
+// Para las tablas anchas: "Bocadillo grande de chopped" -> grupo "Bocadillo grande", nombre "Chopped"
+const PREFIJOS = ['Bocadillo pequeño', 'Bocadillo grande', 'Sándwich', 'Batido'];
+function partirNombre(prod) {
+  const nombre = prod.nombre;
+  const propio = String(prod.grupo || '').trim();
+  for (const g of [propio, ...PREFIJOS].filter(Boolean)) {
+    const m = nombre.match(new RegExp('^' + g.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s+(de\\s+)?(.+)$', 'i'));
+    if (m) return { grupo: propio || g, corto: m[2].charAt(0).toUpperCase() + m[2].slice(1) };
+  }
+  return { grupo: propio || null, corto: nombre };
+}
+// Agrupa productos consecutivos del mismo grupo para la fila superior de la cabecera
+function gruposCabecera(prods) {
+  const seg = [];
+  prods.forEach(p => {
+    const { grupo, corto } = partirNombre(p);
+    const ult = seg[seg.length - 1];
+    if (grupo && ult && ult.grupo === grupo) ult.items.push({ p, corto });
+    else seg.push({ grupo, items: [{ p, corto }] });
+  });
+  return seg;
+}
+function theadDoble(prods, antes, despues) {
+  const seg = gruposCabecera(prods);
+  const th = (t, extra = '') => `<th${extra}>${t}</th>`;
+  const f1 = antes.map(t => th(t, ' rowspan="2"')).join('') +
+    seg.map(s => s.grupo ? th(esc(s.grupo), ` colspan="${s.items.length}" class="grupo"`) : th(esc(s.items[0].corto), ' rowspan="2"')).join('') +
+    despues.map(t => th(t, ' rowspan="2"')).join('');
+  const f2 = seg.filter(s => s.grupo).flatMap(s => s.items.map(i => th(`<span title="${esc(i.p.nombre)}">${esc(i.corto)}</span>`))).join('');
+  return `<thead><tr>${f1}</tr>${f2 ? `<tr>${f2}</tr>` : ''}</thead>`;
+}
+
+/* ---------- Total acumulado ---------- */
+const TOTAL = '__total';
+function cursoEscolar(fecha) {
+  const [y, m] = String(fecha).split('-').map(Number);
+  return m >= 9 ? `${y}-${y + 1}` : `${y - 1}-${y}`;
+}
+function datosTotal() {
+  const camps = P.datos.campanas.slice().sort((a, b) => a.fecha.localeCompare(b.fecha));
+  const filas = camps.map(c => ({ camp: c, s: sumar(c, cursosDe(c)) }));
+  const porAnio = {};
+  filas.forEach(({ camp, s }) => {
+    const a = camp.cursoEscolar || cursoEscolar(camp.fecha);
+    const x = porAnio[a] || (porAnio[a] = { n: 0, comida: 0, fruta: 0, bebida: 0, centimos: 0 });
+    x.n++; x.comida += s.porCat.comida; x.fruta += s.porCat.fruta; x.bebida += s.porCat.bebida; x.centimos += s.centimos;
+  });
+  const tot = { comida: 0, fruta: 0, bebida: 0, centimos: 0 };
+  const porEtapa = {};
+  filas.forEach(({ camp, s }) => {
+    tot.comida += s.porCat.comida; tot.fruta += s.porCat.fruta; tot.bebida += s.porCat.bebida; tot.centimos += s.centimos;
+    const cs = cursosDe(camp);
+    etapasCon(cs).forEach(e => {
+      const se = sumar(camp, cs.filter(c => c.etapa === e));
+      const pe = porEtapa[e] || (porEtapa[e] = { comida: 0, fruta: 0, bebida: 0, centimos: 0 });
+      pe.comida += se.porCat.comida; pe.fruta += se.porCat.fruta; pe.bebida += se.porCat.bebida; pe.centimos += se.centimos;
+    });
+  });
+  const etapas = ETAPAS.map(e => e.id).filter(e => porEtapa[e]);
+  return { filas, tot, porEtapa, etapas, porAnio };
+}
+function vistaTotal() {
+  const { filas, tot, porEtapa, etapas, porAnio } = datosTotal();
+  const anios = Object.keys(porAnio).sort();
+  return `
+    <div class="kpis">
+      <div class="kpi"><div class="v">${eur(tot.centimos)}</div><div class="l">Recaudado en total</div></div>
+      <div class="kpi"><div class="v">${num(tot.comida)}</div><div class="l">Bocadillos y sándwiches</div></div>
+      <div class="kpi"><div class="v">${num(tot.bebida)}</div><div class="l">Bebidas</div></div>
+      <div class="kpi"><div class="v">${filas.length}</div><div class="l">Bocadillos solidarios</div></div>
+    </div>
+    <div class="card">
+      <div class="acciones" style="justify-content:space-between;margin-bottom:.8rem">
+        <h2 style="margin:0">Bocadillo a bocadillo</h2>
+        <button class="btn" data-pdf="total">📄 PDF del total acumulado</button>
+      </div>
+      ${tabla(['Bocadillo solidario', 'Fecha', 'Clases', 'Bocadillos', 'Fruta', 'Bebidas', 'Dinero'],
+        filas.map(({ camp, s }) => `<tr><td><strong>${esc(camp.titulo)}</strong></td><td class="n">${esc(new Date(camp.fecha + 'T12:00').toLocaleDateString('es-ES'))}</td><td class="n">${s.enviados} / ${s.total}</td>${celdaN(s.porCat.comida)}${celdaN(s.porCat.fruta)}${celdaN(s.porCat.bebida)}<td class="n"><strong>${eur(s.centimos)}</strong></td></tr>`),
+        ['Total acumulado', '', '', num(tot.comida), num(tot.fruta), num(tot.bebida), eur(tot.centimos)],
+        ['', 'n', 'n', 'n', 'n', 'n', 'n'], { primera: 200 })}
+    </div>
+    ${P.anio === 'todos' ? `<div class="card"><h2>Por curso</h2>
+      ${tabla(['Curso', 'Bocadillos solidarios', 'Bocadillos', 'Fruta', 'Bebidas', 'Dinero'],
+        anios.map(a => { const x = porAnio[a]; return `<tr><td><strong>${a}</strong></td><td class="n">${x.n}</td>${celdaN(x.comida)}${celdaN(x.fruta)}${celdaN(x.bebida)}<td class="n"><strong>${eur(x.centimos)}</strong></td></tr>`; }),
+        ['Total', filas.length, num(tot.comida), num(tot.fruta), num(tot.bebida), eur(tot.centimos)], ['', 'n', 'n', 'n', 'n', 'n'])}</div>` : ''}
+    <div class="card">
+      <h2>Por etapa</h2>
+      ${tabla(['Etapa', 'Bocadillos', 'Fruta', 'Bebidas', 'Dinero'],
+        etapas.map(e => { const x = porEtapa[e]; return `<tr><td><strong>${esc(e)}</strong></td>${celdaN(x.comida)}${celdaN(x.fruta)}${celdaN(x.bebida)}<td class="n"><strong>${eur(x.centimos)}</strong></td></tr>`; }),
+        ['Total', num(tot.comida), num(tot.fruta), num(tot.bebida), eur(tot.centimos)], ['', 'n', 'n', 'n', 'n'])}
+    </div>`;
+}
+
+function vistaClases(camp) {
+  const cursos = cursosDe(camp);
+  const etapas = etapasCon(cursos);
+  if (!etapas.includes(P.etapa)) P.etapa = etapas[0];
+  const cs = cursos.filter(c => c.etapa === P.etapa);
+  const prods = productosEtapa(camp, P.etapa);
+  const recs = new Map(recsDe(camp.id).map(r => [r.cursoId, r]));
+  const s = sumar(camp, cs);
+  const filas = cs.map(c => {
+    const r = recs.get(c.id);
+    if (!r) return `<tr class="pend"><td><strong>${esc(c.nombre)}</strong></td><td colspan="${prods.length + 2}">Pendiente de enviar</td><td></td></tr>`;
+    const obs = r.observaciones ? ` <span title="${esc(r.observaciones)}">💬</span>` : '';
+    return `<tr><td><strong>${esc(c.nombre)}</strong>${obs}<div class="muted small">${esc(r.tutor)}</div></td>
+      ${prods.map(p => celdaN(r.cantidades[p.id] || 0)).join('')}
+      <td class="n"><strong>${eur(importeRecuento(camp, r))}</strong></td>
+      <td style="text-align:center"><button class="btn sec mini" data-pdf="clase" data-curso="${esc(c.id)}" title="PDF de la clase">PDF</button>
+          <button class="btn peligro mini" data-borrar-rec="${esc(c.id)}" title="Borrar este recuento">✕</button></td></tr>`;
+  });
+  const obsList = cs.map(c => recs.get(c.id)).filter(r => r && r.observaciones);
+  return `
+    <div class="chips">${etapas.map(e => `<button class="chip ${e === P.etapa ? 'active' : ''}" data-etapa="${esc(e)}">${esc(e)}</button>`).join('')}</div>
+    <div class="card">
+      <div class="acciones" style="justify-content:space-between;margin-bottom:.8rem">
+        <h2 style="margin:0">${esc(P.etapa)} <span class="muted small">· ${s.enviados} de ${s.total} clases · ${eur(s.centimos)}</span></h2>
+        <button class="btn" data-pdf="etapa">📄 PDF de ${esc(P.etapa)}</button>
+      </div>
+      ${tabla(['Clase', ...prods.map(p => esc(p.nombre)), 'Importe', ''], filas,
+        ['Total', ...prods.map(p => num(s.porProducto[p.id] || 0)), eur(s.centimos), ''],
+        ['', ...prods.map(() => 'n'), 'n', ''], { primera: 116, derecha: [78, 90], thead: theadDoble(prods, ['Clase'], ['Importe', '']) })}
+      ${obsList.length ? `<h3>Observaciones</h3>${obsList.map(r => `<p class="small" style="margin:.3rem 0"><strong>${esc(r.curso)}:</strong> ${esc(r.observaciones)}</p>`).join('')}` : ''}
+    </div>`;
+}
+
+function tablaCompra(lista) {
+  return tabla(['Artículo', 'Cantidad', 'Paquetes a comprar'],
+    lista.map(a => `<tr><td><strong>${esc(a.nombre)}</strong></td><td class="n">${num(a.total)} ${esc(a.unidad)}</td><td class="n">${a.packs != null ? `<strong>${num(a.packs)}</strong> <span class="muted small">(de ${a.pack})</span>` : '<span class="muted">—</span>'}</td></tr>`),
+    null, ['', 'n', 'n']);
+}
+
+function vistaCompra(camp) {
+  const cursos = cursosDe(camp);
+  const etapas = etapasCon(cursos);
+  if (P.ambito !== 'colegio' && !etapas.includes(P.ambito)) P.ambito = 'colegio';
+  const cs = P.ambito === 'colegio' ? cursos : cursos.filter(c => c.etapa === P.ambito);
+  const lista = listaCompra(camp, cs);
+  const rep = repartoPorClase(camp, cs);
+  return `
+    <div class="chips">
+      <button class="chip ${P.ambito === 'colegio' ? 'active' : ''}" data-ambito="colegio">Todo el colegio</button>
+      ${etapas.map(e => `<button class="chip ${e === P.ambito ? 'active' : ''}" data-ambito="${esc(e)}">${esc(e)}</button>`).join('')}
+    </div>
+    <div class="card">
+      <div class="acciones" style="justify-content:space-between;margin-bottom:.8rem">
+        <h2 style="margin:0">Lista de la compra · ${P.ambito === 'colegio' ? 'Colegio' : esc(P.ambito)}</h2>
+        <div class="acciones">
+          <button class="btn sec" data-pdf="compra-ambito">📄 PDF de esta lista</button>
+          <button class="btn" data-pdf="compra-todo">📄 PDF completo (colegio + etapas)</button>
+        </div>
+      </div>
+      ${lista.length ? tablaCompra(lista)
+      : '<p class="muted" style="margin:0">Todavía no hay recuentos en este ámbito.</p>'}
+      <p class="muted small" style="margin:.4rem 0 0">Las cantidades con decimales (por ejemplo, las tortillas) se redondean hacia arriba.</p>
+    </div>
+    ${rep ? `<div class="card"><h2>Reparto por clase</h2>
+      ${tabla(['Clase', ...rep.arts.map(a => esc(a.nombre))], rep.filas.map(f => `<tr><td>${esc(f.curso)}</td>${f.v.map(celdaN).join('')}</tr>`),
+        ['Total', ...rep.totales.map(num)], ['', ...rep.arts.map(() => 'n')])}</div>` : ''}`;
+}
+
+/* ---------- Editor de productos ---------- */
+function vistaProductos(camp) {
+  if (!P.edit || P.editCamp !== camp.id) { P.edit = clone(camp.catalogo); P.editCamp = camp.id; }
+  const c = P.edit;
+  const nRecs = recsDe(camp.id).length;
+  const artOpts = sel => c.articulos.map(a => `<option value="${esc(a.id)}" ${a.id === sel ? 'selected' : ''}>${esc(a.nombre)} (${esc(a.unidad)})</option>`).join('');
+  return `
+    ${nRecs ? `<div class="aviso info">Este bocadillo ya tiene ${nRecs} recuento${nRecs === 1 ? '' : 's'}. Si cambias un precio, se recalcula todo; si quitas un producto, sus unidades dejan de contar.</div>` : ''}
+    <div class="card" id="ed">
+      <h2>Productos de «${esc(camp.titulo)}»</h2>
+      <p class="muted small" style="margin-top:0">Cada producto indica en qué etapas aparece y qué gasta de la lista de la compra por cada unidad pedida.</p>
+      ${c.productos.map((p, i) => `
+        <div class="ed-prod">
+          <div class="ed-fila">
+            <label>Nombre <input data-p="${i}" data-k="nombre" value="${esc(p.nombre)}"></label>
+            <label>Precio (€) <input data-p="${i}" data-k="precio" type="number" step="0.05" min="0" value="${esc(p.precio)}"></label>
+            <label title="Título que agrupa columnas en las tablas grandes (p. ej. Refrescos o Bebidas). Vacío: se agrupan solos los que empiezan por Bocadillo pequeño/grande o Sándwich.">Grupo en tablas <input data-p="${i}" data-k="grupo" value="${esc(p.grupo || '')}" placeholder="Opcional"></label>
+            <label>Tipo <select data-p="${i}" data-k="categoria">${CATEGORIAS.map(k => `<option value="${k.id}" ${k.id === p.categoria ? 'selected' : ''}>${esc(k.nombre)}</option>`).join('')}</select></label>
+            <button class="x" data-quitar-p="${i}" title="Quitar producto">🗑</button>
+          </div>
+          <div class="ed-menus">${MENUS.map(m => `<label><input type="checkbox" data-p="${i}" data-menu="${m.id}" ${p.menus.includes(m.id) ? 'checked' : ''}> ${esc(m.nombre)}</label>`).join('')}</div>
+          <div class="ed-compra"><span class="muted">Para la compra, cada unidad gasta:</span>
+            ${p.compra.map((x, j) => `<span class="item"><input type="number" step="any" min="0" data-p="${i}" data-c="${j}" data-k="cantidad" value="${esc(x.cantidad)}">
+              <select data-p="${i}" data-c="${j}" data-k="articulo">${artOpts(x.articulo)}</select>
+              <button class="x" data-quitar-c="${i}.${j}" title="Quitar">×</button></span>`).join('')}
+            <button class="btn sec mini" data-anadir-c="${i}">+ añadir</button>
+          </div>
+        </div>`).join('')}
+      <button class="btn sec" data-anadir-p>+ Añadir producto</button>
+
+      <h2 style="margin-top:1.6rem">Artículos de la lista de la compra</h2>
+      <p class="muted small" style="margin-top:0">«Paquete» es cuántas unidades trae cada pack (0 si se compran sueltos). «Reparto por clase» añade, además del total, una tabla con cuántos van a cada clase (útil si algún producto hay que repartirlo por aulas).</p>
+      <div class="ed-art muted small"><span>Nombre</span><span>Se cuenta en</span><span>Paquete</span><span>Reparto por clase</span><span></span></div>
+      ${c.articulos.map((a, i) => `
+        <div class="ed-art">
+          <input data-a="${i}" data-k="nombre" value="${esc(a.nombre)}">
+          <input data-a="${i}" data-k="unidad" value="${esc(a.unidad)}">
+          <input data-a="${i}" data-k="pack" type="number" min="0" value="${esc(a.pack)}">
+          <label class="check"><input type="checkbox" data-a="${i}" data-k="porClase" ${a.porClase ? 'checked' : ''}> Repartir</label>
+          <button class="x" data-quitar-a="${i}" title="Quitar artículo">🗑</button>
+        </div>`).join('')}
+      <button class="btn sec" data-anadir-a>+ Añadir artículo</button>
+    </div>
+    <div class="guardar-barra">
+      <span class="muted small" style="margin-right:auto">Los cambios solo afectan a «${esc(camp.titulo)}».</span>
+      <button class="btn sec" data-ed="descartar">Descartar cambios</button>
+      <button class="btn" data-ed="guardar">💾 Guardar productos</button>
+    </div>`;
+}
+
+function editorCambio(e) {
+  const t = e.target;
+  const c = P.edit;
+  if (!c) return;
+  if (t.dataset.p !== undefined) {
+    const p = c.productos[t.dataset.p];
+    if (t.dataset.menu) {
+      p.menus = MENUS.map(m => m.id).filter(id => id === t.dataset.menu ? t.checked : p.menus.includes(id));
+    } else if (t.dataset.c !== undefined) {
+      p.compra[t.dataset.c][t.dataset.k] = t.dataset.k === 'cantidad' ? Number(t.value) : t.value;
+    } else {
+      p[t.dataset.k] = t.dataset.k === 'precio' ? Number(t.value) : t.value;
+    }
+  } else if (t.dataset.a !== undefined) {
+    const a = c.articulos[t.dataset.a];
+    a[t.dataset.k] = t.dataset.k === 'porClase' ? t.checked : t.dataset.k === 'pack' ? Number(t.value) : t.value;
+  }
+}
+
+function validarCatalogo(c) {
+  for (const p of c.productos) {
+    if (!String(p.nombre).trim()) return 'Hay un producto sin nombre.';
+    if (!(p.precio >= 0)) return `El precio de «${p.nombre}» no es válido.`;
+    if (!p.menus.length) return `«${p.nombre}» no está marcado en ninguna etapa.`;
+  }
+  for (const a of c.articulos) if (!String(a.nombre).trim()) return 'Hay un artículo de la compra sin nombre.';
+  return null;
+}
+
+/* ---------- Editor de clases ---------- */
+function vistaCursos() {
+  return `
+    <div class="card">
+      <h2>Clases que participan</h2>
+      <p class="muted small" style="margin-top:0">Una clase por línea. Estos cambios valen para todos los bocadillos. Si renombras una clase que ya ha enviado recuentos, los antiguos se conservan con el nombre de entonces.</p>
+      <div class="grid2">
+        ${GRUPOS.map((g, i) => {
+          const cs = P.datos.cursos.filter(c => c.etapa === g.etapa && c.menu === g.menu);
+          return `<label>${esc(g.nombre)} <textarea data-grupo="${i}" rows="${Math.max(3, cs.length + 1)}">${esc(cs.map(c => c.nombre).join('\n'))}</textarea></label>`;
+        }).join('')}
+      </div>
+      <div class="acciones" style="justify-content:flex-end"><button class="btn" data-guardar-cursos>💾 Guardar clases</button></div>
+    </div>`;
+}
+
+async function guardarCursos() {
+  const viejos = P.datos.cursos;
+  const nuevos = [], usados = new Set();
+  GRUPOS.forEach((g, i) => {
+    const lineas = document.querySelector(`[data-grupo="${i}"]`).value.split('\n').map(s => s.trim()).filter(Boolean);
+    lineas.forEach(nombre => {
+      const previo = viejos.find(c => c.etapa === g.etapa && c.nombre === nombre && !usados.has(c.id));
+      let id = previo ? previo.id : slug(g.etapa + '-' + nombre);
+      while (usados.has(id)) id += '-2';
+      usados.add(id);
+      nuevos.push({ id, nombre, etapa: g.etapa, menu: g.menu });
+    });
+  });
+  if (!nuevos.length) { alert('La lista de clases no puede quedar vacía.'); return; }
+  await conBoton('[data-guardar-cursos]', async () => {
+    await api('guardarCursos', { clave: P.clave, cursos: nuevos });
+    P.datos.cursos = nuevos;
+    mensaje('Clases guardadas.');
+    pintarSub();
+  });
+}
+
+async function conBoton(sel, fn) {
+  const b = document.querySelector(sel);
+  if (b) b.disabled = true;
+  try { await fn(); } catch (e) { mensaje(e.message, 'error'); } finally { if (b) b.disabled = false; }
+}
+
+/* ---------- Eventos del panel ---------- */
+$('p-login-form').onsubmit = async e => {
+  e.preventDefault();
+  const clave = $('p-clave').value;
+  $('p-login-error').hidden = true;
+  try {
+    await api('login', { clave });
+    P.clave = clave; sesion.set(clave); $('p-clave').value = '';
+    iniciarPastoral();
+  } catch (err) {
+    $('p-login-error').textContent = err.message; $('p-login-error').hidden = false;
+  }
+};
+
+$('p-anio').onchange = async e => { P.anio = e.target.value; P.campId = null; P.edit = null; await recargarPanel(false); };
+$('p-camp').onchange = e => { P.campId = e.target.value; P.edit = null; pintarPanel(); };
+$('p-subtabs').onclick = e => {
+  if (e.target.closest('#p-editar')) {
+    const editando = P.sub === 'productos' || P.sub === 'cursos';
+    if (editando) { P.sub = 'resumen'; P.menuEditar = false; }
+    else P.menuEditar = !P.menuEditar;
+    pintarPanel();
+    return;
+  }
+  const b = e.target.closest('[data-sub]');
+  if (!b) return;
+  P.sub = b.dataset.sub;
+  if (P.sub !== 'productos' && P.sub !== 'cursos') P.menuEditar = false;
+  pintarPanel();
+};
+
+async function accionPanel(e) {
+  const b = e.target.closest('[data-acc]');
+  if (!b) return;
+  const camp = campActual();
+  switch (b.dataset.acc) {
+    case 'recargar': await recargarPanel(); mensaje('Datos actualizados.'); break;
+    case 'salir': P.clave = null; P.datos = null; sesion.set(null); iniciarPastoral(); break;
+    case 'nueva': abrirNueva(); break;
+    case 'nuevoCurso': {
+      const actual = P.datos.cursoActual;
+      const y = Number(actual.slice(0, 4)) + 1;
+      const sig = `${y}-${y + 1}`;
+      if (!confirm(`¿Empezar el curso ${sig}?\n\n· Los bocadillos que sigan abiertos del curso ${actual} se cerrarán.\n· El curso ${actual} queda guardado y se puede consultar eligiéndolo arriba.\n· Los bocadillos nuevos se guardarán en el curso ${sig}.`)) return;
+      await conBoton('#p-nuevo-curso', async () => {
+        await api('nuevoCurso', { clave: P.clave });
+        P.anio = null; P.campId = null;
+        await recargarPanel(false);
+        mensaje(`Curso ${sig} empezado. Crea el primer bocadillo con «➕ Nuevo bocadillo».`);
+      });
+      break;
+    }
+    case 'estado': {
+      const nuevo = camp.estado === 'abierta' ? 'cerrada' : 'abierta';
+      await conBoton('[data-acc="estado"]', async () => {
+        await api('guardarCampana', { clave: P.clave, campana: { ...camp, estado: nuevo } });
+        camp.estado = nuevo;
+        mensaje(nuevo === 'abierta' ? 'Reabierto: los tutores pueden enviar o corregir.' : 'Plazo cerrado: los tutores ya no pueden enviar cambios.');
+        pintarPanel();
+      });
+      break;
+    }
+    case 'borrar': {
+      const n = recsDe(camp.id).length;
+      if (!confirm(`¿Borrar «${camp.titulo}» y sus ${n} recuentos? No se puede deshacer.`)) return;
+      await conBoton('[data-acc="borrar"]', async () => {
+        await api('borrarCampana', { clave: P.clave, id: camp.id });
+        await recargarPanel(false);
+        mensaje('Bocadillo borrado.');
+      });
+      break;
+    }
+  }
+}
+['p-sesion', 'p-cabecera', 'p-subtabs'].forEach(id => $(id).addEventListener('click', accionPanel));
+
+function abrirNueva() {
+  $('p-nueva').hidden = false;
+  const ultima = P.datos.campanas[0];
+  $('n-base').innerHTML = (ultima ? `<option value="${esc(ultima.id)}">Copiar los de «${esc(ultima.titulo)}» (luego se pueden cambiar)</option>` : '') +
+    P.datos.campanas.slice(1).map(c => `<option value="${esc(c.id)}">Copiar los de «${esc(c.titulo)}»</option>`).join('') +
+    `<option value="">Productos y precios iniciales</option>`;
+  const d = new Date();
+  $('n-titulo').value = d.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }).replace(/^./, s => s.toUpperCase()).replace(' de ', ' ');
+  $('n-fecha').value = '';
+  $('n-titulo').focus();
+}
+$('n-cancelar').onclick = () => { $('p-nueva').hidden = true; };
+$('n-crear').onclick = async () => {
+  const titulo = $('n-titulo').value.trim(), fecha = $('n-fecha').value;
+  if (!titulo || !fecha) { alert('Pon un título y la fecha del bocadillo.'); return; }
+  if (cursoEscolar(fecha) !== P.datos.cursoActual &&
+    !confirm(`La fecha no es del curso ${P.datos.cursoActual}. El bocadillo se guardará igualmente en el curso ${P.datos.cursoActual}. ¿Seguir?`)) return;
+  const base = P.datos.campanas.find(c => c.id === $('n-base').value);
+  const campana = { titulo, fecha, estado: 'abierta', catalogo: base ? clone(base.catalogo) : catalogoPorDefecto() };
+  await conBoton('#n-crear', async () => {
+    const r = await api('guardarCampana', { clave: P.clave, campana });
+    $('p-nueva').hidden = true;
+    P.campId = r.id;
+    P.sub = 'productos';
+    await recargarPanel();
+    mensaje(`«${titulo}» creado y abierto a los tutores. Revisa los productos por si este mes cambia algo.`);
+  });
+};
+
+$('p-contenido').addEventListener('input', editorCambio);
+$('p-contenido').addEventListener('change', editorCambio);
+$('p-contenido').addEventListener('click', async e => {
+  const t = e.target.closest('button');
+  if (!t) return;
+  const d = t.dataset;
+  const camp = campActual();
+  if (d.pdf === 'total') { pdfTotal(); return; }
+  if (d.etapa) { P.etapa = d.etapa; pintarSub(); return; }
+  if (d.ambito) { P.ambito = d.ambito; pintarSub(); return; }
+  if (d.irCompra !== undefined) { P.sub = 'compra'; P.ambito = 'colegio'; pintarPanel(); return; }
+  if (d.pdf) { generarPDF(d.pdf, camp, d.curso); return; }
+  if (d.borrarRec) {
+    const r = recsDe(camp.id).find(x => x.cursoId === d.borrarRec);
+    if (!confirm(`¿Borrar el recuento de ${r.curso}? La clase volverá a aparecer como pendiente.`)) return;
+    await conBoton(`[data-borrar-rec="${d.borrarRec}"]`, async () => {
+      await api('borrarRecuento', { clave: P.clave, campana: camp.id, curso: d.borrarRec });
+      P.datos.recuentos = P.datos.recuentos.filter(x => !(x.campana === camp.id && x.cursoId === d.borrarRec));
+      pintarSub();
+      mensaje('Recuento borrado.');
+    });
+    return;
+  }
+  if (d.guardarCursos !== undefined) { guardarCursos(); return; }
+  // Editor de productos
+  const c = P.edit;
+  if (d.anadirP !== undefined) c.productos.push({ id: nuevoId('p'), nombre: '', precio: 1, categoria: 'comida', menus: [], compra: [] });
+  else if (d.quitarP !== undefined) { if (!confirm(`¿Quitar «${c.productos[d.quitarP].nombre || 'este producto'}»?`)) return; c.productos.splice(d.quitarP, 1); }
+  else if (d.anadirC !== undefined) c.productos[d.anadirC].compra.push({ articulo: c.articulos[0]?.id || '', cantidad: 1 });
+  else if (d.quitarC !== undefined) { const [i, j] = d.quitarC.split('.'); c.productos[i].compra.splice(j, 1); }
+  else if (d.anadirA !== undefined) c.articulos.push({ id: nuevoId('a'), nombre: '', unidad: 'unidades', pack: 0, porClase: false });
+  else if (d.quitarA !== undefined) {
+    const a = c.articulos[d.quitarA];
+    const usos = c.productos.filter(p => p.compra.some(x => x.articulo === a.id));
+    if (usos.length) { alert(`«${a.nombre}» lo usan: ${usos.map(p => p.nombre).join(', ')}. Quítalo primero de esos productos.`); return; }
+    c.articulos.splice(d.quitarA, 1);
+  }
+  else if (d.ed === 'descartar') { P.edit = null; }
+  else if (d.ed === 'guardar') {
+    const err = validarCatalogo(c);
+    if (err) { alert(err); return; }
+    await conBoton('[data-ed="guardar"]', async () => {
+      await api('guardarCampana', { clave: P.clave, campana: { ...camp, catalogo: clone(c) } });
+      camp.catalogo = clone(c);
+      mensaje('Productos guardados.');
+    });
+    return;
+  }
+  else return;
+  const y = window.scrollY;
+  pintarSub();
+  window.scrollTo(0, y);
+});
+
+/* =========================================================================
+   PDF
+   ========================================================================= */
+const AZUL = [0, 154, 187], AZUL_SUAVE = [230, 245, 249], VERDE = [180, 190, 0], VERDE_OSCURO = [147, 155, 0];
+const eurPDF = c => eur(c).replace(/ /g, ' ');
+const numPDF = n => num(n).replace(/ /g, ' ');
+
+function nuevoPDF(orient = 'portrait') {
+  if (!window.jspdf) { alert('No se ha podido cargar el generador de PDF. Comprueba la conexión y recarga la página.'); return null; }
+  return new window.jspdf.jsPDF({ orientation: orient, unit: 'mm', format: 'a4' });
+}
+
+// Logo del colegio convertido a PNG para poder incrustarlo en los PDF
+let LOGO_PNG = null;
+(function cargarLogo() {
+  const img = new Image();
+  img.onload = () => {
+    try {
+      const c = document.createElement('canvas');
+      c.width = 1340; c.height = 430;
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      LOGO_PNG = c.toDataURL('image/png');
+    } catch {}
+  };
+  img.src = 'logo.svg';
+})();
+
+function cabecera(doc, camp, titulo, subtitulo) {
+  const w = doc.internal.pageSize.getWidth();
+  if (LOGO_PNG) doc.addImage(LOGO_PNG, 'PNG', 14, 7, 36, 36 * 215 / 670);
+  doc.setTextColor(...AZUL); doc.setFont('helvetica', 'bold'); doc.setFontSize(12);
+  doc.text('Bocadillo solidario · ' + camp.titulo, w - 14, 13, { align: 'right' });
+  doc.setTextColor(110); doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
+  doc.text(fechaLarga(camp.fecha), w - 14, 18.5, { align: 'right' });
+  doc.setDrawColor(...AZUL); doc.setLineWidth(0.6); doc.line(14, 22.5, w - 14, 22.5);
+  doc.setTextColor(30); doc.setFont('helvetica', 'bold'); doc.setFontSize(16);
+  doc.text(titulo, 14, 32);
+  let y = 36;
+  if (subtitulo) { doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(100); doc.text(subtitulo, 14, 38); y = 42; }
+  doc.setTextColor(30);
+  return y + 5;
+}
+
+function tablaPDF(doc, y, head, body, foot, opciones = {}) {
+  // Primera columna fija y el resto del ancho repartido a partes iguales
+  let cols = opciones.cols || {};
+  if (opciones.derecha !== false && head.length > 1) {
+    const primera = opciones.primera || 60;
+    const resto = (doc.internal.pageSize.getWidth() - 28 - primera) / (head.length - 1);
+    cols = { 0: { cellWidth: primera } };
+    for (let i = 1; i < head.length; i++) cols[i] = { cellWidth: resto };
+  }
+  doc.autoTable({
+    startY: y, head: opciones.head || [head], body, foot: foot ? [foot] : undefined, theme: 'grid', showFoot: 'lastPage',
+    margin: { left: 14, right: 14, top: 22, bottom: 18 },
+    styles: { fontSize: opciones.fs || 9, cellPadding: 1.6, lineColor: [220, 226, 232], lineWidth: 0.2, textColor: 30 },
+    headStyles: { fillColor: AZUL, textColor: 255, fontStyle: 'bold', valign: 'middle', halign: 'center', fontSize: (opciones.fs || 9) - 0.5, lineColor: [255, 255, 255], lineWidth: 0.2 },
+    footStyles: { fillColor: AZUL_SUAVE, textColor: 20, fontStyle: 'bold' },
+    alternateRowStyles: { fillColor: [248, 250, 252] },
+    columnStyles: cols,
+    didParseCell: h => { if (h.column.index > 0 && opciones.derecha !== false && (h.section !== 'head' || opciones.headDerecha)) h.cell.styles.halign = 'right'; }
+  });
+  return doc.lastAutoTable.finalY + 8;
+}
+
+function subtituloPDF(doc, y, txt) {
+  if (y > doc.internal.pageSize.getHeight() - 30) { doc.addPage(); y = 22; }
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.setTextColor(...AZUL);
+  doc.text(txt, 14, y); doc.setTextColor(30);
+  return y + 4;
+}
+
+function piePDF(doc) {
+  const n = doc.getNumberOfPages();
+  const hoy = new Date().toLocaleString('es-ES', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  for (let i = 1; i <= n; i++) {
+    doc.setPage(i);
+    const w = doc.internal.pageSize.getWidth(), h = doc.internal.pageSize.getHeight();
+    doc.setDrawColor(...VERDE); doc.setLineWidth(0.5); doc.line(14, h - 13, w - 14, h - 13);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(...AZUL);
+    doc.text('Pastoral - Escuelas Salesianas María Auxiliadora', 14, h - 8);
+    let x = w - 14;
+    if (n > 1) {
+      const pag = `Página ${i} de ${n}`;
+      doc.setTextColor(...VERDE_OSCURO);
+      doc.text(pag, x, h - 8, { align: 'right' });
+      x -= doc.getTextWidth(pag) + 5;
+    }
+    doc.setFont('helvetica', 'normal'); doc.setTextColor(130);
+    doc.text('Generado el ' + hoy, x, h - 8, { align: 'right' });
+  }
+}
+
+const nombreArchivo = (camp, parte) => `bocadillo-solidario-${slug(camp.titulo)}-${slug(parte)}.pdf`;
+
+// Tabla de clases × productos de una etapa
+function seccionEtapa(doc, camp, etapa, y) {
+  const cs = cursosDe(camp).filter(c => c.etapa === etapa);
+  const prods = productosEtapa(camp, etapa);
+  const recs = new Map(recsDe(camp.id).map(r => [r.cursoId, r]));
+  const s = sumar(camp, cs);
+  const body = cs.map(c => {
+    const r = recs.get(c.id);
+    if (!r) return [c.nombre, { content: 'Pendiente de enviar', colSpan: prods.length + 1, styles: { halign: 'left', textColor: 140, fontStyle: 'italic' } }];
+    return [c.nombre + '\n' + r.tutor, ...prods.map(p => r.cantidades[p.id] ? numPDF(r.cantidades[p.id]) : '·'), eurPDF(importeRecuento(camp, r))];
+  });
+  const fs = prods.length > 10 ? 7.5 : 8.5;
+  const seg = gruposCabecera(prods);
+  const filaGrupos = [{ content: 'Clase', rowSpan: 2 },
+    ...seg.map(sg => sg.grupo ? { content: sg.grupo, colSpan: sg.items.length, styles: { fillColor: [0, 119, 145] } } : { content: sg.items[0].corto, rowSpan: 2 }),
+    { content: 'Importe', rowSpan: 2 }];
+  const filaNombres = seg.filter(sg => sg.grupo).flatMap(sg => sg.items.map(i => i.corto));
+  const head = filaNombres.length ? [filaGrupos, filaNombres] : [filaGrupos.map(c => c.rowSpan ? { ...c, rowSpan: 1 } : c)];
+  y = tablaPDF(doc, y, ['Clase', ...prods.map(p => p.nombre), 'Importe'], body,
+    ['Total ' + etapa, ...prods.map(p => numPDF(s.porProducto[p.id] || 0)), eurPDF(s.centimos)],
+    { fs, primera: 34, head });
+  const obs = cs.map(c => recs.get(c.id)).filter(r => r && r.observaciones);
+  if (obs.length) {
+    y = subtituloPDF(doc, y, 'Observaciones');
+    y = tablaPDF(doc, y + 1, ['Clase', 'Observación'], obs.map(r => [r.curso, r.observaciones]), null, { derecha: false, cols: { 0: { cellWidth: 34 } } });
+  }
+  return { y, s, cs };
+}
+
+function seccionCompra(doc, camp, cursos, titulo, y, conReparto = true) {
+  y = subtituloPDF(doc, y, titulo);
+  const lista = listaCompra(camp, cursos);
+  if (!lista.length) {
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.text('Sin recuentos todavía.', 14, y + 4);
+    return y + 12;
+  }
+  y = tablaPDF(doc, y + 1, ['Artículo', 'Cantidad', 'Paquetes a comprar', 'Comprado'],
+    lista.map(a => [a.nombre, `${numPDF(a.total)} ${a.unidad}`, a.packs != null ? `${numPDF(a.packs)} (de ${a.pack})` : '—', '']),
+    null, { fs: 10 });
+  const rep = conReparto && repartoPorClase(camp, cursos);
+  if (rep) {
+    y = subtituloPDF(doc, y, 'Reparto por clase' + (titulo.includes('·') ? ' · ' + titulo.split('·')[1].trim() : ''));
+    y = tablaPDF(doc, y + 1, ['Clase', ...rep.arts.map(a => a.nombre)],
+      rep.filas.map(f => [f.curso, ...f.v.map(n => n ? numPDF(n) : '·')]), ['Total', ...rep.totales.map(numPDF)], { fs: 9 });
+  }
+  return y;
+}
+
+function pdfTotal() {
+  const doc = nuevoPDF();
+  if (!doc) return;
+  const { filas, tot, porEtapa, etapas, porAnio } = datosTotal();
+  const ambito = P.anio === 'todos' ? 'Todos los cursos' : 'Curso ' + P.anio;
+  let y = cabecera(doc, { titulo: 'Total acumulado', fecha: '' }, 'Total acumulado · ' + ambito,
+    `${filas.length} bocadillos solidarios · Total recaudado: ${eurPDF(tot.centimos)}`);
+  y = subtituloPDF(doc, y, 'Bocadillo a bocadillo');
+  y = tablaPDF(doc, y + 1, ['Bocadillo solidario', 'Fecha', 'Clases', 'Bocadillos', 'Fruta', 'Bebidas', 'Dinero'],
+    filas.map(({ camp, s }) => [camp.titulo, new Date(camp.fecha + 'T12:00').toLocaleDateString('es-ES'), `${s.enviados} / ${s.total}`, numPDF(s.porCat.comida), numPDF(s.porCat.fruta), numPDF(s.porCat.bebida), eurPDF(s.centimos)]),
+    ['Total acumulado', '', '', numPDF(tot.comida), numPDF(tot.fruta), numPDF(tot.bebida), eurPDF(tot.centimos)], { fs: 9.5, primera: 50 });
+  if (P.anio === 'todos') {
+    y = subtituloPDF(doc, y, 'Por curso');
+    y = tablaPDF(doc, y + 1, ['Curso', 'Bocadillos solidarios', 'Bocadillos', 'Fruta', 'Bebidas', 'Dinero'],
+      Object.keys(porAnio).sort().map(a => { const x = porAnio[a]; return [a, String(x.n), numPDF(x.comida), numPDF(x.fruta), numPDF(x.bebida), eurPDF(x.centimos)]; }),
+      ['Total', String(filas.length), numPDF(tot.comida), numPDF(tot.fruta), numPDF(tot.bebida), eurPDF(tot.centimos)], { fs: 10 });
+  }
+  y = subtituloPDF(doc, y, 'Por etapa');
+  tablaPDF(doc, y + 1, ['Etapa', 'Bocadillos', 'Fruta', 'Bebidas', 'Dinero'],
+    etapas.map(e => { const x = porEtapa[e]; return [e, numPDF(x.comida), numPDF(x.fruta), numPDF(x.bebida), eurPDF(x.centimos)]; }),
+    ['Total', numPDF(tot.comida), numPDF(tot.fruta), numPDF(tot.bebida), eurPDF(tot.centimos)], { fs: 10 });
+  piePDF(doc);
+  doc.save(`bocadillo-solidario-total-acumulado-${slug(ambito)}.pdf`);
+}
+
+function generarPDF(tipo, camp, cursoId) {
+  const cursos = cursosDe(camp);
+  const etapas = etapasCon(cursos);
+  let doc;
+
+  if (tipo === 'clase') {
+    const c = cursos.find(x => x.id === cursoId);
+    const r = recsDe(camp.id).find(x => x.cursoId === cursoId);
+    if (!(doc = nuevoPDF())) return;
+    let y = cabecera(doc, camp, c.nombre, `${c.etapa} · Tutor/a: ${r.tutor} · Enviado: ${fechaHora(r.actualizado)}`);
+    const prods = productosEtapa(camp, c.etapa).filter(p => r.cantidades[p.id]);
+    const uds = prods.reduce((s, p) => s + r.cantidades[p.id], 0);
+    y = tablaPDF(doc, y, ['Producto', 'Precio', 'Unidades', 'Importe'],
+      prods.map(p => [p.nombre, eurPDF(cent(p.precio)), numPDF(r.cantidades[p.id]), eurPDF(r.cantidades[p.id] * cent(p.precio))]),
+      ['Total', '', numPDF(uds), eurPDF(importeRecuento(camp, r))], { fs: 10 });
+    if (r.observaciones) { y = subtituloPDF(doc, y, 'Observaciones'); doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.text(doc.splitTextToSize(r.observaciones, 180), 14, y + 3); }
+    piePDF(doc); doc.save(nombreArchivo(camp, c.nombre)); return;
+  }
+
+  if (tipo === 'etapa') {
+    if (!(doc = nuevoPDF('landscape'))) return;
+    const s = sumar(camp, cursos.filter(c => c.etapa === P.etapa));
+    const y = cabecera(doc, camp, 'Recuento de ' + P.etapa, `${s.enviados} de ${s.total} clases han enviado · Total recaudado: ${eurPDF(s.centimos)}`);
+    seccionEtapa(doc, camp, P.etapa, y);
+    piePDF(doc); doc.save(nombreArchivo(camp, P.etapa)); return;
+  }
+
+  if (tipo === 'colegio') {
+    if (!(doc = nuevoPDF())) return;
+    const tot = sumar(camp, cursos);
+    let y = cabecera(doc, camp, 'Recuento del colegio', `${tot.enviados} de ${tot.total} clases han enviado · Total recaudado: ${eurPDF(tot.centimos)}`);
+    y = subtituloPDF(doc, y, 'Resumen por etapa');
+    y = tablaPDF(doc, y + 1, ['Etapa', 'Clases', 'Bocadillos', 'Fruta', 'Bebidas', 'Dinero'],
+      etapas.map(e => { const s = sumar(camp, cursos.filter(c => c.etapa === e)); return [e, `${s.enviados} / ${s.total}`, numPDF(s.porCat.comida), numPDF(s.porCat.fruta), numPDF(s.porCat.bebida), eurPDF(s.centimos)]; }),
+      ['Total colegio', `${tot.enviados} / ${tot.total}`, numPDF(tot.porCat.comida), numPDF(tot.porCat.fruta), numPDF(tot.porCat.bebida), eurPDF(tot.centimos)], { fs: 10 });
+    const prods = camp.catalogo.productos.filter(p => tot.porProducto[p.id]);
+    y = subtituloPDF(doc, y, 'Total de cada producto');
+    y = tablaPDF(doc, y + 1, ['Producto', 'Precio', 'Unidades', 'Importe'],
+      prods.map(p => [p.nombre, eurPDF(cent(p.precio)), numPDF(tot.porProducto[p.id]), eurPDF(tot.porProducto[p.id] * cent(p.precio))]),
+      ['Total', '', numPDF(Object.values(tot.porProducto).reduce((a, b) => a + b, 0)), eurPDF(tot.centimos)], { fs: 10 });
+    seccionCompra(doc, camp, cursos, 'Lista de la compra del colegio', y, false);
+    etapas.forEach(e => {
+      doc.addPage('a4', 'landscape');
+      const s = sumar(camp, cursos.filter(c => c.etapa === e));
+      const y2 = cabecera(doc, camp, 'Recuento de ' + e, `${s.enviados} de ${s.total} clases · ${eurPDF(s.centimos)}`);
+      seccionEtapa(doc, camp, e, y2);
+    });
+    piePDF(doc); doc.save(nombreArchivo(camp, 'colegio')); return;
+  }
+
+  if (tipo === 'compra-ambito' || tipo === 'compra-todo') {
+    if (!(doc = nuevoPDF())) return;
+    const ambitos = tipo === 'compra-todo' ? ['colegio', ...etapas] : [P.ambito];
+    ambitos.forEach((a, i) => {
+      if (i > 0) doc.addPage('a4', 'portrait');
+      const cs = a === 'colegio' ? cursos : cursos.filter(c => c.etapa === a);
+      const s = sumar(camp, cs);
+      const y = cabecera(doc, camp, 'Lista de la compra · ' + (a === 'colegio' ? 'Colegio' : a), `${s.enviados} de ${s.total} clases han enviado · Recaudado: ${eurPDF(s.centimos)}`);
+      seccionCompra(doc, camp, cs, a === 'colegio' ? 'Total del colegio' : 'Etapa · ' + a, y);
+    });
+    piePDF(doc);
+    doc.save(nombreArchivo(camp, 'lista-compra-' + (tipo === 'compra-todo' ? 'completa' : P.ambito)));
+  }
+}
+
+/* =========================================================================
+   ARRANQUE
+   ========================================================================= */
+document.querySelectorAll('.role-tab').forEach(b => b.onclick = () => {
+  document.querySelectorAll('.role-tab').forEach(x => x.classList.toggle('active', x === b));
+  const rol = b.dataset.rol;
+  $('rol-tutores').hidden = rol !== 'tutores';
+  $('rol-pastoral').hidden = rol !== 'pastoral';
+  $('t-barra').hidden = rol !== 'tutores' || !T.curso;
+  if (rol === 'pastoral') iniciarPastoral();
+  try { location.hash = rol === 'pastoral' ? 'pastoral' : ''; } catch {}
+});
+
+if (DEMO) {
+  $('demo').hidden = false;
+  $('demo-reset').onclick = () => { try { localStorage.removeItem('bs-demo'); } catch {} location.reload(); };
+}
+iniciarTutores();
+if (location.hash === '#pastoral') document.querySelector('[data-rol="pastoral"]').click();
+</script>
+</body>
+</html>
