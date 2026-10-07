@@ -1777,9 +1777,12 @@ let LOGO_PNG = null;
   img.onload = () => {
     try {
       const c = document.createElement('canvas');
-      c.width = 1340; c.height = 430;
-      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-      LOGO_PNG = c.toDataURL('image/png');
+      // JPEG sobre fondo blanco: el logo se ve igual y los PDF pesan mucho menos
+      c.width = 900; c.height = 289;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height);
+      ctx.drawImage(img, 0, 0, c.width, c.height);
+      LOGO_PNG = c.toDataURL('image/jpeg', 0.92);
     } catch {}
   };
   img.src = 'logo.svg';
@@ -1787,7 +1790,7 @@ let LOGO_PNG = null;
 
 function cabecera(doc, camp, titulo, subtitulo) {
   const w = doc.internal.pageSize.getWidth();
-  if (LOGO_PNG) doc.addImage(LOGO_PNG, 'PNG', 14, 7, 36, 36 * 215 / 670);
+  if (LOGO_PNG) doc.addImage(LOGO_PNG, 'JPEG', 14, 7, 36, 36 * 215 / 670, 'logo', 'FAST');
   // El nombre del bocadillo va a la derecha del logo; si no cabe, se reduce la letra o pasa a dos líneas
   const disponible = w - 14 - (14 + 36 + 8);
   const texto = 'Bocadillo solidario · ' + arreglarTitulo(camp.titulo);
@@ -1948,7 +1951,7 @@ function seccionBalance(doc, camp, y) {
 // Lista de una clase en grande para colgar en la sala mientras se preparan los bocadillos (sin precios)
 function paginaLista(doc, camp, curso, r) {
   const w = doc.internal.pageSize.getWidth(), h = doc.internal.pageSize.getHeight();
-  if (LOGO_PNG) doc.addImage(LOGO_PNG, 'PNG', 14, 8, 30, 30 * 215 / 670);
+  if (LOGO_PNG) doc.addImage(LOGO_PNG, 'JPEG', 14, 8, 30, 30 * 215 / 670, 'logo', 'FAST');
   doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(...AZUL);
   doc.text('Bocadillo solidario · ' + arreglarTitulo(camp.titulo), w - 14, 15, { align: 'right' });
   doc.setDrawColor(...AZUL); doc.setLineWidth(0.6); doc.line(14, 21, w - 14, 21);
@@ -1966,14 +1969,23 @@ function paginaLista(doc, camp, curso, r) {
     body.push([{ content: g.nombre, colSpan: 2, styles: { fillColor: AZUL_SUAVE, textColor: AZUL, fontStyle: 'bold', fontSize: 15, halign: 'left' } }]);
     filas.forEach(f => { total += r.cantidades[f.p.id]; body.push([f.corto, String(r.cantidades[f.p.id])]); });
   });
+  // Letra lo más grande posible sin pasar de una hoja
+  // Letra más grande con la que todo cabe en una hoja (altura de fila ≈ letra de la cantidad + márgenes, en mm)
+  const padDe = f => (f >= 18 ? 3 : 1.8);
+  const altoFila = f => (f + 6) * 0.3528 * 1.15 + 2 * padDe(f);
+  const altoObs = r.observaciones ? 12 + doc.splitTextToSize(r.observaciones, w - 40).length * 6.5 : 0;
+  const disponible = h - 18 - 60 - 12 - altoObs; // hoja - pie - cabecera - fila de títulos
+  const fs = [22, 20, 18, 16, 14, 12, 11, 10].find(f => (body.length + 1) * altoFila(f) <= disponible) || 10;
+  const pad = padDe(fs);
+  body.forEach(fila => { if (fila[0].styles) fila[0].styles.fontSize = fs - 2; });
   doc.autoTable({
     startY: 60, head: [['Producto', 'Cantidad']], body, foot: [['Total de productos', String(total)]], theme: 'grid',
     margin: { left: 20, right: 20, bottom: 18 },
-    styles: { fontSize: 22, cellPadding: { top: 3, bottom: 3, left: 4, right: 4 }, lineColor: [200, 210, 220], lineWidth: 0.3, textColor: 20, valign: 'middle' },
-    headStyles: { fillColor: AZUL, textColor: 255, fontSize: 14, halign: 'center' },
-    footStyles: { fillColor: AZUL_SUAVE, textColor: 20, fontStyle: 'bold', fontSize: 18 },
-    columnStyles: { 1: { cellWidth: 45, halign: 'center', fontStyle: 'bold', fontSize: 30 } },
-    didParseCell: x => { if (x.section === 'foot' && x.column.index === 1) { x.cell.styles.halign = 'center'; x.cell.styles.fontSize = 24; } }
+    styles: { fontSize: fs, cellPadding: { top: pad, bottom: pad, left: 4, right: 4 }, lineColor: [200, 210, 220], lineWidth: 0.3, textColor: 20, valign: 'middle' },
+    headStyles: { fillColor: AZUL, textColor: 255, fontSize: 13, halign: 'center' },
+    footStyles: { fillColor: AZUL_SUAVE, textColor: 20, fontStyle: 'bold', fontSize: fs - 2 },
+    columnStyles: { 1: { cellWidth: 45, halign: 'center', fontStyle: 'bold', fontSize: fs + 6 } },
+    didParseCell: x => { if (x.section === 'foot' && x.column.index === 1) { x.cell.styles.halign = 'center'; x.cell.styles.fontSize = fs + 2; } }
   });
   let y = doc.lastAutoTable.finalY + 8;
   if (r.observaciones) {
