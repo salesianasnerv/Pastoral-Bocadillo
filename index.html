@@ -954,6 +954,7 @@ function repartoPorClase(camp, cursos) {
    PASTORAL: interfaz
    ========================================================================= */
 async function iniciarPastoral() {
+  cargarFira();
   if (!P.clave) { $('p-login').hidden = false; $('p-app').hidden = true; return; }
   $('p-login').hidden = true; $('p-app').hidden = false;
   if (!P.datos) await recargarPanel();
@@ -1677,7 +1678,7 @@ $('p-contenido').addEventListener('click', async e => {
   if (!t) return;
   const d = t.dataset;
   const camp = campActual();
-  if (d.pdf === 'total') { pdfTotal(); return; }
+  if (d.pdf === 'total') { await cargarFira(); pdfTotal(); return; }
   if (d.etapa) { P.etapa = d.etapa; pintarSub(); return; }
   if (d.ambito) { P.ambito = d.ambito; pintarSub(); return; }
   if (d.irCompra !== undefined) { P.sub = 'compra'; P.ambito = 'colegio'; pintarPanel(); return; }
@@ -1705,7 +1706,7 @@ $('p-contenido').addEventListener('click', async e => {
     const y = window.scrollY; pintarSub(); window.scrollTo(0, y);
     return;
   }
-  if (d.pdf) { generarPDF(d.pdf, camp, d.curso); return; }
+  if (d.pdf) { await cargarFira(); generarPDF(d.pdf, camp, d.curso); return; }
   if (d.borrarRec) {
     const r = recsDe(camp.id).find(x => x.cursoId === d.borrarRec);
     if (!confirm(`¿Borrar el recuento de ${r.curso}? La clase volverá a aparecer como pendiente.`)) return;
@@ -1775,9 +1776,38 @@ const AZUL = [0, 154, 187], AZUL_SUAVE = [230, 245, 249], VERDE = [180, 190, 0],
 const eurPDF = c => eur(c).replace(/ /g, ' ');
 const numPDF = n => num(n).replace(/ /g, ' ');
 
+// Tipografía corporativa (Fira Sans) para los PDF. Se descarga una vez del repositorio oficial de Google Fonts;
+// si no se pudiera cargar, los PDF salen con Helvetica.
+const FIRA_URL = 'https://cdn.jsdelivr.net/gh/google/fonts@main/ofl/firasans/';
+let FIRA = null;
+let FUENTE = 'helvetica';
+let cargandoFira = null;
+function cargarFira() {
+  if (cargandoFira) return cargandoFira;
+  const b64 = async f => {
+    const buf = await (await fetch(FIRA_URL + f)).arrayBuffer();
+    let s = ''; const bytes = new Uint8Array(buf);
+    for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+    return btoa(s);
+  };
+  cargandoFira = Promise.all([b64('FiraSans-Regular.ttf'), b64('FiraSans-Bold.ttf'), b64('FiraSans-Italic.ttf')])
+    .then(([normal, bold, italic]) => { FIRA = { normal, bold, italic }; FUENTE = 'FiraSans'; })
+    .catch(() => { cargandoFira = null; });
+  return cargandoFira;
+}
+
 function nuevoPDF(orient = 'portrait') {
   if (!window.jspdf) { alert('No se ha podido cargar el generador de PDF. Comprueba la conexión y recarga la página.'); return null; }
-  return new window.jspdf.jsPDF({ orientation: orient, unit: 'mm', format: 'a4' });
+  const doc = new window.jspdf.jsPDF({ orientation: orient, unit: 'mm', format: 'a4' });
+  if (FIRA) {
+    for (const [estilo, datos] of Object.entries(FIRA)) {
+      doc.addFileToVFS(`FiraSans-${estilo}.ttf`, datos);
+      doc.addFont(`FiraSans-${estilo}.ttf`, 'FiraSans', estilo);
+    }
+    doc.setFont('FiraSans', 'normal');
+    if (doc.autoTableSetDefaults) doc.autoTableSetDefaults({ styles: { font: 'FiraSans' } });
+  }
+  return doc;
 }
 
 // Logo del colegio convertido a PNG para poder incrustarlo en los PDF
@@ -1804,20 +1834,20 @@ function cabecera(doc, camp, titulo, subtitulo) {
   // El nombre del bocadillo va a la derecha del logo; si no cabe, se reduce la letra o pasa a dos líneas
   const disponible = w - 14 - (14 + 36 + 8);
   const texto = 'Bocadillo solidario · ' + arreglarTitulo(camp.titulo);
-  doc.setTextColor(...AZUL); doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...AZUL); doc.setFont(FUENTE, 'bold');
   let fs = 12;
   doc.setFontSize(fs);
   while (fs > 9 && doc.getTextWidth(texto) > disponible) doc.setFontSize(fs -= 0.5);
   const lineas = doc.splitTextToSize(texto, disponible).slice(0, 2);
   const yTitulo = lineas.length > 1 ? 10 : 13;
   doc.text(lineas, w - 14, yTitulo, { align: 'right', lineHeightFactor: 1.15 });
-  doc.setTextColor(110); doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
+  doc.setTextColor(110); doc.setFont(FUENTE, 'normal'); doc.setFontSize(9);
   doc.text(diasTexto(camp), w - 14, lineas.length > 1 ? 19.5 : 18.5, { align: 'right' });
   doc.setDrawColor(...AZUL); doc.setLineWidth(0.6); doc.line(14, 22.5, w - 14, 22.5);
-  doc.setTextColor(30); doc.setFont('helvetica', 'bold'); doc.setFontSize(16);
+  doc.setTextColor(30); doc.setFont(FUENTE, 'bold'); doc.setFontSize(16);
   doc.text(titulo, 14, 32);
   let y = 36;
-  if (subtitulo) { doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(100); doc.text(subtitulo, 14, 38); y = 42; }
+  if (subtitulo) { doc.setFont(FUENTE, 'normal'); doc.setFontSize(10); doc.setTextColor(100); doc.text(subtitulo, 14, 38); y = 42; }
   doc.setTextColor(30);
   return y + 5;
 }
@@ -1834,7 +1864,7 @@ function tablaPDF(doc, y, head, body, foot, opciones = {}) {
   doc.autoTable({
     startY: y, head: opciones.head || [head], body, foot: foot ? [foot] : undefined, theme: 'grid', showFoot: 'lastPage',
     margin: { left: 14, right: 14, top: 22, bottom: 18 },
-    styles: { fontSize: opciones.fs || 9, cellPadding: 1.6, lineColor: [220, 226, 232], lineWidth: 0.2, textColor: 30 },
+    styles: { font: FUENTE, fontSize: opciones.fs || 9, cellPadding: 1.6, lineColor: [220, 226, 232], lineWidth: 0.2, textColor: 30 },
     headStyles: { fillColor: AZUL, textColor: 255, fontStyle: 'bold', valign: 'middle', halign: 'center', fontSize: (opciones.fs || 9) - 0.5, lineColor: [255, 255, 255], lineWidth: 0.2 },
     footStyles: { fillColor: AZUL_SUAVE, textColor: 20, fontStyle: 'bold' },
     alternateRowStyles: { fillColor: [248, 250, 252] },
@@ -1848,7 +1878,7 @@ function subtituloPDF(doc, y, txt) {
   // Si queda poco sitio, el título y su tabla empiezan en la página siguiente
   const pw = doc.internal.pageSize.getWidth(), ph = doc.internal.pageSize.getHeight();
   if (y > ph - 55) { doc.addPage('a4', pw > ph ? 'landscape' : 'portrait'); y = 22; }
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.setTextColor(...AZUL);
+  doc.setFont(FUENTE, 'bold'); doc.setFontSize(12); doc.setTextColor(...AZUL);
   doc.text(txt, 14, y); doc.setTextColor(30);
   return y + 4;
 }
@@ -1860,7 +1890,7 @@ function piePDF(doc) {
     doc.setPage(i);
     const w = doc.internal.pageSize.getWidth(), h = doc.internal.pageSize.getHeight();
     doc.setDrawColor(...VERDE); doc.setLineWidth(0.5); doc.line(14, h - 13, w - 14, h - 13);
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(...AZUL);
+    doc.setFont(FUENTE, 'bold'); doc.setFontSize(8); doc.setTextColor(...AZUL);
     doc.text('Pastoral - Escuelas Salesianas María Auxiliadora', 14, h - 8);
     let x = w - 14;
     if (n > 1) {
@@ -1869,7 +1899,7 @@ function piePDF(doc) {
       doc.text(pag, x, h - 8, { align: 'right' });
       x -= doc.getTextWidth(pag) + 5;
     }
-    doc.setFont('helvetica', 'normal'); doc.setTextColor(130);
+    doc.setFont(FUENTE, 'normal'); doc.setTextColor(130);
     doc.text('Generado el ' + hoy, x, h - 8, { align: 'right' });
   }
 }
@@ -1909,7 +1939,7 @@ function seccionCompra(doc, camp, cursos, titulo, y, conReparto = true) {
   y = subtituloPDF(doc, y, titulo);
   const lista = listaCompra(camp, cursos);
   if (!lista.length) {
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.text('Sin recuentos todavía.', 14, y + 4);
+    doc.setFont(FUENTE, 'normal'); doc.setFontSize(10); doc.text('Sin recuentos todavía.', 14, y + 4);
     return y + 12;
   }
   y = tablaPDF(doc, y + 1, ['Artículo', 'Dónde', 'Cantidad', 'A comprar', 'Comprado'],
@@ -1962,13 +1992,13 @@ function seccionBalance(doc, camp, y) {
 function paginaLista(doc, camp, curso, r) {
   const w = doc.internal.pageSize.getWidth(), h = doc.internal.pageSize.getHeight();
   if (LOGO_PNG) doc.addImage(LOGO_PNG, 'JPEG', 14, 8, 30, 30 * 215 / 670, 'logo', 'FAST');
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(...AZUL);
+  doc.setFont(FUENTE, 'bold'); doc.setFontSize(11); doc.setTextColor(...AZUL);
   doc.text('Bocadillo solidario · ' + arreglarTitulo(camp.titulo), w - 14, 15, { align: 'right' });
   doc.setDrawColor(...AZUL); doc.setLineWidth(0.6); doc.line(14, 21, w - 14, 21);
   doc.setTextColor(30); doc.setFontSize(40);
   doc.text(doc.splitTextToSize(curso.nombre, w - 28)[0], w / 2, 42, { align: 'center' });
   const dia = fechaCurso(camp, curso);
-  doc.setFont('helvetica', 'normal'); doc.setFontSize(16); doc.setTextColor(90);
+  doc.setFont(FUENTE, 'normal'); doc.setFontSize(16); doc.setTextColor(90);
   doc.text([dia ? fechaLarga(dia) : diasTexto(camp), r.tutor ? 'Tutor/a: ' + r.tutor : ''].filter(Boolean).join('  ·  '), w / 2, 52, { align: 'center' });
   const { grupos } = productosPorEtapa(camp);
   const body = [];
@@ -1991,7 +2021,7 @@ function paginaLista(doc, camp, curso, r) {
   doc.autoTable({
     startY: 60, head: [['Producto', 'Cantidad']], body, foot: [['Total de productos', String(total)]], theme: 'grid',
     margin: { left: 20, right: 20, bottom: 18 },
-    styles: { fontSize: fs, cellPadding: { top: pad, bottom: pad, left: 4, right: 4 }, lineColor: [200, 210, 220], lineWidth: 0.3, textColor: 20, valign: 'middle' },
+    styles: { font: FUENTE, fontSize: fs, cellPadding: { top: pad, bottom: pad, left: 4, right: 4 }, lineColor: [200, 210, 220], lineWidth: 0.3, textColor: 20, valign: 'middle' },
     headStyles: { fillColor: AZUL, textColor: 255, fontSize: 13, halign: 'center' },
     footStyles: { fillColor: AZUL_SUAVE, textColor: 20, fontStyle: 'bold', fontSize: fs - 2 },
     columnStyles: { 1: { cellWidth: 45, halign: 'center', fontStyle: 'bold', fontSize: fs + 6 } },
@@ -1999,10 +2029,10 @@ function paginaLista(doc, camp, curso, r) {
   });
   let y = doc.lastAutoTable.finalY + 8;
   if (r.observaciones) {
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(14); doc.setTextColor(...AZUL);
+    doc.setFont(FUENTE, 'bold'); doc.setFontSize(14); doc.setTextColor(...AZUL);
     if (y > h - 35) { doc.addPage(); y = 22; }
     doc.text('Observaciones', 20, y);
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(14); doc.setTextColor(30);
+    doc.setFont(FUENTE, 'normal'); doc.setFontSize(14); doc.setTextColor(30);
     doc.text(doc.splitTextToSize(r.observaciones, w - 40), 20, y + 7);
   }
 }
@@ -2035,7 +2065,7 @@ function generarPDF(tipo, camp, cursoId) {
         gastos.map(g => [g.concepto || '—', { content: g.tienda || '—', styles: { halign: 'center' } }, eurPDF(cent(g.importe))]),
         ['Total gastos', '', eurPDF(b.gastos)], { fs: 10, primera: 80 });
     } else {
-      doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.text('Todavía no se han apuntado gastos.', 14, y + 4); y += 12;
+      doc.setFont(FUENTE, 'normal'); doc.setFontSize(10); doc.text('Todavía no se han apuntado gastos.', 14, y + 4); y += 12;
     }
     y = subtituloPDF(doc, y, 'Ingresos por etapa');
     const tot = sumar(camp, cursos);
@@ -2055,7 +2085,7 @@ function generarPDF(tipo, camp, cursoId) {
     y = tablaPDF(doc, y, ['Producto', 'Precio', 'Unidades', 'Importe'],
       prods.map(p => [p.nombre, eurPDF(cent(p.precio)), numPDF(r.cantidades[p.id]), eurPDF(r.cantidades[p.id] * cent(p.precio))]),
       ['Total', '', numPDF(uds), eurPDF(importeRecuento(camp, r))], { fs: 10 });
-    if (r.observaciones) { y = subtituloPDF(doc, y, 'Observaciones'); doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.text(doc.splitTextToSize(r.observaciones, 180), 14, y + 3); }
+    if (r.observaciones) { y = subtituloPDF(doc, y, 'Observaciones'); doc.setFont(FUENTE, 'normal'); doc.setFontSize(10); doc.text(doc.splitTextToSize(r.observaciones, 180), 14, y + 3); }
     piePDF(doc); doc.save(nombreArchivo(camp, c.nombre)); return;
   }
 
