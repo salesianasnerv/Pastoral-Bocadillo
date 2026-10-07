@@ -105,6 +105,7 @@
   .gasto input { margin: 0; }
   .gasto-cab { margin-bottom: 0.2rem; }
   @media (max-width: 560px) { .gasto { grid-template-columns: 1fr 1fr; } .gasto-cab { display: none; } }
+  .acc-clase { display: flex; flex-wrap: wrap; gap: 0.25rem; justify-content: center; }
   .chips { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 1rem; }
   .chip {
     border: 1px solid rgba(0,154,187,.35); background: var(--azul-suave); color: var(--azul);
@@ -148,6 +149,7 @@
 
   /* Formulario tutores */
   .camp-title { font-size: 1.25rem; font-weight: 700; color: var(--azul); }
+  .dia-etapa { margin-top: 0.9rem; padding: 0.55rem 0.8rem; border-radius: 10px; background: var(--azul-suave); color: var(--azul); font-size: 0.95rem; }
   .cat-head { font-size: 0.78rem; text-transform: uppercase; letter-spacing: .06em; color: var(--text-muted); font-weight: 700; margin: 1rem 0 0.3rem; }
   .prod { display: flex; align-items: center; justify-content: space-between; gap: 0.8rem; padding: 0.55rem 0; border-bottom: 1px solid var(--border); }
   .prod:last-child { border-bottom: none; }
@@ -270,6 +272,7 @@
           <label>Clase <select id="t-curso"></select></label>
         </div>
         <label style="margin-bottom:0">Tutor o tutora <input id="t-tutor" autocomplete="name" placeholder="Nombre y apellidos"></label>
+        <div id="t-dia" class="dia-etapa" hidden></div>
       </div>
 
       <div id="t-previo" class="aviso info" hidden></div>
@@ -325,8 +328,11 @@
           <h3 style="margin-top:0">Nuevo bocadillo solidario</h3>
           <div class="grid2">
             <label>Título <input id="n-titulo" placeholder="Por ejemplo: Noviembre 2026"></label>
-            <label>Fecha del bocadillo <input type="date" id="n-fecha"></label>
+            <span></span>
+            <label>📅 Infantil y Primaria (jueves) <input type="date" id="n-fecha"></label>
+            <label>📅 ESO, Bachillerato y CCFF (viernes) <input type="date" id="n-fecha2"></label>
           </div>
+          <p class="muted small" style="margin:-.3rem 0 .8rem">El Profesorado puede pedir los dos días. Si el bocadillo es un solo día, pon la misma fecha en los dos.</p>
           <label>Productos <select id="n-base"></select></label>
           <div class="acciones">
             <button class="btn" id="n-crear">Crear y abrir a los tutores</button>
@@ -353,6 +359,7 @@
           <div class="subtabs editar-opciones" id="p-editar-opciones" hidden>
             <span class="muted small">Editar:</span>
             <button class="subtab" data-sub="productos">🥪 Productos y precios</button>
+            <button class="subtab" data-sub="fechas">📅 Nombre y fechas</button>
             <button class="subtab" data-sub="cursos">📋 Clases</button>
             <button class="btn peligro mini" data-acc="borrar">🗑 Borrar este bocadillo</button>
           </div>
@@ -407,8 +414,16 @@ const GRUPOS = [
   { etapa: 'ESO', menu: 'mayores', nombre: 'ESO' },
   { etapa: 'Bachillerato', menu: 'mayores', nombre: 'Bachillerato' },
   { etapa: 'CCFF', menu: 'mayores', nombre: 'CCFF' },
-  { etapa: 'Profesorado', menu: 'mayores', nombre: 'Profesorado' }
+  { etapa: 'Profesorado', menu: 'mayores', nombre: 'Profesorado · jueves', dia: 1 },
+  { etapa: 'Profesorado', menu: 'mayores', nombre: 'Profesorado · viernes', dia: 2 }
 ];
+
+function profesoradoDosDias(idJueves) {
+  return [
+    { id: idJueves || slug('Profesorado-Profesorado (jueves)'), nombre: 'Profesorado (jueves)', etapa: 'Profesorado', menu: 'mayores', dia: 1 },
+    { id: slug('Profesorado-Profesorado (viernes)'), nombre: 'Profesorado (viernes)', etapa: 'Profesorado', menu: 'mayores', dia: 2 }
+  ];
+}
 
 function cursosPorDefecto() {
   const l = [];
@@ -420,7 +435,8 @@ function cursosPorDefecto() {
   ab('ESO', ['1º', '2º', '3º', '4º'], 'ESO');
   ab('Bachillerato', ['1º', '2º'], 'Bachillerato');
   ['DAM', 'Enfermería', 'Farmacia', 'Administrativo'].forEach(c => ['1º', '2º'].forEach(n => add('CCFF', `${n} ${c}`)));
-  add('Profesorado', 'Profesorado');
+  // El Profesorado tiene una lista cada día
+  l.push(...profesoradoDosDias());
   return l;
 }
 
@@ -491,6 +507,42 @@ function fechaLarga(f) {
   const t = new Date(y, m - 1, d).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
   return t.charAt(0).toUpperCase() + t.slice(1);
 }
+// Cada bocadillo tiene dos días: fecha (Infantil y Primaria, jueves) y fecha2 (ESO, Bachillerato y CCFF, viernes).
+// El Profesorado puede pedir los dos días.
+const ETAPAS_DIA1 = ['Infantil', 'Primaria'];
+const aFecha = f => { const [y, m, d] = String(f).slice(0, 10).split('-').map(Number); return new Date(y, m - 1, d); };
+const sumarDias = (f, n) => { const d = aFecha(f); d.setDate(d.getDate() + n); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+const tieneDosDias = camp => !!(camp.fecha2 && camp.fecha2 !== camp.fecha);
+function fechaEtapa(camp, etapa) {
+  if (ETAPAS_DIA1.includes(etapa) || !tieneDosDias(camp)) return camp.fecha;
+  return etapa === 'Profesorado' ? null : camp.fecha2;
+}
+// El día concreto de una clase (el Profesorado tiene una lista para cada día)
+function fechaCurso(camp, curso) {
+  if (curso.dia === 1) return camp.fecha;
+  if (curso.dia === 2) return camp.fecha2 || camp.fecha;
+  return fechaEtapa(camp, curso.etapa);
+}
+// «Jueves 5 y viernes 6 de noviembre de 2026»
+function diasTexto(camp) {
+  if (!camp.fecha) return '';
+  if (!tieneDosDias(camp)) return fechaLarga(camp.fecha);
+  const a = aFecha(camp.fecha), b = aFecha(camp.fecha2);
+  const dia = d => d.toLocaleDateString('es-ES', { weekday: 'long' });
+  if (a.getMonth() === b.getMonth() && a.getFullYear() === b.getFullYear()) {
+    const t = `${dia(a)} ${a.getDate()} y ${dia(b)} ${b.getDate()} de ${a.toLocaleDateString('es-ES', { month: 'long' })} de ${a.getFullYear()}`;
+    return t.charAt(0).toUpperCase() + t.slice(1);
+  }
+  return fechaLarga(camp.fecha) + ' y ' + fechaLarga(camp.fecha2).toLowerCase();
+}
+// Texto largo con qué etapa va cada día
+function diasPorEtapa(camp) {
+  if (!tieneDosDias(camp)) return fechaLarga(camp.fecha);
+  return `Infantil y Primaria: ${fechaLarga(camp.fecha).toLowerCase()} · ESO, Bachillerato y CCFF: ${fechaLarga(camp.fecha2).toLowerCase()} · Profesorado: una lista cada día`;
+}
+const fechaCortaNum = f => aFecha(f).toLocaleDateString('es-ES');
+const diasCortos = camp => tieneDosDias(camp) ? `${fechaCortaNum(camp.fecha)} y ${fechaCortaNum(camp.fecha2)}` : fechaCortaNum(camp.fecha);
+
 function fechaHora(iso) {
   if (!iso) return '';
   return new Date(iso).toLocaleString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
@@ -543,7 +595,7 @@ function demoDb() {
     const cursos = cursosPorDefecto();
     db.cursos = cursos;
     const cat = catalogoPorDefecto();
-    db.campanas.push({ id: 'demo1', titulo: 'Octubre 2026 (prueba)', fecha: '2026-10-23', estado: 'abierta', catalogo: cat });
+    db.campanas.push({ id: 'demo1', titulo: 'Octubre 2026 (prueba)', fecha: '2026-10-22', fecha2: '2026-10-23', estado: 'abierta', catalogo: cat });
     const nombres = ['Ana Ruiz', 'Carmen López', 'José Martín', 'Lucía Romero', 'Pablo Gil', 'María Torres', 'Rocío Vega'];
     cursos.forEach((c, i) => {
       if (Math.random() < 0.25) return;
@@ -664,10 +716,10 @@ async function iniciarTutores() {
   const guardada = store.get('bs-tutor', {});
   T.camp = camps.find(c => c.id === guardada.camp) || camps[0];
   if (camps.length > 1) {
-    $('t-camp').innerHTML = `<label style="margin:0">Bocadillo solidario <select id="t-camp-sel">${camps.map(c => `<option value="${esc(c.id)}" ${c.id === T.camp.id ? 'selected' : ''}>${esc(c.titulo)} · ${esc(fechaLarga(c.fecha))}</option>`).join('')}</select></label>`;
+    $('t-camp').innerHTML = `<label style="margin:0">Bocadillo solidario <select id="t-camp-sel">${camps.map(c => `<option value="${esc(c.id)}" ${c.id === T.camp.id ? 'selected' : ''}>${esc(c.titulo)} · ${esc(diasTexto(c))}</option>`).join('')}</select></label>`;
     $('t-camp-sel').onchange = e => { T.camp = camps.find(c => c.id === e.target.value); cargarCurso(); };
   } else {
-    $('t-camp').innerHTML = `<div class="camp-title">${esc(T.camp.titulo)}</div><div class="muted">${esc(fechaLarga(T.camp.fecha))}</div>`;
+    $('t-camp').innerHTML = `<div class="camp-title">${esc(T.camp.titulo)}</div><div class="muted">${esc(diasTexto(T.camp))}</div>`;
   }
 
   const etapas = ETAPAS.filter(e => cursos.some(c => c.etapa === e.id));
@@ -696,9 +748,12 @@ async function cargarCurso() {
   T.previo = null;
   T.cant = {};
   if (!T.curso) {
-    $('t-productos-card').hidden = true; $('t-barra').hidden = true; $('t-previo').hidden = true;
+    $('t-productos-card').hidden = true; $('t-barra').hidden = true; $('t-previo').hidden = true; $('t-dia').hidden = true;
     return;
   }
+  const dia = fechaCurso(T.camp, T.curso);
+  $('t-dia').innerHTML = dia ? `📅 Vuestro bocadillo es el <strong>${esc(fechaLarga(dia).toLowerCase())}</strong>` : `📅 Profesorado: <strong>${esc(diasTexto(T.camp).toLowerCase())}</strong>`;
+  $('t-dia').hidden = false;
   store.set('bs-tutor', { ...store.get('bs-tutor', {}), curso: T.curso.id, camp: T.camp.id });
   $('t-productos').innerHTML = '<div class="cargando">Cargando…</div>';
   $('t-productos-card').hidden = false;
@@ -913,6 +968,13 @@ async function recargarPanel(mantener = true) {
     $('p-contenido').innerHTML = `<div class="aviso error">${esc(e.message)}</div>`;
     return;
   }
+  // Antes había una sola lista de Profesorado: se convierte en dos (jueves y viernes), conservando la primera como la del jueves
+  const prof = (P.datos.cursos || []).filter(c => c.etapa === 'Profesorado');
+  if (prof.length === 1 && !prof[0].dia) {
+    const i = P.datos.cursos.indexOf(prof[0]);
+    P.datos.cursos.splice(i, 1, ...profesoradoDosDias(prof[0].id));
+    api('guardarCursos', { clave: P.clave, cursos: P.datos.cursos }).catch(e => mensaje(e.message, 'error'));
+  }
   if (!P.datos.cursos) {
     P.datos.cursos = cursosPorDefecto();
     api('guardarCursos', { clave: P.clave, cursos: P.datos.cursos }).catch(e => mensaje(e.message, 'error'));
@@ -952,10 +1014,10 @@ function pintarPanel() {
   const camp = campActual();
   $('p-estado').innerHTML = camp ? (camp.estado === 'abierta'
     ? `<div class="estado-caja abierta">
-        <div><strong>🟢 Abierto a los tutores</strong><div class="small muted">${esc(fechaLarga(camp.fecha))} · Los tutores pueden enviar y corregir su recuento.</div></div>
+        <div><strong>🟢 Abierto a los tutores</strong><div class="small muted">${esc(diasPorEtapa(camp))}</div><div class="small muted">Los tutores pueden enviar y corregir su recuento.</div></div>
         <button class="btn sec" data-acc="estado">🔒 Cerrar plazo</button></div>`
     : `<div class="estado-caja cerrada">
-        <div><strong>🔒 Plazo cerrado</strong><div class="small muted">${esc(fechaLarga(camp.fecha))} · Los tutores ya no pueden enviar ni corregir.</div></div>
+        <div><strong>🔒 Plazo cerrado</strong><div class="small muted">${esc(diasPorEtapa(camp))}</div><div class="small muted">Los tutores ya no pueden enviar ni corregir.</div></div>
         <button class="btn sec" data-acc="estado">🔓 Reabrir plazo</button></div>`) : '';
   $('p-sin').hidden = !!camp;
   $('p-sin').innerHTML = P.anio === actual
@@ -963,7 +1025,7 @@ function pintarPanel() {
     : `<h2>No hay bocadillos solidarios guardados en este curso</h2>`;
   $('p-main').hidden = !camp;
   document.querySelectorAll('#p-subtabs .subtab').forEach(b => b.classList.toggle('active', b.dataset.sub === P.sub));
-  const editando = P.sub === 'productos' || P.sub === 'cursos';
+  const editando = ['productos', 'cursos', 'fechas'].includes(P.sub);
   $('p-editar-opciones').hidden = !editando && !P.menuEditar;
   $('p-editar').classList.toggle('active', !!(editando || P.menuEditar));
   $('p-editar').setAttribute('aria-expanded', String(!$('p-editar-opciones').hidden));
@@ -972,7 +1034,7 @@ function pintarPanel() {
 
 function pintarSub() {
   const camp = campActual();
-  const f = { resumen: vistaResumen, clases: vistaClases, compra: vistaCompra, balance: vistaBalance, productos: vistaProductos, cursos: vistaCursos }[P.sub];
+  const f = { resumen: vistaResumen, clases: vistaClases, compra: vistaCompra, balance: vistaBalance, productos: vistaProductos, fechas: vistaFechas, cursos: vistaCursos }[P.sub];
   $('p-contenido').innerHTML = f(camp);
 }
 
@@ -1254,8 +1316,8 @@ function vistaTotal() {
         <h2 style="margin:0">Bocadillo a bocadillo</h2>
         <button class="btn" data-pdf="total">📄 PDF del total acumulado</button>
       </div>
-      ${tabla(['Bocadillo solidario', 'Fecha', 'Clases', 'Bocadillos', 'Fruta', 'Bebidas', 'Ingresos', 'Gastos', 'Ganancia'],
-        filas.map(({ camp, s }) => `<tr><td><strong>${esc(camp.titulo)}</strong></td><td class="n">${esc(new Date(camp.fecha + 'T12:00').toLocaleDateString('es-ES'))}</td><td class="n">${s.enviados} / ${s.total}</td>${celdaN(s.porCat.comida)}${celdaN(s.porCat.fruta)}${celdaN(s.porCat.bebida)}<td class="n">${eur(s.centimos)}</td><td class="n">${eur(s.gastos)}</td><td class="n"><strong>${eur(s.centimos - s.gastos)}</strong></td></tr>`),
+      ${tabla(['Bocadillo solidario', 'Fechas', 'Clases', 'Bocadillos', 'Fruta', 'Bebidas', 'Ingresos', 'Gastos', 'Ganancia'],
+        filas.map(({ camp, s }) => `<tr><td><strong>${esc(camp.titulo)}</strong></td><td class="n">${esc(diasCortos(camp))}</td><td class="n">${s.enviados} / ${s.total}</td>${celdaN(s.porCat.comida)}${celdaN(s.porCat.fruta)}${celdaN(s.porCat.bebida)}<td class="n">${eur(s.centimos)}</td><td class="n">${eur(s.gastos)}</td><td class="n"><strong>${eur(s.centimos - s.gastos)}</strong></td></tr>`),
         ['Total acumulado', '', '', num(tot.comida), num(tot.fruta), num(tot.bebida), eur(tot.centimos), eur(tot.gastos), eur(tot.centimos - tot.gastos)],
         ['', 'n', 'n', 'n', 'n', 'n', 'n', 'n', 'n'], { primera: 180 })}
     </div>
@@ -1286,8 +1348,9 @@ function vistaClases(camp) {
     return `<tr><td><strong>${esc(c.nombre)}</strong>${obs}<div class="muted small">${esc(r.tutor)}</div></td>
       ${prods.map(p => celdaN(r.cantidades[p.id] || 0)).join('')}
       <td class="n"><strong>${eur(importeRecuento(camp, r))}</strong></td>
-      <td style="text-align:center"><button class="btn sec mini" data-pdf="clase" data-curso="${esc(c.id)}" title="PDF de la clase">PDF</button>
-          <button class="btn peligro mini" data-borrar-rec="${esc(c.id)}" title="Borrar este recuento">✕</button></td></tr>`;
+      <td><div class="acc-clase"><button class="btn mini" data-pdf="lista" data-curso="${esc(c.id)}" title="Lista en grande para colgar en la sala al preparar los bocadillos (sin precios)">📋 Lista</button>
+          <button class="btn sec mini" data-pdf="clase" data-curso="${esc(c.id)}" title="Detalle de la clase con precios e importes">PDF</button>
+          <button class="btn peligro mini" data-borrar-rec="${esc(c.id)}" title="Borrar este recuento">✕</button></div></td></tr>`;
   });
   const obsList = cs.map(c => recs.get(c.id)).filter(r => r && r.observaciones);
   return `
@@ -1295,11 +1358,14 @@ function vistaClases(camp) {
     <div class="card">
       <div class="acciones" style="justify-content:space-between;margin-bottom:.8rem">
         <h2 style="margin:0">${esc(P.etapa)} <span class="muted small">· ${s.enviados} de ${s.total} clases · ${eur(s.centimos)}</span></h2>
-        <button class="btn" data-pdf="etapa">📄 PDF de ${esc(P.etapa)}</button>
+        <div class="acciones">
+          <button class="btn sec" data-pdf="listas-etapa" title="Una página por clase, en grande y sin precios, para preparar los bocadillos">📋 Listas de toda la etapa</button>
+          <button class="btn" data-pdf="etapa">📄 PDF de ${esc(P.etapa)}</button>
+        </div>
       </div>
       ${tabla(['Clase', ...prods.map(p => esc(p.nombre)), 'Importe', ''], filas,
         ['Total', ...prods.map(p => num(s.porProducto[p.id] || 0)), eur(s.centimos), ''],
-        ['', ...prods.map(() => 'n'), 'n', ''], { primera: 116, derecha: [78, 90], thead: theadDoble(prods, ['Clase'], ['Importe', '']) })}
+        ['', ...prods.map(() => 'n'), 'n', ''], { primera: 116, derecha: [78, 112], thead: theadDoble(prods, ['Clase'], ['Importe', '']) })}
       ${obsList.length ? `<h3>Observaciones</h3>${obsList.map(r => `<p class="small" style="margin:.3rem 0"><strong>${esc(r.curso)}:</strong> ${esc(r.observaciones)}</p>`).join('')}` : ''}
     </div>`;
 }
@@ -1348,7 +1414,10 @@ function vistaProductos(camp) {
   return `
     ${nRecs ? `<div class="aviso info">Este bocadillo ya tiene ${nRecs} recuento${nRecs === 1 ? '' : 's'}. Si cambias un precio, se recalcula todo; si quitas un producto, sus unidades dejan de contar.</div>` : ''}
     <div class="card" id="ed">
-      <h2>Productos de «${esc(camp.titulo)}»</h2>
+      <div class="acciones" style="justify-content:space-between">
+        <h2 style="margin:0">Productos de «${esc(camp.titulo)}»</h2>
+        <button class="btn sec mini" data-ed="iniciales" title="Sustituye los productos de este bocadillo por los productos, precios, packs y tiendas actuales">↺ Cargar productos y precios iniciales</button>
+      </div>
       <p class="muted small" style="margin-top:0">Cada producto indica en qué etapas aparece y qué gasta de la lista de la compra por cada unidad pedida.</p>
       ${c.productos.map((p, i) => `
         <div class="ed-prod">
@@ -1421,6 +1490,20 @@ function validarCatalogo(c) {
   return null;
 }
 
+/* ---------- Nombre y fechas ---------- */
+function vistaFechas(camp) {
+  return `<div class="card narrow">
+      <h2>Nombre y fechas de «${esc(camp.titulo)}»</h2>
+      <label>Título <input id="f-titulo" value="${esc(camp.titulo)}"></label>
+      <div class="grid2">
+        <label>📅 Infantil y Primaria (jueves) <input type="date" id="f-fecha" value="${esc(camp.fecha)}"></label>
+        <label>📅 ESO, Bachillerato y CCFF (viernes) <input type="date" id="f-fecha2" value="${esc(camp.fecha2 || camp.fecha)}"></label>
+      </div>
+      <p class="muted small" style="margin-top:0">El Profesorado puede pedir los dos días. Si el bocadillo es un solo día, pon la misma fecha en los dos.</p>
+      <div class="acciones" style="justify-content:flex-end"><button class="btn" data-guardar-fechas>💾 Guardar</button></div>
+    </div>`;
+}
+
 /* ---------- Editor de clases ---------- */
 function vistaCursos() {
   return `
@@ -1429,7 +1512,7 @@ function vistaCursos() {
       <p class="muted small" style="margin-top:0">Una clase por línea. Estos cambios valen para todos los bocadillos. Si renombras una clase que ya ha enviado recuentos, los antiguos se conservan con el nombre de entonces.</p>
       <div class="grid2">
         ${GRUPOS.map((g, i) => {
-          const cs = P.datos.cursos.filter(c => c.etapa === g.etapa && c.menu === g.menu);
+          const cs = P.datos.cursos.filter(c => c.etapa === g.etapa && c.menu === g.menu && (c.dia || 0) === (g.dia || 0));
           return `<label>${esc(g.nombre)} <textarea data-grupo="${i}" rows="${Math.max(3, cs.length + 1)}">${esc(cs.map(c => c.nombre).join('\n'))}</textarea></label>`;
         }).join('')}
       </div>
@@ -1443,11 +1526,11 @@ async function guardarCursos() {
   GRUPOS.forEach((g, i) => {
     const lineas = document.querySelector(`[data-grupo="${i}"]`).value.split('\n').map(s => s.trim()).filter(Boolean);
     lineas.forEach(nombre => {
-      const previo = viejos.find(c => c.etapa === g.etapa && c.nombre === nombre && !usados.has(c.id));
+      const previo = viejos.find(c => c.etapa === g.etapa && (c.dia || 0) === (g.dia || 0) && c.nombre === nombre && !usados.has(c.id));
       let id = previo ? previo.id : slug(g.etapa + '-' + nombre);
       while (usados.has(id)) id += '-2';
       usados.add(id);
-      nuevos.push({ id, nombre, etapa: g.etapa, menu: g.menu });
+      nuevos.push({ id, nombre, etapa: g.etapa, menu: g.menu, ...(g.dia ? { dia: g.dia } : {}) });
     });
   });
   if (!nuevos.length) { alert('La lista de clases no puede quedar vacía.'); return; }
@@ -1483,7 +1566,7 @@ $('p-anio').onchange = async e => { P.anio = e.target.value; P.campId = null; P.
 $('p-camp').onchange = e => { P.campId = e.target.value; P.edit = null; pintarPanel(); };
 $('p-subtabs').onclick = e => {
   if (e.target.closest('#p-editar')) {
-    const editando = P.sub === 'productos' || P.sub === 'cursos';
+    const editando = ['productos', 'cursos', 'fechas'].includes(P.sub);
     if (editando) { P.sub = 'resumen'; P.menuEditar = false; }
     else P.menuEditar = !P.menuEditar;
     pintarPanel();
@@ -1492,7 +1575,7 @@ $('p-subtabs').onclick = e => {
   const b = e.target.closest('[data-sub]');
   if (!b) return;
   P.sub = b.dataset.sub;
-  if (P.sub !== 'productos' && P.sub !== 'cursos') P.menuEditar = false;
+  if (!['productos', 'cursos', 'fechas'].includes(P.sub)) P.menuEditar = false;
   pintarPanel();
 };
 
@@ -1552,16 +1635,20 @@ function abrirNueva() {
   const d = new Date();
   $('n-titulo').value = d.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }).replace(/^./, s => s.toUpperCase()).replace(' de ', ' ');
   $('n-fecha').value = '';
+  $('n-fecha2').value = '';
   $('n-titulo').focus();
 }
 $('n-cancelar').onclick = () => { $('p-nueva').hidden = true; };
+// Al poner el jueves, el viernes se rellena solo con el día siguiente
+$('n-fecha').onchange = e => { if (e.target.value) $('n-fecha2').value = sumarDias(e.target.value, 1); };
 $('n-crear').onclick = async () => {
-  const titulo = $('n-titulo').value.trim(), fecha = $('n-fecha').value;
-  if (!titulo || !fecha) { alert('Pon un título y la fecha del bocadillo.'); return; }
+  const titulo = $('n-titulo').value.trim(), fecha = $('n-fecha').value, fecha2 = $('n-fecha2').value || fecha;
+  if (!titulo || !fecha) { alert('Pon un título y las fechas del bocadillo.'); return; }
+  if (fecha2 < fecha) { alert('La fecha de ESO, Bachillerato y CCFF no puede ser anterior a la de Infantil y Primaria.'); return; }
   if (cursoEscolar(fecha) !== P.datos.cursoActual &&
     !confirm(`La fecha no es del curso ${P.datos.cursoActual}. El bocadillo se guardará igualmente en el curso ${P.datos.cursoActual}. ¿Seguir?`)) return;
   const base = [P.datos.ultima, ...P.datos.campanas].find(c => c && c.id === $('n-base').value);
-  const campana = { titulo, fecha, estado: 'abierta', catalogo: base ? clone(base.catalogo) : catalogoPorDefecto() };
+  const campana = { titulo, fecha, fecha2, estado: 'abierta', catalogo: base ? clone(base.catalogo) : catalogoPorDefecto() };
   await conBoton('#n-crear', async () => {
     const r = await api('guardarCampana', { clave: P.clave, campana });
     $('p-nueva').hidden = true;
@@ -1621,6 +1708,18 @@ $('p-contenido').addEventListener('click', async e => {
     return;
   }
   if (d.guardarCursos !== undefined) { guardarCursos(); return; }
+  if (d.guardarFechas !== undefined) {
+    const titulo = $('f-titulo').value.trim(), fecha = $('f-fecha').value, fecha2 = $('f-fecha2').value || fecha;
+    if (!titulo || !fecha) { alert('Pon un título y las fechas.'); return; }
+    if (fecha2 < fecha) { alert('La fecha de ESO, Bachillerato y CCFF no puede ser anterior a la de Infantil y Primaria.'); return; }
+    await conBoton('[data-guardar-fechas]', async () => {
+      await api('guardarCampana', { clave: P.clave, campana: { ...camp, titulo, fecha, fecha2 } });
+      Object.assign(camp, { titulo, fecha, fecha2 });
+      mensaje('Nombre y fechas guardados.');
+      pintarPanel();
+    });
+    return;
+  }
   // Editor de productos
   const c = P.edit;
   if (d.anadirP !== undefined) c.productos.push({ id: nuevoId('p'), nombre: '', precio: 1, categoria: 'comida', menus: [], compra: [] });
@@ -1635,6 +1734,14 @@ $('p-contenido').addEventListener('click', async e => {
     c.articulos.splice(d.quitarA, 1);
   }
   else if (d.ed === 'descartar') { P.edit = null; }
+  else if (d.ed === 'iniciales') {
+    const n = recsDe(camp.id).length;
+    if (!confirm('¿Cargar los productos y precios iniciales en este bocadillo?' +
+      (n ? `\n\nYa hay ${n} recuento${n === 1 ? '' : 's'}: las cantidades de productos que desaparezcan dejarán de contar.` : '') +
+      '\n\nNo se guarda hasta que pulses «Guardar productos».')) return;
+    P.edit = catalogoPorDefecto();
+    mensaje('Productos iniciales cargados. Revísalos y pulsa «💾 Guardar productos».', 'info');
+  }
   else if (d.ed === 'guardar') {
     const err = validarCatalogo(c);
     if (err) { alert(err); return; }
@@ -1692,7 +1799,7 @@ function cabecera(doc, camp, titulo, subtitulo) {
   const yTitulo = lineas.length > 1 ? 10 : 13;
   doc.text(lineas, w - 14, yTitulo, { align: 'right', lineHeightFactor: 1.15 });
   doc.setTextColor(110); doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
-  doc.text(fechaLarga(camp.fecha), w - 14, lineas.length > 1 ? 19.5 : 18.5, { align: 'right' });
+  doc.text(diasTexto(camp), w - 14, lineas.length > 1 ? 19.5 : 18.5, { align: 'right' });
   doc.setDrawColor(...AZUL); doc.setLineWidth(0.6); doc.line(14, 22.5, w - 14, 22.5);
   doc.setTextColor(30); doc.setFont('helvetica', 'bold'); doc.setFontSize(16);
   doc.text(titulo, 14, 32);
@@ -1812,8 +1919,8 @@ function pdfTotal() {
   let y = cabecera(doc, { titulo: 'Total acumulado', fecha: '' }, 'Total acumulado · ' + ambito,
     `${filas.length} bocadillos solidarios · Ingresos: ${eurPDF(tot.centimos)} · Gastos: ${eurPDF(tot.gastos)} · Ganancia: ${eurPDF(tot.centimos - tot.gastos)}`);
   y = subtituloPDF(doc, y, 'Bocadillo a bocadillo');
-  y = tablaPDF(doc, y + 1, ['Bocadillo solidario', 'Fecha', 'Clases', 'Bocadillos', 'Fruta', 'Bebidas', 'Ingresos', 'Gastos', 'Ganancia'],
-    filas.map(({ camp, s }) => [camp.titulo, new Date(camp.fecha + 'T12:00').toLocaleDateString('es-ES'), `${s.enviados} / ${s.total}`, numPDF(s.porCat.comida), numPDF(s.porCat.fruta), numPDF(s.porCat.bebida), eurPDF(s.centimos), eurPDF(s.gastos), eurPDF(s.centimos - s.gastos)]),
+  y = tablaPDF(doc, y + 1, ['Bocadillo solidario', 'Fechas', 'Clases', 'Bocadillos', 'Fruta', 'Bebidas', 'Ingresos', 'Gastos', 'Ganancia'],
+    filas.map(({ camp, s }) => [camp.titulo, diasCortos(camp), `${s.enviados} / ${s.total}`, numPDF(s.porCat.comida), numPDF(s.porCat.fruta), numPDF(s.porCat.bebida), eurPDF(s.centimos), eurPDF(s.gastos), eurPDF(s.centimos - s.gastos)]),
     ['Total acumulado', '', '', numPDF(tot.comida), numPDF(tot.fruta), numPDF(tot.bebida), eurPDF(tot.centimos), eurPDF(tot.gastos), eurPDF(tot.centimos - tot.gastos)], { fs: 8, primera: 38 });
   if (P.anio === 'todos') {
     y = subtituloPDF(doc, y, 'Por curso');
@@ -1838,10 +1945,61 @@ function seccionBalance(doc, camp, y) {
   return y;
 }
 
+// Lista de una clase en grande para colgar en la sala mientras se preparan los bocadillos (sin precios)
+function paginaLista(doc, camp, curso, r) {
+  const w = doc.internal.pageSize.getWidth(), h = doc.internal.pageSize.getHeight();
+  if (LOGO_PNG) doc.addImage(LOGO_PNG, 'PNG', 14, 8, 30, 30 * 215 / 670);
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(...AZUL);
+  doc.text('Bocadillo solidario · ' + arreglarTitulo(camp.titulo), w - 14, 15, { align: 'right' });
+  doc.setDrawColor(...AZUL); doc.setLineWidth(0.6); doc.line(14, 21, w - 14, 21);
+  doc.setTextColor(30); doc.setFontSize(40);
+  doc.text(doc.splitTextToSize(curso.nombre, w - 28)[0], w / 2, 42, { align: 'center' });
+  const dia = fechaCurso(camp, curso);
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(16); doc.setTextColor(90);
+  doc.text([dia ? fechaLarga(dia) : diasTexto(camp), r.tutor ? 'Tutor/a: ' + r.tutor : ''].filter(Boolean).join('  ·  '), w / 2, 52, { align: 'center' });
+  const { grupos } = productosPorEtapa(camp);
+  const body = [];
+  let total = 0;
+  grupos.forEach(g => {
+    const filas = g.filas.filter(f => r.cantidades[f.p.id]);
+    if (!filas.length) return;
+    body.push([{ content: g.nombre, colSpan: 2, styles: { fillColor: AZUL_SUAVE, textColor: AZUL, fontStyle: 'bold', fontSize: 15, halign: 'left' } }]);
+    filas.forEach(f => { total += r.cantidades[f.p.id]; body.push([f.corto, String(r.cantidades[f.p.id])]); });
+  });
+  doc.autoTable({
+    startY: 60, head: [['Producto', 'Cantidad']], body, foot: [['Total de productos', String(total)]], theme: 'grid',
+    margin: { left: 20, right: 20, bottom: 18 },
+    styles: { fontSize: 22, cellPadding: { top: 3, bottom: 3, left: 4, right: 4 }, lineColor: [200, 210, 220], lineWidth: 0.3, textColor: 20, valign: 'middle' },
+    headStyles: { fillColor: AZUL, textColor: 255, fontSize: 14, halign: 'center' },
+    footStyles: { fillColor: AZUL_SUAVE, textColor: 20, fontStyle: 'bold', fontSize: 18 },
+    columnStyles: { 1: { cellWidth: 45, halign: 'center', fontStyle: 'bold', fontSize: 30 } },
+    didParseCell: x => { if (x.section === 'foot' && x.column.index === 1) { x.cell.styles.halign = 'center'; x.cell.styles.fontSize = 24; } }
+  });
+  let y = doc.lastAutoTable.finalY + 8;
+  if (r.observaciones) {
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(14); doc.setTextColor(...AZUL);
+    if (y > h - 35) { doc.addPage(); y = 22; }
+    doc.text('Observaciones', 20, y);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(14); doc.setTextColor(30);
+    doc.text(doc.splitTextToSize(r.observaciones, w - 40), 20, y + 7);
+  }
+}
+
 function generarPDF(tipo, camp, cursoId) {
   const cursos = cursosDe(camp);
   const etapas = etapasCon(cursos);
   let doc;
+
+  if (tipo === 'lista' || tipo === 'listas-etapa') {
+    const recs = new Map(recsDe(camp.id).map(r => [r.cursoId, r]));
+    const lista = (tipo === 'lista' ? cursos.filter(c => c.id === cursoId) : cursos.filter(c => c.etapa === P.etapa)).filter(c => recs.has(c.id));
+    if (!lista.length) { alert('Todavía no hay recuentos en esta etapa.'); return; }
+    if (!(doc = nuevoPDF())) return;
+    lista.forEach((c, i) => { if (i) doc.addPage('a4', 'portrait'); paginaLista(doc, camp, c, recs.get(c.id)); });
+    piePDF(doc);
+    doc.save(nombreArchivo(camp, 'lista-' + (tipo === 'lista' ? lista[0].nombre : P.etapa)));
+    return;
+  }
 
   if (tipo === 'balance') {
     if (!(doc = nuevoPDF())) return;
@@ -1882,7 +2040,8 @@ function generarPDF(tipo, camp, cursoId) {
   if (tipo === 'etapa') {
     if (!(doc = nuevoPDF('landscape'))) return;
     const s = sumar(camp, cursos.filter(c => c.etapa === P.etapa));
-    const y = cabecera(doc, camp, 'Recuento de ' + P.etapa, `${s.enviados} de ${s.total} clases han enviado · Total recaudado: ${eurPDF(s.centimos)}`);
+    const dia = fechaEtapa(camp, P.etapa);
+    const y = cabecera(doc, camp, 'Recuento de ' + P.etapa, `${dia ? fechaLarga(dia) + ' · ' : ''}${s.enviados} de ${s.total} clases han enviado · Total recaudado: ${eurPDF(s.centimos)}`);
     seccionEtapa(doc, camp, P.etapa, y);
     piePDF(doc); doc.save(nombreArchivo(camp, P.etapa)); return;
   }
@@ -1914,7 +2073,8 @@ function generarPDF(tipo, camp, cursoId) {
     etapas.forEach(e => {
       doc.addPage('a4', 'landscape');
       const s = sumar(camp, cursos.filter(c => c.etapa === e));
-      const y2 = cabecera(doc, camp, 'Recuento de ' + e, `${s.enviados} de ${s.total} clases · ${eurPDF(s.centimos)}`);
+      const dia = fechaEtapa(camp, e);
+      const y2 = cabecera(doc, camp, 'Recuento de ' + e, `${dia ? fechaLarga(dia) + ' · ' : ''}${s.enviados} de ${s.total} clases · ${eurPDF(s.centimos)}`);
       seccionEtapa(doc, camp, e, y2);
     });
     piePDF(doc); doc.save(nombreArchivo(camp, 'colegio')); return;
