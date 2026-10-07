@@ -94,6 +94,7 @@
     margin-top: -0.6rem; padding: 0.6rem 0.8rem; border-radius: 12px; align-items: center;
     background: rgba(238, 113, 42, 0.08); border: 1px solid rgba(238, 113, 42, 0.3); justify-content: flex-end;
   }
+  #p-subtabs.modo-edicion > .subtabs:first-child .subtab { opacity: 0.45; }
   .editar-opciones .subtab.active { background: var(--naranja); border-color: var(--naranja); }
   .balance-fila { display: flex; align-items: center; justify-content: space-around; gap: 0.6rem; flex-wrap: wrap; text-align: center; }
   .balance-fila .v { font-size: 1.5rem; font-weight: 700; color: var(--azul); font-variant-numeric: tabular-nums; }
@@ -395,7 +396,7 @@ const ETAPAS = [
   { id: 'Profesorado', menu: 'mayores' }
 ];
 const CATEGORIAS = [
-  { id: 'comida', nombre: 'Bocadillos y sándwiches' },
+  { id: 'comida', nombre: 'Bocadillos' },
   { id: 'fruta', nombre: 'Fruta' },
   { id: 'bebida', nombre: 'Bebidas' },
   { id: 'extra', nombre: 'Extras' }
@@ -1025,16 +1026,19 @@ function pintarPanel() {
     : `<h2>No hay bocadillos solidarios guardados en este curso</h2>`;
   $('p-main').hidden = !camp;
   document.querySelectorAll('#p-subtabs .subtab').forEach(b => b.classList.toggle('active', b.dataset.sub === P.sub));
-  const editando = ['productos', 'cursos', 'fechas'].includes(P.sub);
-  $('p-editar-opciones').hidden = !editando && !P.menuEditar;
-  $('p-editar').classList.toggle('active', !!(editando || P.menuEditar));
+  // Con «Editar» abierto solo se ve el menú de edición: las pestañas normales quedan sin marcar
+  const editando = EDICION.includes(P.sub);
+  $('p-editar-opciones').hidden = !editando;
+  $('p-editar').classList.toggle('active', editando);
+  $('p-editar').textContent = editando ? '✕ Cerrar edición' : '✏️ Editar';
+  $('p-subtabs').classList.toggle('modo-edicion', editando);
   $('p-editar').setAttribute('aria-expanded', String(!$('p-editar-opciones').hidden));
   if (camp) pintarSub();
 }
 
 function pintarSub() {
   const camp = campActual();
-  const f = { resumen: vistaResumen, clases: vistaClases, compra: vistaCompra, balance: vistaBalance, productos: vistaProductos, fechas: vistaFechas, cursos: vistaCursos }[P.sub];
+  const f = { resumen: vistaResumen, clases: vistaClases, compra: vistaCompra, balance: vistaBalance, productos: vistaProductos, fechas: vistaFechas, cursos: vistaCursos, editar: vistaElegirEdicion }[P.sub];
   $('p-contenido').innerHTML = f(camp);
 }
 
@@ -1192,7 +1196,7 @@ function vistaResumen(camp) {
   return `
     <div class="kpis">
       <div class="kpi"><div class="v">${eur(tot.centimos)}</div><div class="l">Recaudado</div></div>
-      <div class="kpi"><div class="v">${num(tot.porCat.comida)}</div><div class="l">Bocadillos y sándwiches</div></div>
+      <div class="kpi"><div class="v">${num(tot.porCat.comida)}</div><div class="l">Bocadillos</div></div>
       <div class="kpi"><div class="v">${num(tot.porCat.bebida)}</div><div class="l">Bebidas</div></div>
       <div class="kpi"><div class="v">${tot.enviados}<span class="muted" style="font-size:1rem"> / ${tot.total}</span></div><div class="l">Clases que han enviado</div></div>
     </div>
@@ -1414,10 +1418,11 @@ function vistaProductos(camp) {
   return `
     ${nRecs ? `<div class="aviso info">Este bocadillo ya tiene ${nRecs} recuento${nRecs === 1 ? '' : 's'}. Si cambias un precio, se recalcula todo; si quitas un producto, sus unidades dejan de contar.</div>` : ''}
     <div class="card" id="ed">
-      <div class="acciones" style="justify-content:space-between">
-        <h2 style="margin:0">Productos de «${esc(camp.titulo)}»</h2>
-        <button class="btn sec mini" data-ed="iniciales" title="Sustituye los productos de este bocadillo por los productos, precios, packs y tiendas actuales">↺ Cargar productos y precios iniciales</button>
+      <div class="aviso info acciones" style="justify-content:space-between">
+        <span>¿Este bocadillo tiene productos antiguos? Puedes sustituirlos por los <strong>productos y precios iniciales</strong> (los actuales, con sus packs y tiendas).</span>
+        <button class="btn" data-ed="iniciales">↺ Cargar productos y precios iniciales</button>
       </div>
+      <h2>Productos de «${esc(camp.titulo)}»</h2>
       <p class="muted small" style="margin-top:0">Cada producto indica en qué etapas aparece y qué gasta de la lista de la compra por cada unidad pedida.</p>
       ${c.productos.map((p, i) => `
         <div class="ed-prod">
@@ -1488,6 +1493,14 @@ function validarCatalogo(c) {
   }
   for (const a of c.articulos) if (!String(a.nombre).trim()) return 'Hay un artículo de la compra sin nombre.';
   return null;
+}
+
+const EDICION = ['editar', 'productos', 'fechas', 'cursos'];
+function vistaElegirEdicion(camp) {
+  return `<div class="card narrow" style="text-align:center">
+      <h2>¿Qué quieres editar?</h2>
+      <p class="muted" style="margin:0">Elige una opción en la franja naranja de arriba: <strong>Productos y precios</strong> o <strong>Nombre y fechas</strong> de «${esc(camp.titulo)}», o las <strong>Clases</strong> que participan.</p>
+    </div>`;
 }
 
 /* ---------- Nombre y fechas ---------- */
@@ -1566,16 +1579,13 @@ $('p-anio').onchange = async e => { P.anio = e.target.value; P.campId = null; P.
 $('p-camp').onchange = e => { P.campId = e.target.value; P.edit = null; pintarPanel(); };
 $('p-subtabs').onclick = e => {
   if (e.target.closest('#p-editar')) {
-    const editando = ['productos', 'cursos', 'fechas'].includes(P.sub);
-    if (editando) { P.sub = 'resumen'; P.menuEditar = false; }
-    else P.menuEditar = !P.menuEditar;
+    P.sub = EDICION.includes(P.sub) ? 'resumen' : 'editar';
     pintarPanel();
     return;
   }
   const b = e.target.closest('[data-sub]');
   if (!b) return;
   P.sub = b.dataset.sub;
-  if (!['productos', 'cursos', 'fechas'].includes(P.sub)) P.menuEditar = false;
   pintarPanel();
 };
 
