@@ -375,7 +375,7 @@
   </section>
 </div>
 
-<footer class="version muted small">Versión 2026-10-07 · 22:30</footer>
+<footer class="version muted small">Versión 2026-10-07 · 22:45</footer>
 
 <script>
 /* =========================================================================
@@ -971,6 +971,8 @@ async function recargarPanel(mantener = true) {
   try {
     P.datos = await api('panel', { clave: P.clave, anio: P.anio || undefined });
     P.anio = P.datos.anio;
+    // Las copias de trabajo de los editores se descartan: siempre se parte de lo guardado en la hoja
+    P.edit = null; P.gastos = null;
   } catch (e) {
     if (/contraseña/i.test(e.message)) { P.clave = null; sesion.set(null); iniciarPastoral(); return; }
     $('p-contenido').innerHTML = `<div class="aviso error">${esc(e.message)}</div>`;
