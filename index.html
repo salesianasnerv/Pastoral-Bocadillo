@@ -95,6 +95,16 @@
     background: rgba(238, 113, 42, 0.08); border: 1px solid rgba(238, 113, 42, 0.3); justify-content: flex-end;
   }
   .editar-opciones .subtab.active { background: var(--naranja); border-color: var(--naranja); }
+  .balance-fila { display: flex; align-items: center; justify-content: space-around; gap: 0.6rem; flex-wrap: wrap; text-align: center; }
+  .balance-fila .v { font-size: 1.5rem; font-weight: 700; color: var(--azul); font-variant-numeric: tabular-nums; }
+  .balance-fila .l { font-size: 0.82rem; color: var(--text-muted); }
+  .balance-fila .op { font-size: 1.6rem; color: var(--text-muted); font-weight: 300; }
+  .v.positivo { color: var(--verde-oscuro) !important; }
+  .v.negativo { color: var(--rojo) !important; }
+  .gasto { display: grid; grid-template-columns: 2fr 1.3fr 120px auto; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem; }
+  .gasto input { margin: 0; }
+  .gasto-cab { margin-bottom: 0.2rem; }
+  @media (max-width: 560px) { .gasto { grid-template-columns: 1fr 1fr; } .gasto-cab { display: none; } }
   .chips { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 1rem; }
   .chip {
     border: 1px solid rgba(0,154,187,.35); background: var(--azul-suave); color: var(--azul);
@@ -183,17 +193,19 @@
   table { border-collapse: collapse; width: 100%; font-size: 0.88rem; }
   th, td { padding: 0.5rem 0.65rem; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
   th { background: var(--azul); color: #fff; font-weight: 600; font-size: 0.8rem; white-space: normal; min-width: 64px; vertical-align: bottom; }
-  td.n { text-align: right; font-variant-numeric: tabular-nums; }
+  td.n { text-align: center; font-variant-numeric: tabular-nums; }
   table.fija { table-layout: fixed; }
   table.fija td { overflow: hidden; text-overflow: ellipsis; }
   table.fija th { padding: 0.5rem 0.15rem; font-size: 0.72rem; line-height: 1.25; }
   table.fija td:last-child { overflow: visible; }
+  table.fija td:first-child { white-space: normal; }
   /* Primera columna fija al desplazar tablas anchas en el móvil */
   table.fija thead tr:first-child > th:first-child, table.fija tbody td:first-child, table.fija tfoot td:first-child { position: sticky; left: 0; z-index: 1; }
   table.fija tbody td:first-child { background: var(--card); box-shadow: 1px 0 0 var(--border); }
   table.fija tbody tr:nth-child(even) td:first-child { background: var(--fila-alt); }
   table.fija tfoot td:first-child { background: var(--card); background-image: linear-gradient(var(--azul-suave), var(--azul-suave)); }
   table.fija tr.pend td:first-child { background: var(--card); }
+  tr.fila-grupo td { background: var(--azul-suave) !important; color: var(--azul); font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: .04em; padding-top: .35rem; padding-bottom: .35rem; }
   th.grupo { background: var(--azul-oscuro); border-left: 1px solid rgba(255,255,255,.35); border-right: 1px solid rgba(255,255,255,.35); }
   th, th.n { text-align: center; }
   tbody tr:nth-child(even) td { background: var(--fila-alt); }
@@ -214,7 +226,7 @@
   .ed-compra select, .ed-compra input { margin: 0; padding: 0.25rem 0.4rem; font-size: 0.85rem; width: auto; }
   .ed-compra input { width: 64px; }
   .x { background: none; border: none; color: var(--rojo); cursor: pointer; font-size: 1.1rem; padding: 0 0.3rem; }
-  .ed-art { display: grid; grid-template-columns: 2fr 1fr 80px auto auto; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem; }
+  .ed-art { display: grid; grid-template-columns: 2fr 1fr 64px 1fr 1.4fr auto auto; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem; }
   .ed-art input { margin: 0; }
   @media (max-width: 640px) { .ed-art { grid-template-columns: 1fr 1fr; } }
   .guardar-barra { position: sticky; bottom: 0; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 0.7rem; display: flex; gap: 0.5rem; justify-content: flex-end; flex-wrap: wrap; align-items: center; }
@@ -335,6 +347,7 @@
             <button class="subtab active" data-sub="resumen">📊 Resumen</button>
             <button class="subtab" data-sub="clases">🏫 Por clase</button>
             <button class="subtab" data-sub="compra">🛒 Lista de la compra</button>
+            <button class="subtab" data-sub="balance">💶 Balance económico</button>
             <button class="btn-editar" id="p-editar" aria-expanded="false">✏️ Editar</button>
           </div>
           <div class="subtabs editar-opciones" id="p-editar-opciones" hidden>
@@ -377,7 +390,8 @@ const ETAPAS = [
 const CATEGORIAS = [
   { id: 'comida', nombre: 'Bocadillos y sándwiches' },
   { id: 'fruta', nombre: 'Fruta' },
-  { id: 'bebida', nombre: 'Bebidas' }
+  { id: 'bebida', nombre: 'Bebidas' },
+  { id: 'extra', nombre: 'Extras' }
 ];
 
 /* ---------- Datos por defecto ---------- */
@@ -411,50 +425,54 @@ function cursosPorDefecto() {
 }
 
 function catalogoPorDefecto() {
-  const A = (id, nombre, unidad, pack = 0, porClase = false) => ({ id, nombre, unidad, pack, porClase });
-  const P = (id, nombre, precio, categoria, menus, compra, grupo = '') => ({ id, nombre, precio, categoria, menus, grupo, compra: compra.map(([articulo, cantidad]) => ({ articulo, cantidad })) });
+  // A(id, nombre, se cuenta en, unidades por pack, cómo se llama el pack, dónde se compra)
+  const A = (id, nombre, unidad, pack = 0, packNombre = '', tienda = '') => ({ id, nombre, unidad, pack, packNombre, tienda, porClase: false });
+  // Cada compra: [artículo, cantidad, por cada N unidades pedidas] -> p. ej. 1 tortilla por cada 5 bocadillos
+  const P = (id, nombre, precio, categoria, menus, compra, grupo = '') => ({ id, nombre, precio, categoria, menus, grupo,
+    compra: compra.map(([articulo, cantidad, cada = 1]) => ({ articulo, cantidad, cada })) });
   const todos = ['infantil', 'primaria', 'primaria-grande', 'mayores'];
+  const primaria = ['primaria', 'primaria-grande'];
   const grandes = ['primaria-grande', 'mayores'];
   return {
     articulos: [
-      A('pan-molde', 'Pan de molde', 'rebanadas'),
-      A('pan-pequeno', 'Pan para bocadillo pequeño', 'piezas'),
-      A('pan-grande', 'Pan para bocadillo grande', 'piezas'),
-      A('chopped', 'Chopped', 'lonchas'),
-      A('chorizo', 'Chorizo', 'lonchas'),
-      A('tortilla', 'Tortilla', 'tortillas'),
-      A('nocilla', 'Nocilla', 'botes'),
-      A('platano', 'Plátanos', 'unidades'),
-      A('zumo', 'Zumos', 'unidades'),
-      A('leche', 'Leche', 'unidades', 6),
-      A('yogur', 'Yogur bebible', 'unidades', 12),
-      A('batido-choco', 'Batido de chocolate', 'unidades', 6),
-      A('batido-vainilla', 'Batido de vainilla', 'unidades', 6),
-      A('cocacola', 'Coca-Cola', 'latas'),
-      A('cocacola-zero', 'Coca-Cola Zero', 'latas'),
-      A('nestea', 'Nestea de limón', 'latas'),
-      A('aquarius', 'Aquarius de naranja', 'latas')
+      A('pan-mini', 'Pan mini bocadillo (Infantil)', 'piezas', 0, '', 'Mercadona'),
+      A('pan-pequeno', 'Molletes (1º-3º EPO)', 'piezas', 0, '', 'Panadería La Espiga'),
+      A('pan-grande', 'Andaluzas (4º EPO en adelante)', 'piezas', 0, '', 'Panadería La Espiga'),
+      A('chopped', 'Chopped', 'lonchas', 120, 'piezas', 'Sercody'),
+      A('chorizo', 'Chorizo/salchichón', 'lonchas', 125, 'piezas', 'Sercody'),
+      A('nocilla', 'Nocilla', 'botes', 0, '', 'Sercody'),
+      A('tortilla', 'Tortilla', 'tortillas', 0, '', 'Sercody'),
+      A('mahonesa', 'Sobres de mayonesa', 'sobres', 0, '', 'Sercody'),
+      A('platano', 'Plátanos', 'unidades', 0, '', 'Frutería'),
+      A('yogur', 'Yogur bebible', 'unidades', 12, 'packs', 'Mercadona · Hacendado'),
+      A('leche', 'Leche entera', 'unidades', 6, 'packs', 'Mercadona · Hacendado'),
+      A('zumo', 'Zumo multifrutas', 'unidades', 6, 'packs', 'Sercody · Eliges'),
+      A('batido-choco', 'Batido de chocolate', 'unidades', 6, 'packs', 'Mercadona · Hacendado'),
+      A('cocacola', 'Coca-Cola', 'latas', 24, 'packs', 'Sercody'),
+      A('cocacola-zero', 'Coca-Cola Zero', 'latas', 24, 'packs', 'Sercody'),
+      A('fanta', 'Fanta naranja', 'latas', 24, 'packs', 'Sercody'),
+      A('nestea', 'Nestea', 'latas', 24, 'packs', 'Sercody')
     ],
     productos: [
-      P('sandwich-chopped', 'Sándwich de chopped', 1.5, 'comida', ['infantil'], [['pan-molde', 2], ['chopped', 4]]),
-      P('sandwich-nocilla', 'Sándwich de Nocilla', 1.5, 'comida', ['infantil'], [['pan-molde', 2]]),
-      P('boc-peq-chopped', 'Bocadillo pequeño de chopped', 1.5, 'comida', ['primaria'], [['pan-pequeno', 1], ['chopped', 4]]),
-      P('boc-peq-nocilla', 'Bocadillo pequeño de Nocilla', 1.5, 'comida', ['primaria'], [['pan-pequeno', 1]]),
-      P('boc-peq-chorizo', 'Bocadillo pequeño de chorizo', 1.5, 'comida', ['primaria'], [['pan-pequeno', 1], ['chorizo', 6]]),
-      P('boc-gr-chopped', 'Bocadillo grande de chopped', 1.5, 'comida', grandes, [['pan-grande', 1], ['chopped', 6]]),
-      P('boc-gr-nocilla', 'Bocadillo grande de Nocilla', 1.5, 'comida', grandes, [['pan-grande', 1], ['nocilla', 0.1]]),
-      P('boc-gr-chorizo', 'Bocadillo grande de chorizo', 1.5, 'comida', grandes, [['pan-grande', 1], ['chorizo', 6]]),
-      P('boc-gr-tortilla', 'Bocadillo grande de tortilla', 2, 'comida', ['mayores'], [['pan-grande', 1], ['tortilla', 0.2]]),
+      P('mini-chopped', 'Mini bocadillo de chopped', 1.5, 'comida', ['infantil'], [['pan-mini', 1], ['chopped', 2]]),
+      P('mini-nocilla', 'Mini bocadillo de Nocilla', 1.5, 'comida', ['infantil'], [['pan-mini', 1], ['nocilla', 1, 11]]),
+      P('boc-peq-chopped', 'Bocadillo pequeño de chopped', 1.5, 'comida', ['primaria'], [['pan-pequeno', 1], ['chopped', 3]]),
+      P('boc-peq-nocilla', 'Bocadillo pequeño de Nocilla', 1.5, 'comida', ['primaria'], [['pan-pequeno', 1], ['nocilla', 1, 11]]),
+      P('boc-peq-chorizo', 'Bocadillo pequeño de chorizo', 1.5, 'comida', ['primaria'], [['pan-pequeno', 1], ['chorizo', 5]]),
+      P('boc-gr-chopped', 'Bocadillo grande de chopped', 1.5, 'comida', grandes, [['pan-grande', 1], ['chopped', 4]]),
+      P('boc-gr-nocilla', 'Bocadillo grande de Nocilla', 1.5, 'comida', grandes, [['pan-grande', 1], ['nocilla', 1, 11]]),
+      P('boc-gr-chorizo', 'Bocadillo grande de chorizo', 1.5, 'comida', grandes, [['pan-grande', 1], ['chorizo', 9]]),
+      P('boc-gr-tortilla', 'Bocadillo grande de tortilla', 2, 'comida', ['mayores'], [['pan-grande', 1], ['tortilla', 1, 5]]),
+      P('mahonesa', 'Sobre de mayonesa', 0.2, 'extra', ['mayores'], [['mahonesa', 1]], 'Extras'),
       P('platano', 'Plátano', 1, 'fruta', todos, [['platano', 1]], 'Fruta'),
-      P('zumo', 'Zumo', 1, 'bebida', todos, [['zumo', 1]], 'Bebidas'),
-      P('leche', 'Leche', 1, 'bebida', todos, [['leche', 1]], 'Bebidas'),
-      P('yogur', 'Yogur bebible', 1, 'bebida', ['infantil', 'primaria', 'primaria-grande'], [['yogur', 1]], 'Bebidas'),
-      P('batido-choco', 'Batido de chocolate', 1, 'bebida', ['mayores'], [['batido-choco', 1]], 'Batidos'),
-      P('batido-vainilla', 'Batido de vainilla', 1, 'bebida', ['mayores'], [['batido-vainilla', 1]], 'Batidos'),
+      P('yogur', 'Yogur bebible', 1, 'bebida', ['infantil', ...primaria], [['yogur', 1]], 'Bebidas'),
+      P('leche', 'Leche entera', 1, 'bebida', ['infantil', ...primaria], [['leche', 1]], 'Bebidas'),
+      P('zumo', 'Zumo multifrutas', 1, 'bebida', todos, [['zumo', 1]], 'Bebidas'),
+      P('batido-choco', 'Batido de chocolate', 1, 'bebida', [...primaria, 'mayores'], [['batido-choco', 1]], 'Bebidas'),
       P('cocacola', 'Coca-Cola', 1.5, 'bebida', ['mayores'], [['cocacola', 1]], 'Refrescos'),
       P('cocacola-zero', 'Coca-Cola Zero', 1.5, 'bebida', ['mayores'], [['cocacola-zero', 1]], 'Refrescos'),
-      P('nestea', 'Nestea de limón', 1.5, 'bebida', ['mayores'], [['nestea', 1]], 'Refrescos'),
-      P('aquarius', 'Aquarius de naranja', 1.5, 'bebida', ['mayores'], [['aquarius', 1]], 'Refrescos')
+      P('fanta', 'Fanta naranja', 1.5, 'bebida', ['mayores'], [['fanta', 1]], 'Refrescos'),
+      P('nestea', 'Nestea', 1.5, 'bebida', ['mayores'], [['nestea', 1]], 'Refrescos')
     ]
   };
 }
@@ -486,6 +504,20 @@ const sesion = {
   set(v) { try { v ? sessionStorage.setItem('bs-clave', v) : sessionStorage.removeItem('bs-clave'); } catch {} }
 };
 
+// Si Google Sheets convirtió un título como «Noviembre 2026» en fecha, se vuelve a mostrar como mes y año
+function arreglarTitulo(t) {
+  const s = String(t ?? '');
+  if (!/^[A-Z][a-z]{2} [A-Z][a-z]{2} \d{2} \d{4} \d{2}:\d{2}|^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(s)) return s;
+  const d = new Date(s.replace(/ \(.*\)$/, ''));
+  if (isNaN(d)) return s;
+  const m = d.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }).replace(' de ', ' ');
+  return m.charAt(0).toUpperCase() + m.slice(1);
+}
+function arreglarDatos(datos) {
+  (datos.campanas || []).forEach(c => { c.titulo = arreglarTitulo(c.titulo); });
+  return datos;
+}
+
 /* ---------- Conexión con la hoja (o modo prueba) ---------- */
 async function api(action, data = {}) {
   if (DEMO) {
@@ -500,7 +532,7 @@ async function api(action, data = {}) {
   }
   const json = await res.json();
   if (!json.ok) throw new Error(json.error || 'Ha ocurrido un error.');
-  return json;
+  return arreglarDatos(json);
 }
 
 // Copia del script de Apps Script que guarda los datos en este navegador (solo modo prueba)
@@ -539,7 +571,7 @@ function demoApi(action, d) {
     guardar();
   }
   switch (action) {
-    case 'publico': return { cursos: db.cursos, campanas: db.campanas.filter(c => c.estado === 'abierta') };
+    case 'publico': return { cursos: db.cursos, campanas: db.campanas.filter(c => c.estado === 'abierta').map(({ gastos, ...c }) => c) };
     case 'miRecuento': return { recuento: db.recuentos.find(r => r.campana === d.campana && r.cursoId === d.curso) || null };
     case 'enviar': {
       const camp = db.campanas.find(c => c.id === d.campana);
@@ -568,7 +600,8 @@ function demoApi(action, d) {
       const campanas = anio === 'todos' ? db.campanas : db.campanas.filter(c => c.cursoEscolar === anio);
       const ids = new Set(campanas.map(c => c.id));
       const anios = [...new Set([...db.campanas.map(c => c.cursoEscolar), actual])].sort().reverse();
-      return { cursos: db.cursos, cursoActual: actual, anio, anios, campanas, recuentos: db.recuentos.filter(x => ids.has(x.campana)) };
+      const ultima = db.campanas.slice().sort((a, b) => b.fecha.localeCompare(a.fecha))[0] || null;
+      return { cursos: db.cursos, cursoActual: actual, anio, anios, ultima, campanas, recuentos: db.recuentos.filter(x => ids.has(x.campana)) };
     }
     case 'nuevoCurso': {
       auth();
@@ -800,7 +833,7 @@ const productosDeCursos = (camp, cursos) => camp.catalogo.productos.filter(p => 
 function sumar(camp, cursos) {
   const recs = new Map(recsDe(camp.id).map(r => [r.cursoId, r]));
   const prods = new Map(camp.catalogo.productos.map(p => [p.id, p]));
-  const porProducto = {}, porCat = { comida: 0, fruta: 0, bebida: 0 };
+  const porProducto = {}, porCat = { comida: 0, fruta: 0, bebida: 0, extra: 0 };
   let centimos = 0, enviados = 0;
   cursos.forEach(c => {
     const r = recs.get(c.id);
@@ -821,20 +854,26 @@ function importeRecuento(camp, r) {
   return camp.catalogo.productos.reduce((s, p) => s + (r.cantidades[p.id] || 0) * cent(p.precio), 0);
 }
 
+// Cuánto gasta cada unidad pedida: "1 tortilla por cada 5 bocadillos" -> 0,2
+const factorCompra = x => Number(x.cantidad) / (Number(x.cada) > 0 ? Number(x.cada) : 1);
+
 function listaCompra(camp, cursos) {
   const { porProducto } = sumar(camp, cursos);
   const bruto = {};
   camp.catalogo.productos.forEach(p => {
     const n = porProducto[p.id] || 0;
     if (!n) return;
-    p.compra.forEach(({ articulo, cantidad }) => { bruto[articulo] = (bruto[articulo] || 0) + n * Number(cantidad); });
+    p.compra.forEach(x => { bruto[x.articulo] = (bruto[x.articulo] || 0) + n * factorCompra(x); });
   });
   return camp.catalogo.articulos.map(a => {
     const total = Math.ceil(Math.round((bruto[a.id] || 0) * 1000) / 1000);
     const pack = Number(a.pack) || 0;
     return { ...a, total, packs: pack ? Math.ceil(total / pack) : null };
-  }).filter(a => a.total > 0);
+  }).filter(a => a.total > 0)
+    .map((a, i) => ({ a, i })).sort((x, y) => tiendaOrden(x.a) - tiendaOrden(y.a) || String(x.a.tienda || '').localeCompare(String(y.a.tienda || '')) || x.i - y.i).map(x => x.a);
 }
+// Agrupa la lista por tienda: primero lo que aún no tiene tienda y después cada tienda junta
+const tiendaOrden = a => (String(a.tienda || '').trim() ? 1 : 0);
 
 function repartoPorClase(camp, cursos) {
   const arts = camp.catalogo.articulos.filter(a => a.porClase);
@@ -846,7 +885,7 @@ function repartoPorClase(camp, cursos) {
     if (!r) return;
     const v = arts.map(a => {
       let t = 0;
-      camp.catalogo.productos.forEach(p => p.compra.forEach(x => { if (x.articulo === a.id) t += (r.cantidades[p.id] || 0) * Number(x.cantidad); }));
+      camp.catalogo.productos.forEach(p => p.compra.forEach(x => { if (x.articulo === a.id) t += (r.cantidades[p.id] || 0) * factorCompra(x); }));
       return Math.ceil(t - 1e-9);
     });
     if (v.some(x => x > 0)) filas.push({ curso: c.nombre, v });
@@ -933,7 +972,7 @@ function pintarPanel() {
 
 function pintarSub() {
   const camp = campActual();
-  const f = { resumen: vistaResumen, clases: vistaClases, compra: vistaCompra, productos: vistaProductos, cursos: vistaCursos }[P.sub];
+  const f = { resumen: vistaResumen, clases: vistaClases, compra: vistaCompra, balance: vistaBalance, productos: vistaProductos, cursos: vistaCursos }[P.sub];
   $('p-contenido').innerHTML = f(camp);
 }
 
@@ -951,6 +990,126 @@ function tabla(head, filas, pie, clasesCol = [], op = {}) {
   </table></div>`;
 }
 const celdaN = n => `<td class="n${n ? '' : ' cero'}">${n ? num(n) : '·'}</td>`;
+
+// Unidades de cada producto en cada etapa, agrupadas y ordenadas de más a menos pedido dentro de cada grupo
+function productosPorEtapa(camp) {
+  const cursos = cursosDe(camp);
+  const etapas = etapasCon(cursos);
+  const porEtapa = Object.fromEntries(etapas.map(e => [e, sumar(camp, cursos.filter(c => c.etapa === e)).porProducto]));
+  const ofrecidos = Object.fromEntries(etapas.map(e => [e, new Set(productosEtapa(camp, e).map(p => p.id))]));
+  const total = sumar(camp, cursos).porProducto;
+  const grupos = [];
+  camp.catalogo.productos.forEach(p => {
+    const { grupo, corto } = partirNombre(p);
+    const nombreGrupo = grupo || (CATEGORIAS.find(c => c.id === p.categoria) || {}).nombre || 'Otros';
+    let g = grupos.find(x => x.nombre === nombreGrupo);
+    if (!g) grupos.push(g = { nombre: nombreGrupo, filas: [] });
+    g.filas.push({ p, corto: grupo ? corto : p.nombre, total: total[p.id] || 0,
+      celdas: etapas.map(e => ofrecidos[e].has(p.id) ? (porEtapa[e][p.id] || 0) : null) });
+  });
+  grupos.forEach(g => g.filas.sort((a, b) => b.total - a.total));
+  return { etapas, grupos };
+}
+
+/* ---------- Balance económico ---------- */
+// Admite «12,50», «12.50» o «1.234,50»
+function leerImporte(v) {
+  let s = String(v ?? '').trim().replace(/\s|€/g, '');
+  if (s.includes(',')) s = s.replace(/\./g, '').replace(',', '.');
+  const n = Number(s);
+  return isFinite(n) ? n : 0;
+}
+const gastosDe = camp => (camp.gastos || []);
+const centGastos = gastos => gastos.reduce((s, g) => s + cent(leerImporte(g.importe)), 0);
+function balance(camp) {
+  const ingresos = sumar(camp, cursosDe(camp)).centimos;
+  const gastos = centGastos(gastosDe(camp));
+  return { ingresos, gastos, ganancia: ingresos - gastos, n: gastosDe(camp).length };
+}
+const claseGanancia = c => c >= 0 ? 'positivo' : 'negativo';
+// Tiendas de la lista de la compra (sin la marca: «Mercadona · Hacendado» → «Mercadona»)
+const tiendasDe = camp => [...new Set(camp.catalogo.articulos.map(a => String(a.tienda || '').split('·')[0].trim()).filter(Boolean))];
+
+function tarjetaBalance(camp) {
+  const b = balance(camp);
+  return `<div class="card">
+      <div class="acciones" style="justify-content:space-between;margin-bottom:.8rem">
+        <h2 style="margin:0">💶 Balance económico</h2>
+        <button class="btn sec" data-ir-balance>Ver balance →</button>
+      </div>
+      <div class="balance-fila">
+        <div><div class="l">Ingresos</div><div class="v">${eur(b.ingresos)}</div></div>
+        <div class="op">−</div>
+        <div><div class="l">Gastos</div><div class="v">${eur(b.gastos)}</div></div>
+        <div class="op">=</div>
+        <div><div class="l">Ganancia real</div><div class="v ${claseGanancia(b.ganancia)}">${eur(b.ganancia)}</div></div>
+      </div>
+      ${b.n ? '' : '<p class="muted small" style="margin:.6rem 0 0">Todavía no se han apuntado gastos. Añádelos en «Balance económico» cuando tengáis los tickets.</p>'}
+    </div>`;
+}
+
+function vistaBalance(camp) {
+  if (!P.gastos || P.gastosCamp !== camp.id) { P.gastos = clone(gastosDe(camp)); P.gastosCamp = camp.id; }
+  const cursos = cursosDe(camp);
+  const etapas = etapasCon(cursos);
+  const tot = sumar(camp, cursos);
+  const tiendas = tiendasDe(camp);
+  return `
+    <div class="kpis" id="b-kpis">${kpisBalance(camp)}</div>
+    <div class="card">
+      <div class="acciones" style="justify-content:space-between;margin-bottom:.4rem">
+        <h2 style="margin:0">Gastos</h2>
+        <button class="btn" data-pdf="balance">📄 PDF del balance</button>
+      </div>
+      <p class="muted small" style="margin-top:0">Apunta lo que ha costado cada compra (por ejemplo, el importe de cada ticket).</p>
+      <datalist id="b-tiendas">${tiendas.map(t => `<option value="${esc(t)}">`).join('')}</datalist>
+      ${P.gastos.length ? `<div class="gasto gasto-cab muted small"><span>Concepto</span><span>Tienda</span><span>Importe (€)</span><span></span></div>` : ''}
+      ${P.gastos.map((g, i) => `
+        <div class="gasto">
+          <input data-g="${i}" data-gk="concepto" value="${esc(g.concepto)}" placeholder="Por ejemplo: Compra de bebidas">
+          <input data-g="${i}" data-gk="tienda" value="${esc(g.tienda)}" list="b-tiendas" placeholder="Tienda">
+          <input data-g="${i}" data-gk="importe" value="${esc(typeof g.importe === 'number' ? (g.importe ? g.importe.toFixed(2).replace('.', ',') : '') : (g.importe ?? ''))}" inputmode="decimal" placeholder="0,00" style="text-align:right">
+          <button class="x" data-quitar-g="${i}" title="Quitar gasto">🗑</button>
+        </div>`).join('')}
+      <div class="acciones" style="margin-top:.6rem">
+        <button class="btn sec" data-anadir-g>+ Añadir gasto</button>
+        ${tiendas.length ? `<button class="btn sec" data-gastos-tiendas title="Crea una línea por cada tienda de la lista de la compra">+ Una línea por tienda (${tiendas.map(esc).join(', ')})</button>` : ''}
+      </div>
+    </div>
+    <div class="guardar-barra">
+      <span class="small" style="margin-right:auto">Total gastos: <strong id="b-total-gastos">${eur(centGastos(P.gastos))}</strong></span>
+      <button class="btn sec" data-gastos="descartar">Descartar cambios</button>
+      <button class="btn" data-gastos="guardar">💾 Guardar gastos</button>
+    </div>
+    <div class="card" style="margin-top:1rem">
+      <h2>Ingresos por etapa</h2>
+      <p class="muted small" style="margin-top:0">Lo que suman los recuentos enviados por los tutores.</p>
+      ${tabla(['Etapa', 'Clases', 'Ingresos'],
+        etapas.map(e => { const s = sumar(camp, cursos.filter(c => c.etapa === e)); return `<tr><td><strong>${esc(e)}</strong></td><td class="n">${s.enviados} / ${s.total}</td><td class="n"><strong>${eur(s.centimos)}</strong></td></tr>`; }),
+        ['Total', `${tot.enviados} / ${tot.total}`, eur(tot.centimos)], ['', 'n', 'n'])}
+    </div>`;
+}
+
+function kpisBalance(camp) {
+  const ingresos = sumar(camp, cursosDe(camp)).centimos;
+  const gastos = centGastos(P.gastosCamp === camp.id && P.gastos ? P.gastos : gastosDe(camp));
+  const ganancia = ingresos - gastos;
+  const margen = ingresos ? Math.round(ganancia / ingresos * 100) : 0;
+  return `
+      <div class="kpi"><div class="v">${eur(ingresos)}</div><div class="l">Ingresos</div></div>
+      <div class="kpi"><div class="v">${eur(gastos)}</div><div class="l">Gastos</div></div>
+      <div class="kpi"><div class="v ${claseGanancia(ganancia)}">${eur(ganancia)}</div><div class="l">Ganancia real</div></div>
+      <div class="kpi"><div class="v">${margen} %</div><div class="l">De cada euro, queda de ganancia</div></div>`;
+}
+
+function gastosCambio(e) {
+  const t = e.target;
+  if (t.dataset.g === undefined || !P.gastos) return;
+  P.gastos[t.dataset.g][t.dataset.gk] = t.value;
+  const camp = campActual();
+  $('b-total-gastos').textContent = eur(centGastos(P.gastos));
+  $('b-kpis').innerHTML = kpisBalance(camp);
+}
 
 function vistaResumen(camp) {
   const cursos = cursosDe(camp);
@@ -975,6 +1134,7 @@ function vistaResumen(camp) {
       <div class="kpi"><div class="v">${num(tot.porCat.bebida)}</div><div class="l">Bebidas</div></div>
       <div class="kpi"><div class="v">${tot.enviados}<span class="muted" style="font-size:1rem"> / ${tot.total}</span></div><div class="l">Clases que han enviado</div></div>
     </div>
+    ${tarjetaBalance(camp)}
     <div class="card">
       <div class="acciones" style="justify-content:space-between;margin-bottom:.8rem">
         <h2 style="margin:0">Por etapa</h2>
@@ -983,6 +1143,18 @@ function vistaResumen(camp) {
       ${tabla(['Etapa', 'Clases', 'Bocadillos', 'Fruta', 'Bebidas', 'Dinero'], filas,
         ['Total colegio', `${tot.enviados} / ${tot.total}`, num(tot.porCat.comida), num(tot.porCat.fruta), num(tot.porCat.bebida), eur(tot.centimos)],
         ['', 'n', 'n', 'n', 'n', 'n'])}
+    </div>
+    <div class="card">
+      <h2>Productos por etapa</h2>
+      <p class="muted small" style="margin-top:0">Unidades pedidas de cada producto, de más a menos pedido dentro de cada grupo. «—» significa que ese producto no se ofrece en esa etapa.</p>
+      ${(() => {
+        const { etapas, grupos } = productosPorEtapa(camp);
+        const filasPE = grupos.flatMap(g => [
+          `<tr class="fila-grupo"><td colspan="${etapas.length + 2}">${esc(g.nombre)}</td></tr>`,
+          ...g.filas.map(f => `<tr><td title="${esc(f.p.nombre)}">${esc(f.corto)}</td>${f.celdas.map(n => n === null ? '<td class="n cero">—</td>' : `<td class="n${n ? '' : ' cero'}">${num(n)}</td>`).join('')}<td class="n"><strong>${num(f.total)}</strong></td></tr>`)
+        ]);
+        return tabla(['Producto', ...etapas.map(esc), 'Total'], filasPE, null, ['', ...etapas.map(() => 'n'), 'n'], { primera: 190 });
+      })()}
     </div>
     <div class="card">
       <h2>Faltan por enviar ${tot.total - tot.enviados ? `(${tot.total - tot.enviados})` : ''}</h2>
@@ -1005,11 +1177,13 @@ function vistaResumen(camp) {
 }
 
 // Para las tablas anchas: "Bocadillo grande de chopped" -> grupo "Bocadillo grande", nombre "Chopped"
-const PREFIJOS = ['Bocadillo pequeño', 'Bocadillo grande', 'Sándwich', 'Batido'];
+const PREFIJOS = ['Mini bocadillo', 'Bocadillo pequeño', 'Bocadillo grande', 'Sándwich', 'Batido'];
 function partirNombre(prod) {
   const nombre = prod.nombre;
   const propio = String(prod.grupo || '').trim();
-  for (const g of [propio, ...PREFIJOS].filter(Boolean)) {
+  // Con grupo propio solo se acorta el nombre si el grupo coincide con su comienzo (p. ej. «Batidos» → «Batido de…»)
+  const prefijos = propio ? [propio, ...PREFIJOS.filter(g => propio.toLowerCase().startsWith(g.toLowerCase()))] : PREFIJOS;
+  for (const g of prefijos) {
     const m = nombre.match(new RegExp('^' + g.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s+(de\\s+)?(.+)$', 'i'));
     if (m) return { grupo: propio || g, corto: m[2].charAt(0).toUpperCase() + m[2].slice(1) };
   }
@@ -1044,17 +1218,17 @@ function cursoEscolar(fecha) {
 }
 function datosTotal() {
   const camps = P.datos.campanas.slice().sort((a, b) => a.fecha.localeCompare(b.fecha));
-  const filas = camps.map(c => ({ camp: c, s: sumar(c, cursosDe(c)) }));
+  const filas = camps.map(c => ({ camp: c, s: { ...sumar(c, cursosDe(c)), gastos: centGastos(gastosDe(c)) } }));
   const porAnio = {};
   filas.forEach(({ camp, s }) => {
     const a = camp.cursoEscolar || cursoEscolar(camp.fecha);
-    const x = porAnio[a] || (porAnio[a] = { n: 0, comida: 0, fruta: 0, bebida: 0, centimos: 0 });
-    x.n++; x.comida += s.porCat.comida; x.fruta += s.porCat.fruta; x.bebida += s.porCat.bebida; x.centimos += s.centimos;
+    const x = porAnio[a] || (porAnio[a] = { n: 0, comida: 0, fruta: 0, bebida: 0, centimos: 0, gastos: 0 });
+    x.n++; x.comida += s.porCat.comida; x.fruta += s.porCat.fruta; x.bebida += s.porCat.bebida; x.centimos += s.centimos; x.gastos += s.gastos;
   });
-  const tot = { comida: 0, fruta: 0, bebida: 0, centimos: 0 };
+  const tot = { comida: 0, fruta: 0, bebida: 0, centimos: 0, gastos: 0 };
   const porEtapa = {};
   filas.forEach(({ camp, s }) => {
-    tot.comida += s.porCat.comida; tot.fruta += s.porCat.fruta; tot.bebida += s.porCat.bebida; tot.centimos += s.centimos;
+    tot.comida += s.porCat.comida; tot.fruta += s.porCat.fruta; tot.bebida += s.porCat.bebida; tot.centimos += s.centimos; tot.gastos += s.gastos;
     const cs = cursosDe(camp);
     etapasCon(cs).forEach(e => {
       const se = sumar(camp, cs.filter(c => c.etapa === e));
@@ -1070,9 +1244,9 @@ function vistaTotal() {
   const anios = Object.keys(porAnio).sort();
   return `
     <div class="kpis">
-      <div class="kpi"><div class="v">${eur(tot.centimos)}</div><div class="l">Recaudado en total</div></div>
-      <div class="kpi"><div class="v">${num(tot.comida)}</div><div class="l">Bocadillos y sándwiches</div></div>
-      <div class="kpi"><div class="v">${num(tot.bebida)}</div><div class="l">Bebidas</div></div>
+      <div class="kpi"><div class="v">${eur(tot.centimos)}</div><div class="l">Ingresos</div></div>
+      <div class="kpi"><div class="v">${eur(tot.gastos)}</div><div class="l">Gastos</div></div>
+      <div class="kpi"><div class="v ${claseGanancia(tot.centimos - tot.gastos)}">${eur(tot.centimos - tot.gastos)}</div><div class="l">Ganancia real</div></div>
       <div class="kpi"><div class="v">${filas.length}</div><div class="l">Bocadillos solidarios</div></div>
     </div>
     <div class="card">
@@ -1080,15 +1254,15 @@ function vistaTotal() {
         <h2 style="margin:0">Bocadillo a bocadillo</h2>
         <button class="btn" data-pdf="total">📄 PDF del total acumulado</button>
       </div>
-      ${tabla(['Bocadillo solidario', 'Fecha', 'Clases', 'Bocadillos', 'Fruta', 'Bebidas', 'Dinero'],
-        filas.map(({ camp, s }) => `<tr><td><strong>${esc(camp.titulo)}</strong></td><td class="n">${esc(new Date(camp.fecha + 'T12:00').toLocaleDateString('es-ES'))}</td><td class="n">${s.enviados} / ${s.total}</td>${celdaN(s.porCat.comida)}${celdaN(s.porCat.fruta)}${celdaN(s.porCat.bebida)}<td class="n"><strong>${eur(s.centimos)}</strong></td></tr>`),
-        ['Total acumulado', '', '', num(tot.comida), num(tot.fruta), num(tot.bebida), eur(tot.centimos)],
-        ['', 'n', 'n', 'n', 'n', 'n', 'n'], { primera: 200 })}
+      ${tabla(['Bocadillo solidario', 'Fecha', 'Clases', 'Bocadillos', 'Fruta', 'Bebidas', 'Ingresos', 'Gastos', 'Ganancia'],
+        filas.map(({ camp, s }) => `<tr><td><strong>${esc(camp.titulo)}</strong></td><td class="n">${esc(new Date(camp.fecha + 'T12:00').toLocaleDateString('es-ES'))}</td><td class="n">${s.enviados} / ${s.total}</td>${celdaN(s.porCat.comida)}${celdaN(s.porCat.fruta)}${celdaN(s.porCat.bebida)}<td class="n">${eur(s.centimos)}</td><td class="n">${eur(s.gastos)}</td><td class="n"><strong>${eur(s.centimos - s.gastos)}</strong></td></tr>`),
+        ['Total acumulado', '', '', num(tot.comida), num(tot.fruta), num(tot.bebida), eur(tot.centimos), eur(tot.gastos), eur(tot.centimos - tot.gastos)],
+        ['', 'n', 'n', 'n', 'n', 'n', 'n', 'n', 'n'], { primera: 180 })}
     </div>
     ${P.anio === 'todos' ? `<div class="card"><h2>Por curso</h2>
-      ${tabla(['Curso', 'Bocadillos solidarios', 'Bocadillos', 'Fruta', 'Bebidas', 'Dinero'],
-        anios.map(a => { const x = porAnio[a]; return `<tr><td><strong>${a}</strong></td><td class="n">${x.n}</td>${celdaN(x.comida)}${celdaN(x.fruta)}${celdaN(x.bebida)}<td class="n"><strong>${eur(x.centimos)}</strong></td></tr>`; }),
-        ['Total', filas.length, num(tot.comida), num(tot.fruta), num(tot.bebida), eur(tot.centimos)], ['', 'n', 'n', 'n', 'n', 'n'])}</div>` : ''}
+      ${tabla(['Curso', 'Bocadillos solidarios', 'Bocadillos', 'Fruta', 'Bebidas', 'Ingresos', 'Gastos', 'Ganancia'],
+        anios.map(a => { const x = porAnio[a]; return `<tr><td><strong>${a}</strong></td><td class="n">${x.n}</td>${celdaN(x.comida)}${celdaN(x.fruta)}${celdaN(x.bebida)}<td class="n">${eur(x.centimos)}</td><td class="n">${eur(x.gastos)}</td><td class="n"><strong>${eur(x.centimos - x.gastos)}</strong></td></tr>`; }),
+        ['Total', filas.length, num(tot.comida), num(tot.fruta), num(tot.bebida), eur(tot.centimos), eur(tot.gastos), eur(tot.centimos - tot.gastos)], ['', 'n', 'n', 'n', 'n', 'n', 'n', 'n'])}</div>` : ''}
     <div class="card">
       <h2>Por etapa</h2>
       ${tabla(['Etapa', 'Bocadillos', 'Fruta', 'Bebidas', 'Dinero'],
@@ -1131,9 +1305,9 @@ function vistaClases(camp) {
 }
 
 function tablaCompra(lista) {
-  return tabla(['Artículo', 'Cantidad', 'Paquetes a comprar'],
-    lista.map(a => `<tr><td><strong>${esc(a.nombre)}</strong></td><td class="n">${num(a.total)} ${esc(a.unidad)}</td><td class="n">${a.packs != null ? `<strong>${num(a.packs)}</strong> <span class="muted small">(de ${a.pack})</span>` : '<span class="muted">—</span>'}</td></tr>`),
-    null, ['', 'n', 'n']);
+  return tabla(['Artículo', 'Dónde', 'Cantidad', 'A comprar'],
+    lista.map(a => `<tr><td><strong>${esc(a.nombre)}</strong></td><td class="${a.tienda ? '' : 'muted'}" style="text-align:center">${esc(a.tienda || '—')}</td><td class="n">${num(a.total)} ${esc(a.unidad)}</td><td class="n">${a.packs != null ? `<strong>${num(a.packs)} ${esc(a.packNombre || 'paquetes')}</strong> <span class="muted small">(de ${a.pack})</span>` : '<span class="muted">—</span>'}</td></tr>`),
+    null, ['', '', 'n', 'n'], { primera: 240 });
 }
 
 function vistaCompra(camp) {
@@ -1186,9 +1360,10 @@ function vistaProductos(camp) {
             <button class="x" data-quitar-p="${i}" title="Quitar producto">🗑</button>
           </div>
           <div class="ed-menus">${MENUS.map(m => `<label><input type="checkbox" data-p="${i}" data-menu="${m.id}" ${p.menus.includes(m.id) ? 'checked' : ''}> ${esc(m.nombre)}</label>`).join('')}</div>
-          <div class="ed-compra"><span class="muted">Para la compra, cada unidad gasta:</span>
+          <div class="ed-compra"><span class="muted">Para la compra:</span>
             ${p.compra.map((x, j) => `<span class="item"><input type="number" step="any" min="0" data-p="${i}" data-c="${j}" data-k="cantidad" value="${esc(x.cantidad)}">
               <select data-p="${i}" data-c="${j}" data-k="articulo">${artOpts(x.articulo)}</select>
+              <span class="muted">por cada</span><input type="number" step="1" min="1" data-p="${i}" data-c="${j}" data-k="cada" value="${esc(x.cada || 1)}" title="Por ejemplo: 1 tortilla por cada 5 bocadillos">
               <button class="x" data-quitar-c="${i}.${j}" title="Quitar">×</button></span>`).join('')}
             <button class="btn sec mini" data-anadir-c="${i}">+ añadir</button>
           </div>
@@ -1196,13 +1371,15 @@ function vistaProductos(camp) {
       <button class="btn sec" data-anadir-p>+ Añadir producto</button>
 
       <h2 style="margin-top:1.6rem">Artículos de la lista de la compra</h2>
-      <p class="muted small" style="margin-top:0">«Paquete» es cuántas unidades trae cada pack (0 si se compran sueltos). «Reparto por clase» añade, además del total, una tabla con cuántos van a cada clase (útil si algún producto hay que repartirlo por aulas).</p>
-      <div class="ed-art muted small"><span>Nombre</span><span>Se cuenta en</span><span>Paquete</span><span>Reparto por clase</span><span></span></div>
+      <p class="muted small" style="margin-top:0">«Trae» es cuántas unidades vienen en cada pack o pieza (0 si se compra suelto), y «Se compra en» cómo se llama (packs, piezas…). «Dónde» es la tienda o marca: la lista de la compra se ordena por tienda. «Repartir» añade una tabla con cuántos van a cada clase.</p>
+      <div class="ed-art muted small"><span>Nombre</span><span>Se cuenta en</span><span>Trae</span><span>Se compra en</span><span>Dónde</span><span>Reparto por clase</span><span></span></div>
       ${c.articulos.map((a, i) => `
         <div class="ed-art">
           <input data-a="${i}" data-k="nombre" value="${esc(a.nombre)}">
           <input data-a="${i}" data-k="unidad" value="${esc(a.unidad)}">
           <input data-a="${i}" data-k="pack" type="number" min="0" value="${esc(a.pack)}">
+          <input data-a="${i}" data-k="packNombre" value="${esc(a.packNombre || '')}" placeholder="packs, piezas…">
+          <input data-a="${i}" data-k="tienda" value="${esc(a.tienda || '')}" placeholder="Mercadona, Sercody…">
           <label class="check"><input type="checkbox" data-a="${i}" data-k="porClase" ${a.porClase ? 'checked' : ''}> Repartir</label>
           <button class="x" data-quitar-a="${i}" title="Quitar artículo">🗑</button>
         </div>`).join('')}
@@ -1224,7 +1401,7 @@ function editorCambio(e) {
     if (t.dataset.menu) {
       p.menus = MENUS.map(m => m.id).filter(id => id === t.dataset.menu ? t.checked : p.menus.includes(id));
     } else if (t.dataset.c !== undefined) {
-      p.compra[t.dataset.c][t.dataset.k] = t.dataset.k === 'cantidad' ? Number(t.value) : t.value;
+      p.compra[t.dataset.c][t.dataset.k] = (t.dataset.k === 'cantidad' || t.dataset.k === 'cada') ? Number(t.value) : t.value;
     } else {
       p[t.dataset.k] = t.dataset.k === 'precio' ? Number(t.value) : t.value;
     }
@@ -1366,9 +1543,11 @@ async function accionPanel(e) {
 
 function abrirNueva() {
   $('p-nueva').hidden = false;
-  const ultima = P.datos.campanas[0];
-  $('n-base').innerHTML = (ultima ? `<option value="${esc(ultima.id)}">Copiar los de «${esc(ultima.titulo)}» (luego se pueden cambiar)</option>` : '') +
-    P.datos.campanas.slice(1).map(c => `<option value="${esc(c.id)}">Copiar los de «${esc(c.titulo)}»</option>`).join('') +
+  // Por defecto se copian los productos del último bocadillo, aunque sea del curso anterior
+  const ultima = P.datos.ultima || P.datos.campanas[0];
+  const otras = P.datos.campanas.filter(c => !ultima || c.id !== ultima.id);
+  $('n-base').innerHTML = (ultima ? `<option value="${esc(ultima.id)}">Copiar los de «${esc(arreglarTitulo(ultima.titulo))}» (luego se pueden cambiar)</option>` : '') +
+    otras.map(c => `<option value="${esc(c.id)}">Copiar los de «${esc(c.titulo)}»</option>`).join('') +
     `<option value="">Productos y precios iniciales</option>`;
   const d = new Date();
   $('n-titulo').value = d.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }).replace(/^./, s => s.toUpperCase()).replace(' de ', ' ');
@@ -1381,7 +1560,7 @@ $('n-crear').onclick = async () => {
   if (!titulo || !fecha) { alert('Pon un título y la fecha del bocadillo.'); return; }
   if (cursoEscolar(fecha) !== P.datos.cursoActual &&
     !confirm(`La fecha no es del curso ${P.datos.cursoActual}. El bocadillo se guardará igualmente en el curso ${P.datos.cursoActual}. ¿Seguir?`)) return;
-  const base = P.datos.campanas.find(c => c.id === $('n-base').value);
+  const base = [P.datos.ultima, ...P.datos.campanas].find(c => c && c.id === $('n-base').value);
   const campana = { titulo, fecha, estado: 'abierta', catalogo: base ? clone(base.catalogo) : catalogoPorDefecto() };
   await conBoton('#n-crear', async () => {
     const r = await api('guardarCampana', { clave: P.clave, campana });
@@ -1394,6 +1573,7 @@ $('n-crear').onclick = async () => {
 };
 
 $('p-contenido').addEventListener('input', editorCambio);
+$('p-contenido').addEventListener('input', gastosCambio);
 $('p-contenido').addEventListener('change', editorCambio);
 $('p-contenido').addEventListener('click', async e => {
   const t = e.target.closest('button');
@@ -1404,6 +1584,30 @@ $('p-contenido').addEventListener('click', async e => {
   if (d.etapa) { P.etapa = d.etapa; pintarSub(); return; }
   if (d.ambito) { P.ambito = d.ambito; pintarSub(); return; }
   if (d.irCompra !== undefined) { P.sub = 'compra'; P.ambito = 'colegio'; pintarPanel(); return; }
+  if (d.irBalance !== undefined) { P.sub = 'balance'; pintarPanel(); return; }
+  if (d.anadirG !== undefined || d.quitarG !== undefined || d.gastosTiendas !== undefined || d.gastos) {
+    if (d.anadirG !== undefined) P.gastos.push({ concepto: '', tienda: '', importe: '' });
+    else if (d.quitarG !== undefined) P.gastos.splice(Number(d.quitarG), 1);
+    else if (d.gastosTiendas !== undefined) {
+      const ya = new Set(P.gastos.map(g => String(g.tienda).trim().toLowerCase()));
+      tiendasDe(camp).filter(t => !ya.has(t.toLowerCase())).forEach(t => P.gastos.push({ concepto: 'Compra en ' + t, tienda: t, importe: '' }));
+    }
+    else if (d.gastos === 'descartar') P.gastos = null;
+    else if (d.gastos === 'guardar') {
+      const gastos = P.gastos.map(g => ({ concepto: String(g.concepto || '').trim(), tienda: String(g.tienda || '').trim(), importe: Math.round(leerImporte(g.importe) * 100) / 100 }))
+        .filter(g => g.concepto || g.tienda || g.importe);
+      await conBoton('[data-gastos="guardar"]', async () => {
+        await api('guardarCampana', { clave: P.clave, campana: { ...camp, gastos } });
+        camp.gastos = gastos;
+        P.gastos = null;
+        mensaje('Gastos guardados.');
+        pintarSub();
+      });
+      return;
+    }
+    const y = window.scrollY; pintarSub(); window.scrollTo(0, y);
+    return;
+  }
   if (d.pdf) { generarPDF(d.pdf, camp, d.curso); return; }
   if (d.borrarRec) {
     const r = recsDe(camp.id).find(x => x.cursoId === d.borrarRec);
@@ -1421,9 +1625,9 @@ $('p-contenido').addEventListener('click', async e => {
   const c = P.edit;
   if (d.anadirP !== undefined) c.productos.push({ id: nuevoId('p'), nombre: '', precio: 1, categoria: 'comida', menus: [], compra: [] });
   else if (d.quitarP !== undefined) { if (!confirm(`¿Quitar «${c.productos[d.quitarP].nombre || 'este producto'}»?`)) return; c.productos.splice(d.quitarP, 1); }
-  else if (d.anadirC !== undefined) c.productos[d.anadirC].compra.push({ articulo: c.articulos[0]?.id || '', cantidad: 1 });
+  else if (d.anadirC !== undefined) c.productos[d.anadirC].compra.push({ articulo: c.articulos[0]?.id || '', cantidad: 1, cada: 1 });
   else if (d.quitarC !== undefined) { const [i, j] = d.quitarC.split('.'); c.productos[i].compra.splice(j, 1); }
-  else if (d.anadirA !== undefined) c.articulos.push({ id: nuevoId('a'), nombre: '', unidad: 'unidades', pack: 0, porClase: false });
+  else if (d.anadirA !== undefined) c.articulos.push({ id: nuevoId('a'), nombre: '', unidad: 'unidades', pack: 0, packNombre: 'packs', tienda: '', porClase: false });
   else if (d.quitarA !== undefined) {
     const a = c.articulos[d.quitarA];
     const usos = c.productos.filter(p => p.compra.some(x => x.articulo === a.id));
@@ -1477,10 +1681,18 @@ let LOGO_PNG = null;
 function cabecera(doc, camp, titulo, subtitulo) {
   const w = doc.internal.pageSize.getWidth();
   if (LOGO_PNG) doc.addImage(LOGO_PNG, 'PNG', 14, 7, 36, 36 * 215 / 670);
-  doc.setTextColor(...AZUL); doc.setFont('helvetica', 'bold'); doc.setFontSize(12);
-  doc.text('Bocadillo solidario · ' + camp.titulo, w - 14, 13, { align: 'right' });
+  // El nombre del bocadillo va a la derecha del logo; si no cabe, se reduce la letra o pasa a dos líneas
+  const disponible = w - 14 - (14 + 36 + 8);
+  const texto = 'Bocadillo solidario · ' + arreglarTitulo(camp.titulo);
+  doc.setTextColor(...AZUL); doc.setFont('helvetica', 'bold');
+  let fs = 12;
+  doc.setFontSize(fs);
+  while (fs > 9 && doc.getTextWidth(texto) > disponible) doc.setFontSize(fs -= 0.5);
+  const lineas = doc.splitTextToSize(texto, disponible).slice(0, 2);
+  const yTitulo = lineas.length > 1 ? 10 : 13;
+  doc.text(lineas, w - 14, yTitulo, { align: 'right', lineHeightFactor: 1.15 });
   doc.setTextColor(110); doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
-  doc.text(fechaLarga(camp.fecha), w - 14, 18.5, { align: 'right' });
+  doc.text(fechaLarga(camp.fecha), w - 14, lineas.length > 1 ? 19.5 : 18.5, { align: 'right' });
   doc.setDrawColor(...AZUL); doc.setLineWidth(0.6); doc.line(14, 22.5, w - 14, 22.5);
   doc.setTextColor(30); doc.setFont('helvetica', 'bold'); doc.setFontSize(16);
   doc.text(titulo, 14, 32);
@@ -1507,13 +1719,15 @@ function tablaPDF(doc, y, head, body, foot, opciones = {}) {
     footStyles: { fillColor: AZUL_SUAVE, textColor: 20, fontStyle: 'bold' },
     alternateRowStyles: { fillColor: [248, 250, 252] },
     columnStyles: cols,
-    didParseCell: h => { if (h.column.index > 0 && opciones.derecha !== false && (h.section !== 'head' || opciones.headDerecha)) h.cell.styles.halign = 'right'; }
+    didParseCell: h => { if (h.column.index > 0 && opciones.derecha !== false && h.section !== 'head' && !(h.cell.raw && h.cell.raw.styles && h.cell.raw.styles.halign)) h.cell.styles.halign = 'center'; }
   });
   return doc.lastAutoTable.finalY + 8;
 }
 
 function subtituloPDF(doc, y, txt) {
-  if (y > doc.internal.pageSize.getHeight() - 30) { doc.addPage(); y = 22; }
+  // Si queda poco sitio, el título y su tabla empiezan en la página siguiente
+  const pw = doc.internal.pageSize.getWidth(), ph = doc.internal.pageSize.getHeight();
+  if (y > ph - 55) { doc.addPage('a4', pw > ph ? 'landscape' : 'portrait'); y = 22; }
   doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.setTextColor(...AZUL);
   doc.text(txt, 14, y); doc.setTextColor(30);
   return y + 4;
@@ -1540,7 +1754,7 @@ function piePDF(doc) {
   }
 }
 
-const nombreArchivo = (camp, parte) => `bocadillo-solidario-${slug(camp.titulo)}-${slug(parte)}.pdf`;
+const nombreArchivo = (camp, parte) => `bocadillo-solidario-${slug(arreglarTitulo(camp.titulo))}-${slug(parte)}.pdf`;
 
 // Tabla de clases × productos de una etapa
 function seccionEtapa(doc, camp, etapa, y) {
@@ -1578,8 +1792,8 @@ function seccionCompra(doc, camp, cursos, titulo, y, conReparto = true) {
     doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.text('Sin recuentos todavía.', 14, y + 4);
     return y + 12;
   }
-  y = tablaPDF(doc, y + 1, ['Artículo', 'Cantidad', 'Paquetes a comprar', 'Comprado'],
-    lista.map(a => [a.nombre, `${numPDF(a.total)} ${a.unidad}`, a.packs != null ? `${numPDF(a.packs)} (de ${a.pack})` : '—', '']),
+  y = tablaPDF(doc, y + 1, ['Artículo', 'Dónde', 'Cantidad', 'A comprar', 'Comprado'],
+    lista.map(a => [a.nombre, { content: a.tienda || '—', styles: { halign: 'center' } }, `${numPDF(a.total)} ${a.unidad}`, a.packs != null ? `${numPDF(a.packs)} ${a.packNombre || 'paquetes'} (de ${a.pack})` : '—', '']),
     null, { fs: 10 });
   const rep = conReparto && repartoPorClase(camp, cursos);
   if (rep) {
@@ -1596,16 +1810,16 @@ function pdfTotal() {
   const { filas, tot, porEtapa, etapas, porAnio } = datosTotal();
   const ambito = P.anio === 'todos' ? 'Todos los cursos' : 'Curso ' + P.anio;
   let y = cabecera(doc, { titulo: 'Total acumulado', fecha: '' }, 'Total acumulado · ' + ambito,
-    `${filas.length} bocadillos solidarios · Total recaudado: ${eurPDF(tot.centimos)}`);
+    `${filas.length} bocadillos solidarios · Ingresos: ${eurPDF(tot.centimos)} · Gastos: ${eurPDF(tot.gastos)} · Ganancia: ${eurPDF(tot.centimos - tot.gastos)}`);
   y = subtituloPDF(doc, y, 'Bocadillo a bocadillo');
-  y = tablaPDF(doc, y + 1, ['Bocadillo solidario', 'Fecha', 'Clases', 'Bocadillos', 'Fruta', 'Bebidas', 'Dinero'],
-    filas.map(({ camp, s }) => [camp.titulo, new Date(camp.fecha + 'T12:00').toLocaleDateString('es-ES'), `${s.enviados} / ${s.total}`, numPDF(s.porCat.comida), numPDF(s.porCat.fruta), numPDF(s.porCat.bebida), eurPDF(s.centimos)]),
-    ['Total acumulado', '', '', numPDF(tot.comida), numPDF(tot.fruta), numPDF(tot.bebida), eurPDF(tot.centimos)], { fs: 9.5, primera: 50 });
+  y = tablaPDF(doc, y + 1, ['Bocadillo solidario', 'Fecha', 'Clases', 'Bocadillos', 'Fruta', 'Bebidas', 'Ingresos', 'Gastos', 'Ganancia'],
+    filas.map(({ camp, s }) => [camp.titulo, new Date(camp.fecha + 'T12:00').toLocaleDateString('es-ES'), `${s.enviados} / ${s.total}`, numPDF(s.porCat.comida), numPDF(s.porCat.fruta), numPDF(s.porCat.bebida), eurPDF(s.centimos), eurPDF(s.gastos), eurPDF(s.centimos - s.gastos)]),
+    ['Total acumulado', '', '', numPDF(tot.comida), numPDF(tot.fruta), numPDF(tot.bebida), eurPDF(tot.centimos), eurPDF(tot.gastos), eurPDF(tot.centimos - tot.gastos)], { fs: 8, primera: 38 });
   if (P.anio === 'todos') {
     y = subtituloPDF(doc, y, 'Por curso');
-    y = tablaPDF(doc, y + 1, ['Curso', 'Bocadillos solidarios', 'Bocadillos', 'Fruta', 'Bebidas', 'Dinero'],
-      Object.keys(porAnio).sort().map(a => { const x = porAnio[a]; return [a, String(x.n), numPDF(x.comida), numPDF(x.fruta), numPDF(x.bebida), eurPDF(x.centimos)]; }),
-      ['Total', String(filas.length), numPDF(tot.comida), numPDF(tot.fruta), numPDF(tot.bebida), eurPDF(tot.centimos)], { fs: 10 });
+    y = tablaPDF(doc, y + 1, ['Curso', 'Bocadillos solidarios', 'Bocadillos', 'Fruta', 'Bebidas', 'Ingresos', 'Gastos', 'Ganancia'],
+      Object.keys(porAnio).sort().map(a => { const x = porAnio[a]; return [a, String(x.n), numPDF(x.comida), numPDF(x.fruta), numPDF(x.bebida), eurPDF(x.centimos), eurPDF(x.gastos), eurPDF(x.centimos - x.gastos)]; }),
+      ['Total', String(filas.length), numPDF(tot.comida), numPDF(tot.fruta), numPDF(tot.bebida), eurPDF(tot.centimos), eurPDF(tot.gastos), eurPDF(tot.centimos - tot.gastos)], { fs: 8.5, primera: 30 });
   }
   y = subtituloPDF(doc, y, 'Por etapa');
   tablaPDF(doc, y + 1, ['Etapa', 'Bocadillos', 'Fruta', 'Bebidas', 'Dinero'],
@@ -1615,10 +1829,41 @@ function pdfTotal() {
   doc.save(`bocadillo-solidario-total-acumulado-${slug(ambito)}.pdf`);
 }
 
+function seccionBalance(doc, camp, y) {
+  const b = balance(camp);
+  y = subtituloPDF(doc, y, 'Balance económico');
+  y = tablaPDF(doc, y + 1, ['Concepto', 'Importe'],
+    [['Ingresos (recuentos de los tutores)', eurPDF(b.ingresos)], ['Gastos', eurPDF(b.gastos)]],
+    ['Ganancia real', eurPDF(b.ganancia)], { fs: 10, primera: 120 });
+  return y;
+}
+
 function generarPDF(tipo, camp, cursoId) {
   const cursos = cursosDe(camp);
   const etapas = etapasCon(cursos);
   let doc;
+
+  if (tipo === 'balance') {
+    if (!(doc = nuevoPDF())) return;
+    const b = balance(camp);
+    let y = cabecera(doc, camp, 'Balance económico', `Ingresos: ${eurPDF(b.ingresos)} · Gastos: ${eurPDF(b.gastos)} · Ganancia real: ${eurPDF(b.ganancia)}`);
+    y = seccionBalance(doc, camp, y);
+    y = subtituloPDF(doc, y, 'Gastos');
+    const gastos = gastosDe(camp);
+    if (gastos.length) {
+      y = tablaPDF(doc, y + 1, ['Concepto', 'Tienda', 'Importe'],
+        gastos.map(g => [g.concepto || '—', { content: g.tienda || '—', styles: { halign: 'center' } }, eurPDF(cent(g.importe))]),
+        ['Total gastos', '', eurPDF(b.gastos)], { fs: 10, primera: 80 });
+    } else {
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.text('Todavía no se han apuntado gastos.', 14, y + 4); y += 12;
+    }
+    y = subtituloPDF(doc, y, 'Ingresos por etapa');
+    const tot = sumar(camp, cursos);
+    tablaPDF(doc, y + 1, ['Etapa', 'Clases', 'Ingresos'],
+      etapas.map(e => { const s = sumar(camp, cursos.filter(c => c.etapa === e)); return [e, `${s.enviados} / ${s.total}`, eurPDF(s.centimos)]; }),
+      ['Total', `${tot.enviados} / ${tot.total}`, eurPDF(tot.centimos)], { fs: 10 });
+    piePDF(doc); doc.save(nombreArchivo(camp, 'balance-economico')); return;
+  }
 
   if (tipo === 'clase') {
     const c = cursos.find(x => x.id === cursoId);
@@ -1650,7 +1895,17 @@ function generarPDF(tipo, camp, cursoId) {
     y = tablaPDF(doc, y + 1, ['Etapa', 'Clases', 'Bocadillos', 'Fruta', 'Bebidas', 'Dinero'],
       etapas.map(e => { const s = sumar(camp, cursos.filter(c => c.etapa === e)); return [e, `${s.enviados} / ${s.total}`, numPDF(s.porCat.comida), numPDF(s.porCat.fruta), numPDF(s.porCat.bebida), eurPDF(s.centimos)]; }),
       ['Total colegio', `${tot.enviados} / ${tot.total}`, numPDF(tot.porCat.comida), numPDF(tot.porCat.fruta), numPDF(tot.porCat.bebida), eurPDF(tot.centimos)], { fs: 10 });
+    y = seccionBalance(doc, camp, y);
     const prods = camp.catalogo.productos.filter(p => tot.porProducto[p.id]);
+    {
+      const { etapas: et, grupos } = productosPorEtapa(camp);
+      y = subtituloPDF(doc, y, 'Productos por etapa');
+      const body = grupos.flatMap(g => [
+        [{ content: g.nombre, colSpan: et.length + 2, styles: { fillColor: AZUL_SUAVE, textColor: AZUL, fontStyle: 'bold', halign: 'left' } }],
+        ...g.filas.map(f => [f.corto, ...f.celdas.map(n => n === null ? '—' : numPDF(n)), { content: numPDF(f.total), styles: { fontStyle: 'bold' } }])
+      ]);
+      y = tablaPDF(doc, y + 1, ['Producto', ...et, 'Total'], body, null, { fs: 8.5, primera: 46 });
+    }
     y = subtituloPDF(doc, y, 'Total de cada producto');
     y = tablaPDF(doc, y + 1, ['Producto', 'Precio', 'Unidades', 'Importe'],
       prods.map(p => [p.nombre, eurPDF(cent(p.precio)), numPDF(tot.porProducto[p.id]), eurPDF(tot.porProducto[p.id] * cent(p.precio))]),
