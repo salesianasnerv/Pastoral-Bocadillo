@@ -373,7 +373,7 @@
         <div class="acciones">
           <button class="btn sec mini" data-acc="recargar" title="Volver a cargar los recuentos que hayan llegado">↻ Actualizar datos</button>
           <button class="btn peligro mini" data-acc="salir">Salir</button>
-          <span class="muted" style="font-size:.7rem" title="Versión de la web">v. 2026-10-11 21:30</span>
+          <span class="muted" style="font-size:.7rem" title="Versión de la web">v. 2026-10-11 21:45</span>
         </div>
       </div>
       <div class="card" id="p-cabecera">
@@ -1962,7 +1962,7 @@ function piePDF(doc) {
     const w = doc.internal.pageSize.getWidth(), h = doc.internal.pageSize.getHeight();
     doc.setDrawColor(...VERDE); doc.setLineWidth(0.5); doc.line(14, h - 13, w - 14, h - 13);
     doc.setFont(FUENTE, 'bold'); doc.setFontSize(8); doc.setTextColor(...AZUL);
-    doc.text('Pastoral | Escuelas Salesianas María Auxiliadora', 14, h - 8);
+    doc.text('Escuelas Salesianas María Auxiliadora · Nervión (Sevilla)', 14, h - 8);
     let x = w - 14;
     if (n > 1) {
       const pag = `Página ${i} de ${n}`;
