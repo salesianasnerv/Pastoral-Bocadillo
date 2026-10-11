@@ -3,13 +3,35 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bocadillo solidario | Pastoral Salesianas Nervión</title>
-<meta name="description" content="Recuento del Bocadillo solidario para tutores y responsables de Pastoral de Salesianas Nervión">
+<title>Bocadillo solidario · Salesianas Nervión</title>
+<meta name="description" content="Recuento de pedidos del Bocadillo solidario por clase y lista de la compra para tutores y responsables de Pastoral.">
 <meta name="theme-color" content="#009abb">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="icon" type="image/png" sizes="48x48" href="favicon-48.png">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Bocadillo">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+
+<!-- Vista previa al compartir (WhatsApp, Teams…) -->
+<meta property="og:type" content="website">
+<meta property="og:locale" content="es_ES">
+<meta property="og:site_name" content="Escuelas Salesianas María Auxiliadora">
+<meta property="og:title" content="Bocadillo solidario · Salesianas Nervión">
+<meta property="og:description" content="Recuento de pedidos por clase y lista de la compra para tutores y responsables de Pastoral.">
+<meta property="og:url" content="https://pastoral-bocadillo.vercel.app/">
+<meta property="og:image" content="https://pastoral-bocadillo.vercel.app/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Bocadillo solidario · Escuelas Salesianas María Auxiliadora">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://pastoral-bocadillo.vercel.app/og-image.png">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<link rel="icon" href="favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fira+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -54,11 +76,35 @@
     margin: 0; background: var(--bg); color: var(--text);
     font-family: 'Fira Sans', system-ui, sans-serif; line-height: 1.5;
   }
-  .wrap { max-width: 1100px; margin: 0 auto; padding: 2rem 1rem 6rem; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 1.6rem 1rem 2rem; }
+
+  /* Cabecera (logo | título) como en Control de baños y Biblioteca */
+  .top { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+    padding: 10px 16px; background: var(--card); border-bottom: 2px solid var(--azul); }
+  .marca { display: flex; align-items: center; gap: 14px; min-width: 0; }
+  .marca .logo-top { height: 40px; width: auto; display: block; flex: none; }
+  .marca h1 { margin: 0; font-size: 18px; font-weight: 700; color: var(--azul); padding-left: 14px; border-left: 1px solid var(--border); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .usuario { font-size: 13px; color: var(--text-muted); display: flex; gap: 10px; align-items: center; }
+  .usuario a { color: var(--azul); font-weight: 600; text-decoration: none; white-space: nowrap; }
+  .usuario a:hover { text-decoration: underline; }
+  @media (max-width: 600px) { .marca .logo-top { height: 32px; } .marca h1 { font-size: 16px; padding-left: 10px; } .marca { gap: 10px; } }
+
+  /* Antes de elegir papel */
+  .role-placeholder { text-align: center; color: var(--text-muted); padding: 2.2rem 1rem; border: 2px dashed var(--border); border-radius: 16px; margin: 0 auto 1.3rem; max-width: 560px; }
+  .role-placeholder p { margin: 0.5rem 0 0; font-size: 0.98rem; }
+  .instalar-portada { display: inline-flex; align-items: center; gap: 8px; margin-top: 1rem; }
+
+  /* Pie de página (igual que en el portal de utilidades) */
+  .pie { text-align: center; color: var(--text-muted); font-size: 13px; padding: 20px 16px; margin-top: 24px; border-top: 1px solid var(--border); }
+  body:has(#t-barra:not([hidden])) .pie { padding-bottom: 96px; }
+
+  dialog.dlg { border: 1px solid var(--border); border-radius: 16px; background: var(--card); color: var(--text); max-width: 420px; padding: 1.4rem; }
+  dialog.dlg::backdrop { background: rgba(15, 23, 32, 0.45); }
+  dialog.dlg h2 { color: var(--azul); }
+  .pasos { padding-left: 20px; } .pasos li { margin: 6px 0; }
   .narrow { max-width: 680px; margin: 0 auto; }
   [hidden] { display: none !important; }
 
-  header.page-head { text-align: center; margin-bottom: 1.5rem; }
   .logo { height: 54px; width: auto; display: block; margin: 0 auto 1rem; }
   .eyebrow {
     display: inline-block; background: var(--azul-suave); color: var(--azul);
@@ -237,18 +283,15 @@
   @media (max-width: 640px) { .ed-art { grid-template-columns: 1fr 1fr; } }
   .guardar-barra { position: sticky; bottom: 0; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 0.7rem; display: flex; gap: 0.5rem; justify-content: flex-end; flex-wrap: wrap; align-items: center; }
 
-  footer.version { text-align: center; padding: 0 1rem 1.5rem; font-size: 0.75rem; opacity: 0.7; }
   .cargando { text-align: center; color: var(--text-muted); padding: 2rem 0; }
 </style>
 </head>
 <body>
+<header class="top">
+  <div class="marca"><img class="logo-top" src="logo.svg" alt="Salesianas Nervión"><h1>Bocadillo solidario</h1></div>
+  <div class="usuario"><a href="#" class="instalar" hidden>Instalar app</a></div>
+</header>
 <div class="wrap">
-  <header class="page-head">
-    <img class="logo" src="logo.svg" alt="Salesianas Nervión">
-    <div class="eyebrow">Pastoral</div>
-    <h1>🥪 Bocadillo solidario</h1>
-    <p class="subtitle">Recuento de pedidos por clase y lista de la compra</p>
-  </header>
 
   <div id="demo" class="demo" hidden>
     <span><strong>Modo prueba:</strong> todavía no está conectada a la hoja de Google. Los datos se guardan solo en este navegador. La contraseña de Pastoral en modo prueba es <code>prueba</code>.</span>
@@ -256,12 +299,21 @@
   </div>
 
   <div class="roles">
-    <button class="role-tab active" data-rol="tutores">🧑‍🏫 Tutores</button>
+    <button class="role-tab" data-rol="tutores">🧑‍🏫 Tutores</button>
     <button class="role-tab" data-rol="pastoral">🗂️ Responsables de Pastoral</button>
   </div>
 
+  <div class="role-placeholder" id="role-placeholder">
+    <span style="font-size: 1.6rem;">👆</span>
+    <p>Elige arriba cuál es tu papel para ver los pasos que te corresponden.</p>
+    <button class="btn sec instalar instalar-portada" type="button" hidden>
+      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 4v11m0 0-4-4m4 4 4-4M5 20h14"/></svg>
+      Instalar la app en este dispositivo
+    </button>
+  </div>
+
   <!-- ===================== TUTORES ===================== -->
-  <section id="rol-tutores" class="narrow">
+  <section id="rol-tutores" class="narrow" hidden>
     <div id="t-cargando" class="cargando">Cargando…</div>
     <div id="t-error" class="aviso error" hidden></div>
     <div id="t-sin" class="card" hidden>
@@ -321,7 +373,7 @@
         <div class="acciones">
           <button class="btn sec mini" data-acc="recargar" title="Volver a cargar los recuentos que hayan llegado">↻ Actualizar datos</button>
           <button class="btn peligro mini" data-acc="salir">Salir</button>
-          <span class="muted" style="font-size:.7rem" title="Versión de la web">v. 2026-10-07 23:00</span>
+          <span class="muted" style="font-size:.7rem" title="Versión de la web">v. 2026-10-11 21:30</span>
         </div>
       </div>
       <div class="card" id="p-cabecera">
@@ -376,7 +428,17 @@
   </section>
 </div>
 
-<footer class="version muted small">Pastoral | Escuelas Salesianas María Auxiliadora</footer>
+<footer class="pie">Escuelas Salesianas María Auxiliadora · Nervión (Sevilla)</footer>
+
+<dialog class="dlg" id="dlg-instalar">
+  <h2>Instalar la app</h2>
+  <ol class="pasos">
+    <li>Pulsa el botón <b>Compartir</b> de Safari (el cuadrado con una flecha hacia arriba).</li>
+    <li>Elige <b>«Añadir a pantalla de inicio»</b>.</li>
+    <li>Pulsa <b>Añadir</b>. Aparecerá el icono del colegio en tu pantalla.</li>
+  </ol>
+  <div class="acciones" style="justify-content:flex-end"><button class="btn" type="button" id="dlg-instalar-ok">Entendido</button></div>
+</dialog>
 
 <script>
 /* =========================================================================
@@ -2161,6 +2223,7 @@ function generarPDF(tipo, camp, cursoId) {
    ========================================================================= */
 document.querySelectorAll('.role-tab').forEach(b => b.onclick = () => {
   document.querySelectorAll('.role-tab').forEach(x => x.classList.toggle('active', x === b));
+  $('role-placeholder').hidden = true;
   const rol = b.dataset.rol;
   $('rol-tutores').hidden = rol !== 'tutores';
   $('rol-pastoral').hidden = rol !== 'pastoral';
@@ -2174,7 +2237,26 @@ if (DEMO) {
   $('demo-reset').onclick = () => { try { localStorage.removeItem('bs-demo'); } catch {} location.reload(); };
 }
 iniciarTutores();
+// Con #tutores o #pastoral en el enlace se abre directamente ese papel
 if (location.hash === '#pastoral') document.querySelector('[data-rol="pastoral"]').click();
+else if (location.hash === '#tutores') document.querySelector('[data-rol="tutores"]').click();
+
+/* ---------- App instalable ---------- */
+let instalar = null;
+const esIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const enApp = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+function pintarInstalar() { document.querySelectorAll('.instalar').forEach(el => { el.hidden = !instalar; }); }
+async function instalarApp() {
+  if (instalar === 'ios') { $('dlg-instalar').showModal(); return; }
+  if (instalar) { instalar.prompt(); await instalar.userChoice.catch(() => {}); instalar = null; pintarInstalar(); }
+}
+$('dlg-instalar-ok').onclick = () => $('dlg-instalar').close();
+if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); instalar = e; pintarInstalar(); });
+window.addEventListener('appinstalled', () => { instalar = null; pintarInstalar(); });
+if (esIOS() && !enApp()) instalar = 'ios';
+document.addEventListener('click', e => { if (e.target.closest('.instalar')) { e.preventDefault(); instalarApp(); } });
+pintarInstalar();
 </script>
 </body>
 </html>
