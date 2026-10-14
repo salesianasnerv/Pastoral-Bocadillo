@@ -285,13 +285,93 @@
   .guardar-barra { position: sticky; bottom: 0; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 0.7rem; display: flex; gap: 0.5rem; justify-content: flex-end; flex-wrap: wrap; align-items: center; }
 
   .cargando { text-align: center; color: var(--text-muted); padding: 2rem 0; }
+
+  /* ─── Portada (como en el portal de utilidades, en azul: apartado «Pastoral»): cabecera solo con el logo,
+     franja con el curso y los botones, cartel, descripción y cajas desplegables ─── */
+  .top.solo-logo { justify-content: center; border-bottom: 0; padding: 12px 16px; }
+  .top.solo-logo .marca .logo-top { height: 64px; }
+  .franja { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 8px 16px; background: #009abb; color: #fff; }
+  .franja .quien { font-size: 13px; font-weight: 600; text-shadow: 0 1px 2px rgba(0,0,0,.25); }
+  .franja-acc { display: flex; gap: 8px; flex-wrap: wrap; margin-left: auto; }
+  .franja-btn { display: inline-flex; align-items: center; gap: 7px; padding: 6px 12px; border-radius: 999px; border: 1px solid rgba(255,255,255,.75);
+    background: rgba(255,255,255,.14); color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.2); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+  .franja-btn:hover { background: #fff; color: #007791; text-shadow: none; }
+  .franja-btn[hidden] { display: none; }
+  .franja-btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .presenta { padding: 22px max(1rem, calc((100% - 1100px) / 2 + 1rem)); border-bottom: 2px solid rgba(0, 154, 187, .45); }
+  .presenta-sup { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; margin-bottom: 12px; }
+  .cartel { display: inline-block; background: rgba(0, 154, 187, .12); color: #007791; font-weight: 700; font-size: .78rem;
+    letter-spacing: .06em; text-transform: uppercase; padding: .3rem .8rem; border-radius: 999px; }
+  .presenta-cab { display: flex; align-items: center; gap: 16px; }
+  .presenta-ico { flex: none; width: 56px; height: 56px; border-radius: 14px; display: grid; place-items: center; background: rgba(0, 154, 187, .12); color: var(--azul); }
+  .presenta-ico svg { width: 30px; height: 30px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .presenta h1 { margin: 0 0 4px; font-size: 1.6rem; line-height: 1.2; color: var(--azul); }
+  .presenta-cab p { margin: 0; color: var(--text-muted); max-width: 70ch; }
+  .presenta-info { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; margin-top: 18px; align-items: start; }
+  .info-bloque { background: var(--card); border: 1px solid var(--border); border-radius: 12px; }
+  .info-bloque summary { list-style: none; display: flex; align-items: center; gap: 10px; padding: 12px 16px; cursor: pointer; font-weight: 700; }
+  .info-bloque summary::-webkit-details-marker { display: none; }
+  .info-bloque summary > svg { width: 20px; height: 20px; flex: none; fill: none; stroke: var(--azul); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .info-bloque summary > span { flex: 1; min-width: 0; }
+  .info-bloque summary small { display: block; font-weight: 500; font-size: .8rem; color: var(--text-muted); }
+  .info-bloque summary::after { content: ""; flex: none; width: 8px; height: 8px; border-right: 2px solid var(--text-muted); border-bottom: 2px solid var(--text-muted);
+    transform: rotate(45deg); margin: -4px 4px 0; transition: transform .15s; }
+  .info-bloque[open] summary::after { transform: rotate(-135deg); margin-top: 4px; }
+  .info-bloque summary:hover { color: var(--azul); }
+  .info-bloque ul { margin: 0; padding: 0 16px 14px 34px; color: var(--text-muted); font-size: .9rem; }
+  .info-bloque li + li { margin-top: 3px; }
+  .info-bloque b { color: var(--text); font-weight: 600; }
+  .aviso-etq { display: inline-block; margin-left: 6px; vertical-align: 3px; line-height: 1.5; font-style: normal; font-size: .7rem; font-weight: 700;
+    color: #b94a0c; background: rgba(238, 113, 42, .14); padding: 1px 8px; border-radius: 999px; white-space: nowrap; }
+  :root[data-theme="dark"] .aviso-etq { color: #fb923c; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .aviso-etq { color: #fb923c; } }
+  @media print { .franja, .presenta { display: none !important; } }
+  @media (max-width: 560px) {
+    .top.solo-logo .marca .logo-top { height: 54px; }
+    .presenta-cab { align-items: flex-start; } .presenta h1 { font-size: 1.3rem; } .presenta-ico { width: 46px; height: 46px; }
+    .presenta-info { grid-template-columns: 1fr; }
+  }
 </style>
 </head>
 <body>
-<header class="top">
-  <div class="marca"><img class="logo-top" src="logo.svg" alt="Salesianas Nervión"><h1>Bocadillo solidario</h1></div>
-  <div class="usuario"><a href="#" class="instalar" hidden>Instalar app</a></div>
+<header class="top solo-logo">
+  <div class="marca"><img class="logo-top" src="logo.svg" alt="Salesianas Nervión"></div>
 </header>
+<div class="franja">
+  <span class="quien" id="franja-curso">Curso 2026-2027</span>
+  <div class="franja-acc">
+    <button type="button" class="franja-btn instalar" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>Instalar como app</button>
+    <button type="button" class="franja-btn" id="franja-admin"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>Administración</button>
+  </div>
+</div>
+<section class="presenta">
+  <div class="presenta-sup"><span class="cartel">Utilidades | Pastoral</span></div>
+  <div class="presenta-cab">
+    <span class="presenta-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg></span>
+    <div>
+      <h1>Bocadillo solidario</h1>
+      <p>Recuento del Bocadillo solidario para tutores y responsables de Pastoral.</p>
+    </div>
+  </div>
+  <div class="presenta-info">
+    <details class="info-bloque">
+      <summary><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5M16 4.5a3.5 3.5 0 0 1 0 7M18 14.8c1.9.7 3.1 2.4 3.5 5.2"/></svg><span>Tutores <small>Acceso: sin inicio de sesión</small></span></summary>
+      <ul>
+        <li><b>Recuento de la clase:</b> elige etapa y clase y escribe cuántos se han apuntado a cada producto.</li>
+        <li><b>Observaciones:</b> alergias o cambios de última hora.</li>
+        <li>Se puede volver a enviar para corregirlo mientras el bocadillo esté abierto.</li>
+      </ul>
+    </details>
+    <details class="info-bloque">
+      <summary><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><span>Responsables de Pastoral <em class="aviso-etq">Solo con contraseña</em> <small>Acceso: contraseña de Pastoral</small></span></summary>
+      <ul>
+        <li><b>Nuevo bocadillo:</b> crearlo con sus fechas y productos y abrirlo a los tutores.</li>
+        <li><b>Resumen, por clase, lista de la compra y balance económico</b>, con descarga en PDF.</li>
+        <li><b>Editar:</b> productos y precios, nombre y fechas, y clases.</li>
+      </ul>
+    </details>
+  </div>
+</section>
 <div class="wrap">
 
   <div id="demo" class="demo" hidden>
@@ -307,10 +387,6 @@
   <div class="role-placeholder" id="role-placeholder">
     <span style="font-size: 1.6rem;">👆</span>
     <p>Elige arriba cuál es tu papel para ver los pasos que te corresponden.</p>
-    <button class="btn sec instalar instalar-portada" type="button" hidden>
-      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 4v11m0 0-4-4m4 4 4-4M5 20h14"/></svg>
-      Instalar la app en este dispositivo
-    </button>
   </div>
 
   <!-- ===================== TUTORES ===================== -->
@@ -2246,10 +2322,12 @@ else if (location.hash === '#tutores') document.querySelector('[data-rol="tutore
 let instalar = null;
 const esIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 const enApp = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
-function pintarInstalar() { document.querySelectorAll('.instalar').forEach(el => { el.hidden = !instalar; }); }
+// El botón de la franja se ve siempre (salvo dentro de la app ya instalada); si el navegador no ofrece instalarla, explica cómo.
+function pintarInstalar() { document.querySelectorAll('.instalar').forEach(el => { el.hidden = el.matches('.franja .instalar') ? enApp() : !instalar; }); }
 async function instalarApp() {
   if (instalar === 'ios') { $('dlg-instalar').showModal(); return; }
-  if (instalar) { instalar.prompt(); await instalar.userChoice.catch(() => {}); instalar = null; pintarInstalar(); }
+  if (instalar) { instalar.prompt(); await instalar.userChoice.catch(() => {}); instalar = null; pintarInstalar(); return; }
+  alert('Para instalarla: abre el menú del navegador (⋮ o ⋯) y elige «Instalar aplicación» o «Añadir a pantalla de inicio».');
 }
 $('dlg-instalar-ok').onclick = () => $('dlg-instalar').close();
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
@@ -2258,6 +2336,13 @@ window.addEventListener('appinstalled', () => { instalar = null; pintarInstalar(
 if (esIOS() && !enApp()) instalar = 'ios';
 document.addEventListener('click', e => { if (e.target.closest('.instalar')) { e.preventDefault(); instalarApp(); } });
 pintarInstalar();
+
+/* ---------- Franja: curso escolar (cambia solo cada 1 de septiembre) y «Administración» ---------- */
+(() => {
+  const y = new Date().getFullYear() - (new Date().getMonth() < 8 ? 1 : 0);
+  $('franja-curso').textContent = 'Curso ' + y + '-' + (y + 1);
+  $('franja-admin').onclick = () => { document.querySelector('[data-rol="pastoral"]').click(); document.querySelector('.roles').scrollIntoView({ behavior: 'smooth' }); };
+})();
 </script>
 </body>
 </html>
