@@ -102,6 +102,17 @@
   dialog.dlg { border: 1px solid var(--border); border-radius: 16px; background: var(--card); color: var(--text); max-width: 420px; padding: 1.4rem; }
   dialog.dlg::backdrop { background: rgba(15, 23, 32, 0.45); }
   dialog.dlg h2 { color: var(--azul); }
+  /* Tutorial en vídeo (tutores) */
+  .tutorial-aviso { display: flex; align-items: center; gap: 0.9rem; flex-wrap: wrap; margin-bottom: 1rem; padding: 0.8rem 1rem; border-radius: 14px;
+    background: linear-gradient(120deg, rgba(0,154,187,.12), rgba(180,190,0,.12)); border: 1px solid rgba(0,154,187,.3); }
+  .tutorial-aviso .ico { flex: none; width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center; background: var(--naranja); color: #fff; box-shadow: 0 0 0 5px rgba(238,113,42,.18); }
+  .tutorial-aviso .ico svg { width: 18px; height: 18px; margin-left: 3px; fill: currentColor; }
+  .tutorial-aviso div { flex: 1 1 220px; font-size: 0.93rem; }
+  .tutorial-aviso div strong { display: block; color: var(--azul); }
+  dialog.dlg-video { max-width: 1040px; width: calc(100vw - 24px); padding: 0.8rem; }
+  dialog.dlg-video .cab { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin: 0 0.2rem 0.6rem; }
+  dialog.dlg-video h2 { margin: 0; font-size: 1.05rem; }
+  dialog.dlg-video iframe { display: block; width: 100%; height: 60vh; border: 0; border-radius: 12px; }
   .pasos { padding-left: 20px; } .pasos li { margin: 6px 0; }
   .narrow { max-width: 680px; margin: 0 auto; }
   [hidden] { display: none !important; }
@@ -399,6 +410,11 @@
 
   <!-- ===================== TUTORES ===================== -->
   <section id="rol-tutores" class="narrow" hidden>
+    <div class="tutorial-aviso">
+      <span class="ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4l14 8-14 8z"/></svg></span>
+      <div><strong>¿Es la primera vez?</strong>Mira en minuto y medio cómo enviar el recuento de tu clase.</div>
+      <button type="button" class="btn" id="ver-tutorial">▶ Ver tutorial</button>
+    </div>
     <div id="t-cargando" class="cargando">Cargando…</div>
     <div id="t-error" class="aviso error" hidden></div>
     <div id="t-sin" class="card" hidden>
@@ -514,6 +530,11 @@
 </div>
 
 <footer class="pie">Escuelas Salesianas María Auxiliadora · Nervión (Sevilla)</footer>
+
+<dialog class="dlg dlg-video" id="dlg-tutorial" aria-label="Tutorial para tutores">
+  <div class="cab"><h2>Tutorial · Cómo enviar el recuento de tu clase</h2><button class="btn sec mini" type="button" id="dlg-tutorial-cerrar">Cerrar ✕</button></div>
+  <iframe id="tutorial-marco" title="Tutorial en vídeo para tutores" allow="autoplay; fullscreen" allowfullscreen></iframe>
+</dialog>
 
 <dialog class="dlg" id="dlg-instalar">
   <h2>Instalar la app</h2>
@@ -2338,6 +2359,15 @@ async function instalarApp() {
   alert('Para instalarla: abre el menú del navegador (⋮ o ⋯) y elige «Instalar aplicación» o «Añadir a pantalla de inicio».');
 }
 $('dlg-instalar-ok').onclick = () => $('dlg-instalar').close();
+
+// Tutorial en vídeo para tutores (se carga solo al abrirlo y se descarga al cerrar para parar la música)
+$('ver-tutorial').onclick = () => { $('tutorial-marco').src = 'tutorial-tutores.html?embed'; $('dlg-tutorial').showModal(); };
+$('dlg-tutorial-cerrar').onclick = () => $('dlg-tutorial').close();
+$('dlg-tutorial').addEventListener('close', () => { $('tutorial-marco').src = 'about:blank'; });
+$('dlg-tutorial').addEventListener('click', e => { if (e.target === $('dlg-tutorial')) $('dlg-tutorial').close(); });
+window.addEventListener('message', e => {
+  if (e.source === $('tutorial-marco').contentWindow && e.data && e.data.tutorialAlto) $('tutorial-marco').style.height = Math.ceil(e.data.tutorialAlto) + 'px';
+});
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
 window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); instalar = e; pintarInstalar(); });
 window.addEventListener('appinstalled', () => { instalar = null; pintarInstalar(); });
