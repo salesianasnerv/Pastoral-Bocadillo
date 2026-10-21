@@ -317,7 +317,7 @@
                       <div class="w-muted" style="font-size:11.5px">Escribe el número total de cada producto para toda la clase.</div>
                       <div id="w-lista"></div>
                       <label class="w-label" style="margin:12px 0 0">Observaciones (opcional)
-                        <div class="w-area vacio" id="in-obs">Por ejemplo: alergias o cambios de última hora</div>
+                        <div class="w-area vacio" id="in-obs">Indica solo el número. No pongas ningún NOMBRE</div>
                       </label>
                     </div>
                   </div>
@@ -407,7 +407,7 @@ const PASOS = [
   { t: 15, fin: 27, titulo: 'Elige etapa y clase', texto: 'Primero la <b>etapa</b> y después <b>tu clase</b> en los desplegables.', tip: 'Verás el día exacto en que tu clase recibe el bocadillo.' },
   { t: 27, fin: 34, titulo: 'Escribe tu nombre', texto: 'Pon tu <b>nombre y apellidos</b> como tutor o tutora.', tip: 'La web lo recuerda para la próxima vez en ese dispositivo.' },
   { t: 34, fin: 54, titulo: '¿Cuántos se han apuntado?', texto: 'Escribe el <b>total de cada producto</b> para toda la clase, o usa los botones <b>+</b> y <b>−</b>.', tip: 'En la barra de abajo ves al momento el total de productos y el importe.' },
-  { t: 54, fin: 60, titulo: 'Observaciones', texto: 'Si hace falta, avisa de <b>alergias</b> o <b>cambios de última hora</b>.', tip: 'Es opcional: si no hay nada que avisar, déjalo en blanco.' },
+  { t: 54, fin: 60, titulo: 'Observaciones', texto: 'Indica solo el número. No pongas ningún NOMBRE.', tip: 'Es opcional: si no hay nada que avisar, déjalo en blanco.' },
   { t: 60, fin: 69, titulo: 'Envía el recuento', texto: 'Pulsa el botón naranja <b>«Enviar recuento»</b>.', tip: 'Un mensaje verde te confirma que ha llegado. ¡Ya está!' },
   { t: 69, fin: 78, titulo: '¿Hay que cambiar algo?', texto: 'Vuelve a entrar, cambia lo que necesites y pulsa <b>«Enviar corrección»</b>.', tip: 'El nuevo recuento sustituye al anterior mientras Pastoral mantenga el plazo abierto.' }
 ];
@@ -536,7 +536,7 @@ function render(t) {
   const obs = tecleado('2 alumnos con alergia al gluten', 56.2, 58.6, t);
   const focoObs = t >= 55.8 && t < 59.2;
   poner('in-obs', 'class', 'w-area' + (obs ? '' : ' vacio') + (focoObs ? ' foco' : ''));
-  poner('in-obs', 'html', (obs || (focoObs ? '' : 'Por ejemplo: alergias o cambios de última hora')) + (focoObs ? '<span class="caret"></span>' : ''));
+  poner('in-obs', 'html', (obs || (focoObs ? '' : 'Indica solo el número. No pongas ningún NOMBRE')) + (focoObs ? '<span class="caret"></span>' : ''));
   // Botón y avisos
   const enviando = (t >= T.envia && t < T.enviado - 0.6) || (t >= T.envia2 && t < T.corregido - 0.6);
   poner('w-btn', 'class', 'w-btn' + (enviando ? ' enviando' : ''));
