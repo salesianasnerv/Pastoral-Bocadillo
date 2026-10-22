@@ -494,7 +494,7 @@
         <div class="acciones">
           <button class="btn sec mini" data-acc="recargar" title="Volver a cargar los recuentos que hayan llegado">↻ Actualizar datos</button>
           <button class="btn peligro mini" data-acc="salir">Salir</button>
-          <span class="muted" style="font-size:.7rem" title="Versión de la web">v. 2026-10-22 18:30</span>
+          <span class="muted" style="font-size:.7rem" title="Versión de la web">v. 2026-10-22 19:00</span>
         </div>
       </div>
       <div class="card" id="p-cabecera">
@@ -2061,7 +2061,7 @@ function cargarFira() {
 
 function nuevoPDF(orient = 'portrait') {
   if (!window.jspdf) { alert('No se ha podido cargar el generador de PDF. Comprueba la conexión y recarga la página.'); return null; }
-  const doc = new window.jspdf.jsPDF({ orientation: orient, unit: 'mm', format: 'a4' });
+  const doc = new window.jspdf.jsPDF({ orientation: orient, unit: 'mm', format: 'a4', compress: true });
   if (FIRA) {
     for (const [estilo, datos] of Object.entries(FIRA)) {
       doc.addFileToVFS(`FiraSans-${estilo}.ttf`, datos);
