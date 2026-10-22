@@ -295,6 +295,14 @@
   @media (max-width: 640px) { .ed-art { grid-template-columns: 1fr 1fr; } }
   .guardar-barra { position: sticky; bottom: 0; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 0.7rem; display: flex; gap: 0.5rem; justify-content: flex-end; flex-wrap: wrap; align-items: center; }
 
+  .alergias { margin-top: 1.2rem; padding: .9rem 1rem; border-radius: 12px; background: rgba(238, 113, 42, .08); border: 1px solid rgba(238, 113, 42, .35); }
+  .alergias h3 { margin: 0 0 .2rem; color: var(--naranja-hover); }
+  .alergias-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 2fr; gap: .6rem; }
+  .alergias-grid label { margin: 0; }
+  @media (max-width: 560px) { .alergias-grid { grid-template-columns: 1fr 1fr 1fr; } .alergias-grid label:last-child { grid-column: 1 / -1; } }
+  .aviso-alergias { background: rgba(238, 113, 42, .1); border: 1px solid rgba(238, 113, 42, .4); border-radius: 12px; padding: .7rem 1rem; margin: .8rem 0; font-size: .93rem; }
+  .dia-semana { color: var(--azul); font-weight: 600; margin-left: .3rem; }
+  .dia-semana:not(:empty)::before { content: "· "; color: var(--text-muted); font-weight: 400; }
   .cargando { text-align: center; color: var(--text-muted); padding: 2rem 0; }
 
   /* ─── Portada (como en el portal de utilidades, en azul: apartado «Pastoral»): cabecera solo con el logo,
@@ -442,8 +450,18 @@
         <h2 style="margin-bottom:0.2rem">¿Cuántos se han apuntado?</h2>
         <p class="muted small" style="margin:0">Escribe el número total de cada producto para toda la clase.</p>
         <div id="t-productos"></div>
+        <div class="alergias">
+          <h3>⚠️ Alergias e intolerancias</h3>
+          <p class="muted small" style="margin:0 0 .6rem">Indica solo <strong>cuántos alumnos/as</strong> las tienen. <strong>No escribas nombres.</strong></p>
+          <div class="alergias-grid">
+            <label>Sin gluten <input type="number" inputmode="numeric" min="0" max="99" id="t-al-gluten" placeholder="0"></label>
+            <label>Sin lactosa <input type="number" inputmode="numeric" min="0" max="99" id="t-al-lactosa" placeholder="0"></label>
+            <label>Otra <input type="number" inputmode="numeric" min="0" max="99" id="t-al-otra" placeholder="0"></label>
+            <label>¿Cuál? <input type="text" id="t-al-cual" maxlength="60" placeholder="Por ejemplo: huevo, frutos secos"></label>
+          </div>
+        </div>
         <label style="margin:1rem 0 0">Observaciones (opcional)
-          <textarea id="t-obs" placeholder="Indica solo el número. No pongas ningún NOMBRE"></textarea>
+          <textarea id="t-obs" placeholder="Cualquier otra cosa que queráis indicar. No pongas nombres de alumnos/as."></textarea>
         </label>
       </div>
     </div>
@@ -476,7 +494,7 @@
         <div class="acciones">
           <button class="btn sec mini" data-acc="recargar" title="Volver a cargar los recuentos que hayan llegado">↻ Actualizar datos</button>
           <button class="btn peligro mini" data-acc="salir">Salir</button>
-          <span class="muted" style="font-size:.7rem" title="Versión de la web">v. 2026-10-11 22:15</span>
+          <span class="muted" style="font-size:.7rem" title="Versión de la web">v. 2026-10-22 18:30</span>
         </div>
       </div>
       <div class="card" id="p-cabecera">
@@ -490,10 +508,11 @@
           <div class="grid2">
             <label>Título <input id="n-titulo" placeholder="Por ejemplo: Noviembre 2026"></label>
             <span></span>
-            <label>📅 Infantil y Primaria (jueves) <input type="date" id="n-fecha"></label>
-            <label>📅 ESO, Bachillerato y CCFF (viernes) <input type="date" id="n-fecha2"></label>
+            <label>📅 Infantil y Primaria <span class="dia-semana" data-dia-de="n-fecha"></span><input type="date" id="n-fecha"></label>
+            <label>📅 ESO, Bachillerato y CCFF <span class="dia-semana" data-dia-de="n-fecha2"></span><input type="date" id="n-fecha2"></label>
           </div>
-          <p class="muted small" style="margin:-.3rem 0 .8rem">El Profesorado puede pedir los dos días. Si el bocadillo es un solo día, pon la misma fecha en los dos.</p>
+          <div class="acciones" style="margin:-.3rem 0 .6rem"><button class="btn sec mini" type="button" data-intercambiar="n">⇄ Intercambiar los días</button></div>
+          <p class="muted small" style="margin:0 0 .8rem">Cada grupo puede ir el jueves o el viernes: pon la fecha que le toque. El Profesorado tiene una lista para cada día. Si el bocadillo es un solo día, pon la misma fecha en los dos.</p>
           <label>Productos <select id="n-base"></select></label>
           <div class="acciones">
             <button class="btn" id="n-crear">Crear y abrir a los tutores</button>
@@ -685,8 +704,9 @@ function fechaLarga(f) {
   const t = new Date(y, m - 1, d).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
   return t.charAt(0).toUpperCase() + t.slice(1);
 }
-// Cada bocadillo tiene dos días: fecha (Infantil y Primaria, jueves) y fecha2 (ESO, Bachillerato y CCFF, viernes).
-// El Profesorado puede pedir los dos días.
+// Cada bocadillo tiene dos días: fecha (Infantil y Primaria) y fecha2 (ESO, Bachillerato y CCFF).
+// Normalmente Infantil y Primaria es el jueves y ESO el viernes, pero algunos meses se intercambian.
+// El Profesorado tiene una lista para cada día (la del jueves va con el primer día y la del viernes con el segundo).
 const ETAPAS_DIA1 = ['Infantil', 'Primaria'];
 const aFecha = f => { const [y, m, d] = String(f).slice(0, 10).split('-').map(Number); return new Date(y, m - 1, d); };
 const sumarDias = (f, n) => { const d = aFecha(f); d.setDate(d.getDate() + n); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
@@ -696,30 +716,53 @@ function fechaEtapa(camp, etapa) {
   return etapa === 'Profesorado' ? null : camp.fecha2;
 }
 // El día concreto de una clase (el Profesorado tiene una lista para cada día)
+// Las dos fechas ordenadas: [primer día, segundo día]
+const diasOrdenados = camp => [camp.fecha, camp.fecha2 || camp.fecha].sort();
 function fechaCurso(camp, curso) {
-  if (curso.dia === 1) return camp.fecha;
-  if (curso.dia === 2) return camp.fecha2 || camp.fecha;
+  if (curso.dia === 1) return diasOrdenados(camp)[0];
+  if (curso.dia === 2) return diasOrdenados(camp)[1];
   return fechaEtapa(camp, curso.etapa);
 }
 // «Jueves 5 y viernes 6 de noviembre de 2026»
 function diasTexto(camp) {
   if (!camp.fecha) return '';
   if (!tieneDosDias(camp)) return fechaLarga(camp.fecha);
-  const a = aFecha(camp.fecha), b = aFecha(camp.fecha2);
+  const [fa, fb] = diasOrdenados(camp);
+  const a = aFecha(fa), b = aFecha(fb);
   const dia = d => d.toLocaleDateString('es-ES', { weekday: 'long' });
   if (a.getMonth() === b.getMonth() && a.getFullYear() === b.getFullYear()) {
     const t = `${dia(a)} ${a.getDate()} y ${dia(b)} ${b.getDate()} de ${a.toLocaleDateString('es-ES', { month: 'long' })} de ${a.getFullYear()}`;
     return t.charAt(0).toUpperCase() + t.slice(1);
   }
-  return fechaLarga(camp.fecha) + ' y ' + fechaLarga(camp.fecha2).toLowerCase();
+  return fechaLarga(fa) + ' y ' + fechaLarga(fb).toLowerCase();
 }
 // Texto largo con qué etapa va cada día
 function diasPorEtapa(camp) {
   if (!tieneDosDias(camp)) return fechaLarga(camp.fecha);
-  return `Infantil y Primaria: ${fechaLarga(camp.fecha).toLowerCase()} · ESO, Bachillerato y CCFF: ${fechaLarga(camp.fecha2).toLowerCase()} · Profesorado: una lista cada día`;
+  const primaria = `Infantil y Primaria: ${fechaLarga(camp.fecha).toLowerCase()}`;
+  const eso = `ESO, Bachillerato y CCFF: ${fechaLarga(camp.fecha2).toLowerCase()}`;
+  return `${camp.fecha <= camp.fecha2 ? primaria + ' · ' + eso : eso + ' · ' + primaria} · Profesorado: una lista cada día`;
 }
 const fechaCortaNum = f => aFecha(f).toLocaleDateString('es-ES');
-const diasCortos = camp => tieneDosDias(camp) ? `${fechaCortaNum(camp.fecha)} y ${fechaCortaNum(camp.fecha2)}` : fechaCortaNum(camp.fecha);
+const diasCortos = camp => tieneDosDias(camp) ? diasOrdenados(camp).map(fechaCortaNum).join(' y ') : fechaCortaNum(camp.fecha);
+// «jueves» / «viernes» junto a cada fecha del formulario
+const nombreDia = f => f ? aFecha(f).toLocaleDateString('es-ES', { weekday: 'long' }) : '';
+
+// Alergias e intolerancias de una clase: solo números (nunca nombres)
+function textoAlergias(a) {
+  if (!a) return '';
+  const p = [];
+  if (a.gluten) p.push(`${a.gluten} sin gluten`);
+  if (a.lactosa) p.push(`${a.lactosa} sin lactosa`);
+  if (a.otra) p.push(`${a.otra} ${a.cual ? 'con alergia o intolerancia a ' + a.cual : 'con otra alergia o intolerancia'}`);
+  return p.join(' · ');
+}
+// Suma las alergias de varias clases (para la etapa y el colegio)
+function sumarAlergias(recs) {
+  const t = { gluten: 0, lactosa: 0, otra: 0, cuales: new Set() };
+  recs.forEach(r => { const a = r && r.alergias; if (!a) return; t.gluten += a.gluten || 0; t.lactosa += a.lactosa || 0; t.otra += a.otra || 0; if (a.otra && a.cual) t.cuales.add(a.cual.toLowerCase()); });
+  return { gluten: t.gluten, lactosa: t.lactosa, otra: t.otra, cual: [...t.cuales].join(', ') };
+}
 
 function fechaHora(iso) {
   if (!iso) return '';
@@ -817,7 +860,7 @@ function demoApi(action, d) {
       const ahora = new Date().toISOString();
       let r = db.recuentos.find(x => x.campana === camp.id && x.cursoId === curso.id);
       if (!r) { r = { campana: camp.id, cursoId: curso.id, enviado: ahora }; db.recuentos.push(r); }
-      Object.assign(r, { curso: curso.nombre, etapa: curso.etapa, tutor: d.tutor.trim(), cantidades, observaciones: d.observaciones || '', actualizado: ahora });
+      Object.assign(r, { curso: curso.nombre, etapa: curso.etapa, tutor: d.tutor.trim(), cantidades, alergias: d.alergias || {}, observaciones: d.observaciones || '', actualizado: ahora });
       guardar();
       return { recuento: r };
     }
@@ -919,6 +962,15 @@ function rellenarCursos(sel) {
   if (sel) $('t-curso').value = sel;
 }
 
+function ponerAlergias(a) {
+  a = a || {};
+  $('t-al-gluten').value = a.gluten || ''; $('t-al-lactosa').value = a.lactosa || ''; $('t-al-otra').value = a.otra || ''; $('t-al-cual').value = a.cual || '';
+}
+function leerAlergias() {
+  const n = id => Math.max(0, Math.min(99, parseInt($(id).value) || 0));
+  return { gluten: n('t-al-gluten'), lactosa: n('t-al-lactosa'), otra: n('t-al-otra'), cual: $('t-al-cual').value.trim().slice(0, 60) };
+}
+
 async function cargarCurso() {
   $('t-ok').hidden = true;
   const id = $('t-curso').value;
@@ -942,9 +994,11 @@ async function cargarCurso() {
   if (T.previo) {
     T.cant = { ...T.previo.cantidades };
     $('t-obs').value = T.previo.observaciones || '';
+    ponerAlergias(T.previo.alergias);
     if (!$('t-tutor').value) $('t-tutor').value = T.previo.tutor;
   } else {
     $('t-obs').value = '';
+    ponerAlergias(null);
   }
   pintarPrevio();
   pintarProductos();
@@ -1016,10 +1070,12 @@ $('t-enviar').onclick = async () => {
   if (!tutor) { $('t-tutor').focus(); alert('Escribe el nombre del tutor o tutora.'); return; }
   const total = Object.values(T.cant).reduce((a, b) => a + (b || 0), 0);
   if (!total && !confirm('No has puesto ningún producto. ¿Enviar el recuento vacío (nadie se ha apuntado)?')) return;
+  const alergias = leerAlergias();
+  if (alergias.otra && !alergias.cual) { $('t-al-cual').focus(); alert('Indica en «¿Cuál?» de qué alergia o intolerancia se trata (sin nombres de alumnos/as).'); return; }
   const btn = $('t-enviar');
   btn.disabled = true; btn.textContent = 'Enviando…';
   try {
-    const r = await api('enviar', { campana: T.camp.id, curso: T.curso.id, tutor, cantidades: T.cant, observaciones: $('t-obs').value.trim() });
+    const r = await api('enviar', { campana: T.camp.id, curso: T.curso.id, tutor, cantidades: T.cant, alergias, observaciones: $('t-obs').value.trim() });
     store.set('bs-tutor', { ...store.get('bs-tutor', {}), tutor });
     const corr = !!T.previo;
     T.previo = r.recuento;
@@ -1390,6 +1446,17 @@ function vistaResumen(camp) {
         ['Total colegio', `${tot.enviados} / ${tot.total}`, num(tot.porCat.comida), num(tot.porCat.fruta), num(tot.porCat.bebida), eur(tot.centimos)],
         ['', 'n', 'n', 'n', 'n', 'n'])}
     </div>
+    ${(() => {
+      const filasAl = etapas.map(e => ({ e, a: sumarAlergias(cursos.filter(c => c.etapa === e).map(c => recsDe(camp.id).find(r => r.cursoId === c.id))) }))
+        .filter(x => x.a.gluten || x.a.lactosa || x.a.otra);
+      if (!filasAl.length) return '';
+      const t = sumarAlergias(recsDe(camp.id));
+      return `<div class="card"><h2>⚠️ Alergias e intolerancias</h2>
+        ${tabla(['Etapa', 'Sin gluten', 'Sin lactosa', 'Otras', '¿Cuáles?'],
+          filasAl.map(({ e, a }) => `<tr><td><strong>${esc(e)}</strong></td>${celdaN(a.gluten)}${celdaN(a.lactosa)}${celdaN(a.otra)}<td>${esc(a.cual)}</td></tr>`),
+          ['Total colegio', num(t.gluten), num(t.lactosa), num(t.otra), esc(t.cual)], ['', 'n', 'n', 'n', ''])}
+        <p class="muted small" style="margin:.4rem 0 0">Número de alumnos/as que han indicado los tutores. El detalle de cada clase está en «Por clase» y en las listas grandes.</p></div>`;
+    })()}
     <div class="card">
       <h2>Productos por etapa</h2>
       <p class="muted small" style="margin-top:0">Unidades pedidas de cada producto, de más a menos pedido dentro de cada grupo. «—» significa que ese producto no se ofrece en esa etapa.</p>
@@ -1528,7 +1595,8 @@ function vistaClases(camp) {
   const filas = cs.map(c => {
     const r = recs.get(c.id);
     if (!r) return `<tr class="pend"><td><strong>${esc(c.nombre)}</strong></td><td colspan="${prods.length + 2}">Pendiente de enviar</td><td></td></tr>`;
-    const obs = r.observaciones ? ` <span title="${esc(r.observaciones)}">💬</span>` : '';
+    const al = textoAlergias(r.alergias);
+    const obs = (al ? ` <span title="Alergias: ${esc(al)}">⚠️</span>` : '') + (r.observaciones ? ` <span title="${esc(r.observaciones)}">💬</span>` : '');
     return `<tr><td><strong>${esc(c.nombre)}</strong>${obs}<div class="muted small">${esc(r.tutor)}</div></td>
       ${prods.map(p => celdaN(r.cantidades[p.id] || 0)).join('')}
       <td class="n"><strong>${eur(importeRecuento(camp, r))}</strong></td>
@@ -1537,6 +1605,7 @@ function vistaClases(camp) {
           <button class="btn peligro mini" data-borrar-rec="${esc(c.id)}" title="Borrar este recuento">✕</button></div></td></tr>`;
   });
   const obsList = cs.map(c => recs.get(c.id)).filter(r => r && r.observaciones);
+  const alList = cs.map(c => recs.get(c.id)).filter(r => r && textoAlergias(r.alergias));
   return `
     <div class="chips">${etapas.map(e => `<button class="chip ${e === P.etapa ? 'active' : ''}" data-etapa="${esc(e)}">${esc(e)}</button>`).join('')}</div>
     <div class="card">
@@ -1550,6 +1619,7 @@ function vistaClases(camp) {
       ${tabla(['Clase', ...prods.map(p => esc(p.nombre)), 'Importe', ''], filas,
         ['Total', ...prods.map(p => num(s.porProducto[p.id] || 0)), eur(s.centimos), ''],
         ['', ...prods.map(() => 'n'), 'n', ''], { primera: 116, derecha: [78, 112], thead: theadDoble(prods, ['Clase'], ['Importe', '']) })}
+      ${alList.length ? `<h3>⚠️ Alergias e intolerancias</h3>${alList.map(r => `<p class="small" style="margin:.3rem 0"><strong>${esc(r.curso)}:</strong> ${esc(textoAlergias(r.alergias))}</p>`).join('')}` : ''}
       ${obsList.length ? `<h3>Observaciones</h3>${obsList.map(r => `<p class="small" style="margin:.3rem 0"><strong>${esc(r.curso)}:</strong> ${esc(r.observaciones)}</p>`).join('')}` : ''}
     </div>`;
 }
@@ -1580,6 +1650,7 @@ function vistaCompra(camp) {
           <button class="btn" data-pdf="compra-todo">📄 PDF completo (colegio + etapas)</button>
         </div>
       </div>
+      ${(() => { const al = textoAlergias(sumarAlergias(cs.map(c => recsDe(camp.id).find(r => r.cursoId === c.id)))); return al ? `<div class="aviso-alergias">⚠️ <strong>Alergias e intolerancias:</strong> ${esc(al)}. Tenedlo en cuenta al comprar (por ejemplo, pan sin gluten).</div>` : ''; })()}
       ${lista.length ? tablaCompra(lista)
       : '<p class="muted" style="margin:0">Todavía no hay recuentos en este ámbito.</p>'}
       <p class="muted small" style="margin:.4rem 0 0">Las cantidades con decimales (por ejemplo, las tortillas) se redondean hacia arriba.</p>
@@ -1689,10 +1760,11 @@ function vistaFechas(camp) {
       <h2>Nombre y fechas de «${esc(camp.titulo)}»</h2>
       <label>Título <input id="f-titulo" value="${esc(camp.titulo)}"></label>
       <div class="grid2">
-        <label>📅 Infantil y Primaria (jueves) <input type="date" id="f-fecha" value="${esc(camp.fecha)}"></label>
-        <label>📅 ESO, Bachillerato y CCFF (viernes) <input type="date" id="f-fecha2" value="${esc(camp.fecha2 || camp.fecha)}"></label>
+        <label>📅 Infantil y Primaria <span class="dia-semana" data-dia-de="f-fecha">${esc(nombreDia(camp.fecha))}</span><input type="date" id="f-fecha" value="${esc(camp.fecha)}"></label>
+        <label>📅 ESO, Bachillerato y CCFF <span class="dia-semana" data-dia-de="f-fecha2">${esc(nombreDia(camp.fecha2 || camp.fecha))}</span><input type="date" id="f-fecha2" value="${esc(camp.fecha2 || camp.fecha)}"></label>
       </div>
-      <p class="muted small" style="margin-top:0">El Profesorado puede pedir los dos días. Si el bocadillo es un solo día, pon la misma fecha en los dos.</p>
+      <div class="acciones" style="margin:-.3rem 0 .6rem"><button class="btn sec mini" type="button" data-intercambiar="f">⇄ Intercambiar los días</button></div>
+      <p class="muted small" style="margin-top:0">Cada grupo puede ir el jueves o el viernes: pon la fecha que le toque. El Profesorado tiene una lista para cada día. Si el bocadillo es un solo día, pon la misma fecha en los dos.</p>
       <div class="acciones" style="justify-content:flex-end"><button class="btn" data-guardar-fechas>💾 Guardar</button></div>
     </div>`;
 }
@@ -1826,15 +1898,28 @@ function abrirNueva() {
   $('n-titulo').value = d.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }).replace(/^./, s => s.toUpperCase()).replace(' de ', ' ');
   $('n-fecha').value = '';
   $('n-fecha2').value = '';
+  pintarDiasSemana();
   $('n-titulo').focus();
 }
 $('n-cancelar').onclick = () => { $('p-nueva').hidden = true; };
-// Al poner el jueves, el viernes se rellena solo con el día siguiente
-$('n-fecha').onchange = e => { if (e.target.value) $('n-fecha2').value = sumarDias(e.target.value, 1); };
+// Al poner la primera fecha, si la segunda está vacía se rellena con el día siguiente
+$('n-fecha').onchange = e => { if (e.target.value && !$('n-fecha2').value) $('n-fecha2').value = sumarDias(e.target.value, 1); pintarDiasSemana(); };
+$('n-fecha2').onchange = pintarDiasSemana;
+// Muestra «jueves»/«viernes» junto a cada fecha y permite intercambiar los dos días
+function pintarDiasSemana() {
+  document.querySelectorAll('[data-dia-de]').forEach(s => { const i = $(s.dataset.diaDe); s.textContent = i && i.value ? nombreDia(i.value) : ''; });
+}
+document.addEventListener('change', e => { if (e.target.id === 'f-fecha' || e.target.id === 'f-fecha2') pintarDiasSemana(); });
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-intercambiar]');
+  if (!b) return;
+  const a = $(b.dataset.intercambiar + '-fecha'), c = $(b.dataset.intercambiar + '-fecha2');
+  [a.value, c.value] = [c.value, a.value];
+  pintarDiasSemana();
+});
 $('n-crear').onclick = async () => {
   const titulo = $('n-titulo').value.trim(), fecha = $('n-fecha').value, fecha2 = $('n-fecha2').value || fecha;
   if (!titulo || !fecha) { alert('Pon un título y las fechas del bocadillo.'); return; }
-  if (fecha2 < fecha) { alert('La fecha de ESO, Bachillerato y CCFF no puede ser anterior a la de Infantil y Primaria.'); return; }
   if (cursoEscolar(fecha) !== P.datos.cursoActual &&
     !confirm(`La fecha no es del curso ${P.datos.cursoActual}. El bocadillo se guardará igualmente en el curso ${P.datos.cursoActual}. ¿Seguir?`)) return;
   const base = [P.datos.ultima, ...P.datos.campanas].find(c => c && c.id === $('n-base').value);
@@ -1901,7 +1986,6 @@ $('p-contenido').addEventListener('click', async e => {
   if (d.guardarFechas !== undefined) {
     const titulo = $('f-titulo').value.trim(), fecha = $('f-fecha').value, fecha2 = $('f-fecha2').value || fecha;
     if (!titulo || !fecha) { alert('Pon un título y las fechas.'); return; }
-    if (fecha2 < fecha) { alert('La fecha de ESO, Bachillerato y CCFF no puede ser anterior a la de Infantil y Primaria.'); return; }
     await conBoton('[data-guardar-fechas]', async () => {
       await api('guardarCampana', { clave: P.clave, campana: { ...camp, titulo, fecha, fecha2 } });
       Object.assign(camp, { titulo, fecha, fecha2 });
@@ -2106,16 +2190,23 @@ function seccionEtapa(doc, camp, etapa, y) {
   y = tablaPDF(doc, y, ['Clase', ...prods.map(p => p.nombre), 'Importe'], body,
     ['Total ' + etapa, ...prods.map(p => numPDF(s.porProducto[p.id] || 0)), eurPDF(s.centimos)],
     { fs, primera: 34, head });
-  const obs = cs.map(c => recs.get(c.id)).filter(r => r && r.observaciones);
+  const obs = cs.map(c => recs.get(c.id)).filter(r => r && (r.observaciones || textoAlergias(r.alergias)));
   if (obs.length) {
-    y = subtituloPDF(doc, y, 'Observaciones');
-    y = tablaPDF(doc, y + 1, ['Clase', 'Observación'], obs.map(r => [r.curso, r.observaciones]), null, { derecha: false, cols: { 0: { cellWidth: 34 } } });
+    y = subtituloPDF(doc, y, 'Alergias, intolerancias y observaciones');
+    y = tablaPDF(doc, y + 1, ['Clase', 'Alergias e intolerancias', 'Observaciones'], obs.map(r => [r.curso, textoAlergias(r.alergias) || '—', r.observaciones || '—']), null,
+      { derecha: false, cols: { 0: { cellWidth: 34 }, 1: { cellWidth: 80 } } });
   }
   return { y, s, cs };
 }
 
 function seccionCompra(doc, camp, cursos, titulo, y, conReparto = true) {
   y = subtituloPDF(doc, y, titulo);
+  const al = textoAlergias(sumarAlergias(cursos.map(c => recsDe(camp.id).find(r => r.cursoId === c.id))));
+  if (al) {
+    doc.setFont(FUENTE, 'bold'); doc.setFontSize(9.5); doc.setTextColor(211, 90, 21);
+    const t = doc.splitTextToSize('Alergias e intolerancias: ' + al + '. Tenedlo en cuenta al comprar.', 180);
+    doc.text(t, 14, y + 2); doc.setTextColor(30); y += 3 + t.length * 4.5;
+  }
   const lista = listaCompra(camp, cursos);
   if (!lista.length) {
     doc.setFont(FUENTE, 'normal'); doc.setFontSize(10); doc.text('Sin recuentos todavía.', 14, y + 4);
@@ -2192,7 +2283,9 @@ function paginaLista(doc, camp, curso, r) {
   // Letra más grande con la que todo cabe en una hoja (altura de fila ≈ letra de la cantidad + márgenes, en mm)
   const padDe = f => (f >= 18 ? 3 : 1.8);
   const altoFila = f => (f + 6) * 0.3528 * 1.15 + 2 * padDe(f);
-  const altoObs = r.observaciones ? 12 + doc.splitTextToSize(r.observaciones, w - 40).length * 6.5 : 0;
+  const al = textoAlergias(r.alergias);
+  doc.setFontSize(14);
+  const altoObs = (r.observaciones ? 12 + doc.splitTextToSize(r.observaciones, w - 40).length * 6.5 : 0) + (al ? 16 + doc.splitTextToSize(al, w - 50).length * 6.5 : 0);
   const disponible = h - 18 - 60 - 12 - altoObs; // hoja - pie - cabecera - fila de títulos
   const fs = [22, 20, 18, 16, 14, 12, 11, 10].find(f => (body.length + 1) * altoFila(f) <= disponible) || 10;
   const pad = padDe(fs);
@@ -2207,6 +2300,19 @@ function paginaLista(doc, camp, curso, r) {
     didParseCell: x => { if (x.section === 'foot' && x.column.index === 1) { x.cell.styles.halign = 'center'; x.cell.styles.fontSize = fs + 2; } }
   });
   let y = doc.lastAutoTable.finalY + 8;
+  if (al) {
+    // Recuadro naranja para que se vea bien al preparar los bocadillos
+    const lineas = doc.splitTextToSize(al, w - 50);
+    const alto = 12 + lineas.length * 6.5;
+    if (y + alto > h - 22) { doc.addPage(); y = 22; }
+    doc.setFillColor(253, 236, 225); doc.setDrawColor(238, 113, 42); doc.setLineWidth(0.6);
+    doc.roundedRect(20, y - 2, w - 40, alto, 3, 3, 'FD');
+    doc.setFont(FUENTE, 'bold'); doc.setFontSize(14); doc.setTextColor(211, 90, 21);
+    doc.text('Alergias e intolerancias', 25, y + 5);
+    doc.setFont(FUENTE, 'normal'); doc.setTextColor(30);
+    doc.text(lineas, 25, y + 11.5);
+    y += alto + 6;
+  }
   if (r.observaciones) {
     doc.setFont(FUENTE, 'bold'); doc.setFontSize(14); doc.setTextColor(...AZUL);
     if (y > h - 35) { doc.addPage(); y = 22; }
@@ -2264,6 +2370,8 @@ function generarPDF(tipo, camp, cursoId) {
     y = tablaPDF(doc, y, ['Producto', 'Precio', 'Unidades', 'Importe'],
       prods.map(p => [p.nombre, eurPDF(cent(p.precio)), numPDF(r.cantidades[p.id]), eurPDF(r.cantidades[p.id] * cent(p.precio))]),
       ['Total', '', numPDF(uds), eurPDF(importeRecuento(camp, r))], { fs: 10 });
+    const al = textoAlergias(r.alergias);
+    if (al) { y = subtituloPDF(doc, y, 'Alergias e intolerancias'); doc.setFont(FUENTE, 'normal'); doc.setFontSize(10); const t = doc.splitTextToSize(al, 180); doc.text(t, 14, y + 3); y += 8 + t.length * 5; }
     if (r.observaciones) { y = subtituloPDF(doc, y, 'Observaciones'); doc.setFont(FUENTE, 'normal'); doc.setFontSize(10); doc.text(doc.splitTextToSize(r.observaciones, 180), 14, y + 3); }
     piePDF(doc); doc.save(nombreArchivo(camp, c.nombre)); return;
   }
