@@ -106,6 +106,12 @@
   .w-tab.active { background: #009abb; border-color: #009abb; color: #fff; box-shadow: 0 4px 12px rgba(0,154,187,.3); }
   .w-place { position: absolute; left: 28px; right: 28px; top: 62px; text-align: center; color: #64748B; padding: 26px 10px; border: 2px dashed #E2E8F0; border-radius: 14px; transition: opacity .3s; background: #F8FAFC; z-index: 2; }
   .w-place.fuera { opacity: 0; }
+  .w-login { position: absolute; left: 28px; right: 28px; top: 62px; text-align: center; background: #fff; border: 1px solid #E2E8F0; border-radius: 14px; padding: 18px 16px; box-shadow: 0 10px 25px -5px rgba(0,154,187,.08); z-index: 2; transition: opacity .3s; }
+  .w-login.fuera { opacity: 0; }
+  .w-login h4 { margin: 0 0 4px; font-size: 15px; color: #1E293B; }
+  .w-login p { margin: 0 0 12px; font-size: 11.5px; color: #64748B; }
+  .w-ms { display: inline-flex; align-items: center; gap: 8px; background: #009abb; color: #fff; font-weight: 700; font-size: 13px; padding: 9px 18px; border-radius: 9px; }
+  .w-ms i { display: grid; grid-template-columns: 6px 6px; gap: 1px; } .w-ms i b { width: 6px; height: 6px; display: block; }
   .w-form { transition: opacity .45s, transform .45s; }
   .w-form.oculto { opacity: 0; transform: translateY(10px); }
   .w-card { background: #fff; border: 1px solid #E2E8F0; border-radius: 14px; box-shadow: 0 10px 25px -5px rgba(0,154,187,.08); padding: 14px 16px; margin-bottom: 10px; }
@@ -292,6 +298,8 @@
                     <div class="w-tab">🗂️ Responsables de Pastoral</div>
                   </div>
                   <div class="w-place" id="w-place">👆<br>Elige arriba cuál es tu papel para ver los pasos que te corresponden.</div>
+                  <div class="w-login fuera" id="w-login"><h4>Entra con tu cuenta del colegio</h4><p>El recuento lo envía el tutor o tutora de cada clase.</p>
+                    <span class="w-ms" id="w-ms"><i><b style="background:#f25022"></b><b style="background:#7fba00"></b><b style="background:#00a4ef"></b><b style="background:#ffb900"></b></i>Entrar con Microsoft 365</span></div>
                   <div class="w-form oculto" id="w-form">
                     <div class="w-card" id="w-card1">
                       <div class="w-camp">Noviembre 2026</div>
@@ -353,7 +361,7 @@
             <div class="metas" id="intro-metas">
               <span class="meta"><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9 2h6"/></svg>Menos de 2 minutos</span>
               <span class="meta"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg>7 pasos</span>
-              <span class="meta"><svg viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 7.5-2"/></svg>Sin contraseña</span>
+              <span class="meta"><svg viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 7.5-2"/></svg>Con tu cuenta del colegio</span>
             </div>
           </div>
           <div class="bocata" id="intro-bocata"><div class="aro"></div><div class="aro a2"></div>
@@ -367,8 +375,8 @@
             <h2 id="c-tit">¡Así de fácil!</h2>
             <p id="c-sub">El recuento de tu clase en cuatro pasos</p>
             <div class="resumen" id="c-res">
-              <div class="rcard"><div class="rn">1</div><b>Pulsa «Tutores»</b><span>Sin contraseña, desde el ordenador o el móvil.</span></div>
-              <div class="rcard"><div class="rn">2</div><b>Etapa, clase y nombre</b><span>La web te dice qué día es vuestro bocadillo.</span></div>
+              <div class="rcard"><div class="rn">1</div><b>Entra con Microsoft 365</b><span>Con tu cuenta del colegio, desde el ordenador o el móvil.</span></div>
+              <div class="rcard"><div class="rn">2</div><b>Tu clase ya aparece</b><span>Con tu nombre y el día de vuestro bocadillo.</span></div>
               <div class="rcard"><div class="rn">3</div><b>¿Cuántos se apuntan?</b><span>El total de cada producto para toda la clase.</span></div>
               <div class="rcard"><div class="rn">4</div><b>Enviar recuento</b><span>Espera al mensaje verde de confirmación.</span></div>
             </div>
@@ -403,9 +411,9 @@ const D = 86;
 
 /* ---------- Guion ---------- */
 const PASOS = [
-  { t: 6,  fin: 15, titulo: 'Entra en la web', texto: 'Abre <b>pastoral-bocadillo.vercel.app</b> en el ordenador o en el móvil y pulsa <b>«Tutores»</b>.', tip: 'No necesitas contraseña. También la encuentras en Utilidades → Pastoral.' },
-  { t: 15, fin: 27, titulo: 'Elige etapa y clase', texto: 'Primero la <b>etapa</b> y después <b>tu clase</b> en los desplegables.', tip: 'Verás el día exacto en que tu clase recibe el bocadillo.' },
-  { t: 27, fin: 34, titulo: 'Escribe tu nombre', texto: 'Pon tu <b>nombre y apellidos</b> como tutor o tutora.', tip: 'La web lo recuerda para la próxima vez en ese dispositivo.' },
+  { t: 6,  fin: 15, titulo: 'Entra en la web', texto: 'Abre <b>pastoral-bocadillo.vercel.app</b>, pulsa <b>«Tutores»</b> y <b>«Entrar con Microsoft 365»</b>.', tip: 'Con tu cuenta del colegio. También la encuentras en Utilidades → Pastoral.' },
+  { t: 15, fin: 27, titulo: 'Tu clase ya aparece', texto: 'La web pone sola la <b>etapa</b> y <b>la clase de tu tutoría</b>.', tip: 'Verás el día exacto en que tu clase recibe el bocadillo. Pastoral puede elegir cualquier clase.' },
+  { t: 27, fin: 34, titulo: 'Tu nombre, también', texto: 'Tu <b>nombre</b> sale de tu cuenta del colegio. No hay que escribirlo.', tip: '¿No aparece tu clase? Pide al Equipo Directivo que revise las tutorías.' },
   { t: 34, fin: 54, titulo: '¿Cuántos se han apuntado?', texto: 'Escribe el <b>total de cada producto</b> para toda la clase, o usa los botones <b>+</b> y <b>−</b>.', tip: 'En la barra de abajo ves al momento el total de productos y el importe.' },
   { t: 54, fin: 60, titulo: 'Observaciones', texto: 'Indica solo el número. No pongas ningún NOMBRE.', tip: 'Es opcional: si no hay nada que avisar, déjalo en blanco.' },
   { t: 60, fin: 69, titulo: 'Envía el recuento', texto: 'Pulsa el botón naranja <b>«Enviar recuento»</b>.', tip: 'Un mensaje verde te confirma que ha llegado. ¡Ya está!' },
@@ -415,10 +423,10 @@ const CAPS = [{ t: 0, n: 'Inicio' }, ...PASOS.map((p, i) => ({ t: p.t, n: `${i +
 const SUBS = [
   [0.6, 5.4, 'Tutorial para tutores: cómo enviar el recuento del <b>Bocadillo solidario</b>.'],
   [6.2, 10.4, 'Entra en la web del Bocadillo solidario desde el ordenador o el móvil.'],
-  [10.4, 15, 'Pulsa <b>«Tutores»</b>. No hace falta contraseña.'],
-  [15, 21.2, 'Elige la <b>etapa</b> y, después, <b>tu clase</b>.'],
+  [10.4, 15, 'Pulsa <b>«Tutores»</b> y entra con tu cuenta de <b>Microsoft 365</b>.'],
+  [15, 21.2, 'La <b>etapa</b> y <b>tu clase</b> ya aparecen elegidas.'],
   [21.2, 27, 'La web te muestra qué día recibe tu clase el bocadillo.'],
-  [27, 34, 'Escribe tu <b>nombre y apellidos</b>.'],
+  [27, 34, 'Tu <b>nombre</b> también sale solo, de tu cuenta del colegio.'],
   [34, 39.4, 'Escribe cuántos alumnos se han apuntado a cada producto…'],
   [39.4, 42.6, '…o usa los botones <b>+</b> y <b>−</b> para sumar y restar.'],
   [42.6, 48, 'Rellena así todos los productos de tu clase.'],
@@ -440,7 +448,7 @@ const ETAPAS = ['Infantil', 'Primaria', 'ESO', 'Bachillerato', 'CCFF', 'Profesor
 const CLASES = ['1º ESO A', '1º ESO B', '2º ESO A', '2º ESO B', '3º ESO A', '4º ESO A'];
 const NOCILLA = [40.0, 40.5, 41.0, 41.5, 42.0];
 const T = { // momentos clave
-  tab: 12.05, abreEtapa: 16.55, eligeEtapa: 17.8, abreClase: 19.35, eligeClase: 20.75, dia: 21.0,
+  tab: 11.0, entra: 13.2, dia: 21.0,
   chopped: 37.6, tortilla: 44.2, platano: 45.2, zumo: 46.2, coca: 47.2, platano2: 72.55,
   envia: 61.75, enviado: 63.6, previo: 69.55, envia2: 74.25, corregido: 75.6
 };
@@ -502,22 +510,21 @@ function render(t) {
   // Pestaña y formulario
   poner('w-tab-t', 'class', 'w-tab' + (t >= T.tab ? ' active' : ''));
   poner('w-place', 'class', 'w-place' + (t >= T.tab + 0.1 ? ' fuera' : ''));
-  poner('w-form', 'class', 'w-form' + (t >= T.tab + 0.3 ? '' : ' oculto'));
+  poner('w-login', 'class', 'w-login' + (t >= T.tab + 0.1 && t < T.entra + 0.15 ? '' : ' fuera'));
+  poner('w-form', 'class', 'w-form' + (t >= T.entra + 0.4 ? '' : ' oculto'));
   // Etapa
-  const etapaOk = t >= T.eligeEtapa;
-  poner('sel-etapa', 'class', 'w-sel' + (etapaOk ? '' : ' vacio') + (t >= T.abreEtapa && t < T.eligeEtapa + 0.05 ? ' abierto foco' : ''));
+  const etapaOk = t >= T.entra;   // con la sesión iniciada, la tutoría ya viene elegida
+  poner('sel-etapa', 'class', 'w-sel' + (etapaOk ? '' : ' vacio'));
   poner('sel-etapa-v', 'text', etapaOk ? 'ESO' : 'Elige la etapa');
-  document.querySelectorAll('#menu-etapa .w-opt').forEach(o => o.classList.toggle('hover', o.dataset.v === 'ESO' && t >= 17.3));
   // Clase
-  const claseOk = t >= T.eligeClase;
-  poner('sel-clase', 'class', 'w-sel' + (etapaOk ? (claseOk ? '' : ' vacio') : ' off') + (t >= T.abreClase && t < T.eligeClase + 0.05 ? ' abierto foco' : ''));
+  const claseOk = t >= T.entra;
+  poner('sel-clase', 'class', 'w-sel' + (etapaOk ? (claseOk ? '' : ' vacio') : ' off'));
   poner('sel-clase-v', 'text', claseOk ? '2º ESO B' : etapaOk ? 'Elige la clase' : 'Primero elige la etapa');
-  document.querySelectorAll('#menu-clase .w-opt').forEach(o => o.classList.toggle('hover', o.dataset.v === '2º ESO B' && t >= 20.25));
   poner('w-dia', 'class', 'w-dia' + (t >= T.dia ? '' : ' oculto'));
   poner('w-prods', 'class', 'w-card w-prods' + (t >= T.dia ? '' : ' oculto'));
   // Nombre
-  const nom = tecleado('María López', 28.5, 30.8, t);
-  const focoNom = t >= 28.2 && t < 31.8;
+  const nom = t >= T.entra ? 'María López' : '';
+  const focoNom = false;
   poner('in-tutor', 'class', 'w-input' + (nom ? '' : ' vacio') + (focoNom ? ' foco' : ''));
   poner('in-tutor', 'html', (nom || (focoNom ? '' : 'Nombre y apellidos')) + (focoNom ? '<span class="caret"></span>' : ''));
   // Cantidades
@@ -590,7 +597,7 @@ function construir() {
   // Medidas (todo en coordenadas del visor, sin desplazar)
   const M = {
     tab: R('w-tab-t'), etapa: R('sel-etapa'), clase: R('sel-clase'), tutor: R('in-tutor'), dia: R('w-dia'), card1: R('w-card1'),
-    optESO: R(document.querySelector('#menu-etapa [data-v="ESO"]')), opt2B: R(document.querySelector('#menu-clase [data-v="2º ESO B"]')),
+    ms: R('w-ms'),
     prods: R('w-prods'), slot: R('w-slot'), obs: R('in-obs'), total: R('w-total'), uds: R('w-uds'), btn: R('w-btn'), bar: R('w-bar')
   };
   ['chopped', 'tortilla', 'platano', 'zumo', 'coca'].forEach(id => M['q' + id] = R('q-' + id));
@@ -674,21 +681,21 @@ function construir() {
   tl.to('#pg', { opacity: 1, duration: 0.5 }, 10.0);
   tl.set('#cursor', { x: VW * 0.72, y: VH * 0.82 }, 0);
   tl.to('#cursor', { opacity: 1, duration: 0.3 }, 10.4);
-  mover(M.tab.cx + 20, M.tab.cy + 4, 10.8, 0.9);
-  anillo('anillo-pg', M.tab, 11.4, 1.6, 5);
+  mover(M.tab.cx + 20, M.tab.cy + 4, 10.4, 0.55);
+  anillo('anillo-pg', M.tab, 10.5, 0.7, 5);
   clic(T.tab - 0.05);
   salto('#w-tab-t', T.tab);
+  mover(M.ms.cx + 10, M.ms.cy + 4, 11.9, 0.8);
+  anillo('anillo-pg', M.ms, 12.3, 1.0, 5);
+  clic(T.entra - 0.05);
+  salto('#w-ms', T.entra);
 
   // Paso 2: etapa y clase
   camIzq(M.card1.x - 8, M.card1.cy + 40, 1.14, 15.0, 1.1);
-  mover(M.etapa.cx, M.etapa.cy, 15.6, 0.8);
-  clic(T.abreEtapa - 0.05);
-  mover(M.optESO.cx - 30, M.optESO.cy, 16.8, 0.5);
-  clic(T.eligeEtapa - 0.05);
-  mover(M.clase.cx, M.clase.cy, 18.4, 0.7);
-  clic(T.abreClase - 0.05);
-  mover(M.opt2B.cx - 30, M.opt2B.cy, 19.7, 0.55);
-  clic(T.eligeClase - 0.05);
+  mover(M.clase.cx + 30, M.clase.cy + 30, 15.6, 0.8);
+  const selecciones = { x: M.etapa.x, y: M.etapa.y, w: M.clase.x + M.clase.w - M.etapa.x, h: M.etapa.h };
+  anillo('anillo-pg', selecciones, 16.2, 4.0, 5);
+  burbuja('burbuja-pg', '✅ <em>Tu tutoría</em>', M.etapa.x + 20, M.etapa.y + M.etapa.h + 12, 16.6, 3.6, true);
   mover(M.dia.x + M.dia.w * 0.85, M.dia.cy + 60, 21.0, 0.8);
   anillo('anillo-pg', M.dia, 21.5, 4.6, 4);
   burbuja('burbuja-pg', '📅 <em>¡Vuestro día!</em>', M.dia.x + 30, M.dia.y + M.dia.h + 12, 21.9, 4.3, true);
@@ -696,9 +703,9 @@ function construir() {
 
   // Paso 3: nombre
   camIzq(M.tutor.x - 24, M.tutor.cy, 1.3, 27.0, 1.0);
-  mover(M.tutor.x + 60, M.tutor.cy, 27.4, 0.7);
-  clic(28.15);
-  burbuja('burbuja-pg', '💾 Se recuerda para la próxima vez', M.tutor.x + 40, M.tutor.y + M.tutor.h + 12, 31.0, 2.6, true);
+  mover(M.tutor.x + M.tutor.w * 0.7, M.tutor.cy + 26, 27.4, 0.7);
+  anillo('anillo-pg', M.tutor, 28.0, 4.6, 4);
+  burbuja('burbuja-pg', '🔒 Sale de tu cuenta del colegio', M.tutor.x + 40, M.tutor.y + M.tutor.h + 12, 28.5, 4.4, true);
 
   // Paso 4: cantidades
   camara(VW / 2, VH / 2, 1, 34.0, 1.0);
