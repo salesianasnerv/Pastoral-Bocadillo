@@ -1014,11 +1014,12 @@ async function iniciarTutores() {
 
   const etapas = ETAPAS.filter(e => cursos.some(c => c.etapa === e.id));
   $('t-etapa').innerHTML = `<option value="">Elige la etapa</option>` + etapas.map(e => `<option>${esc(e.id)}</option>`).join('');
-  const cursoGuardado = cursos.find(c => c.id === guardada.curso);
-  if (cursoGuardado) $('t-etapa').value = cursoGuardado.etapa;
-  rellenarCursos(cursoGuardado ? cursoGuardado.id : '');
+  // Se abre en la última clase usada o, si no, en la tutoría de quien entra (también si es de Pastoral)
+  const inicial = cursos.find(c => c.id === guardada.curso) || cursos.find(c => (yo?.mias || []).includes(c.id))
+    || (cursos.length === 1 ? cursos[0] : null);
+  if (inicial) $('t-etapa').value = inicial.etapa;
+  rellenarCursos(inicial ? inicial.id : '');
   if (guardada.tutor && !yo) $('t-tutor').value = guardada.tutor;
-  if (!cursoGuardado && cursos.length === 1) { $('t-etapa').value = cursos[0].etapa; rellenarCursos(cursos[0].id); }
   cargarCurso();
 }
 
