@@ -2538,7 +2538,8 @@ document.querySelectorAll('.role-tab').forEach(b => b.onclick = () => {
   $('rol-pastoral').hidden = rol !== 'pastoral';
   $('t-barra').hidden = rol !== 'tutores' || !T.curso;
   if (rol === 'pastoral') iniciarPastoral();
-  try { location.hash = rol === 'pastoral' ? 'pastoral' : ''; } catch {}
+  // Al volver de Microsoft 365 el enlace trae la sesión (#access_token=…): no se toca hasta que Supabase la lea
+  if (!/access_token=|error_description=/.test(location.hash)) try { location.hash = rol === 'pastoral' ? 'pastoral' : ''; } catch {}
 });
 
 if (DEMO) {

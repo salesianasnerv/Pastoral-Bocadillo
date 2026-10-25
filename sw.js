@@ -1,7 +1,7 @@
 // Permite instalar el Bocadillo solidario como app y que abra rápido.
 // Los recuentos siempre se piden a la hoja de Google en el momento; aquí solo se guarda la «carcasa» de la web.
 // Si cambias la lista de archivos, sube también el número de VERSION.
-const VERSION = 'v3';
+const VERSION = 'v4';
 const CACHE = `bocadillo-${VERSION}`;
 const CARCASA = ['./', 'index.html', 'manifest.json', 'logo.svg',
   'favicon-32.png', 'favicon-48.png', 'icon-180.png', 'icon-192.png', 'icon-512.png', 'icon-maskable-512.png'];
