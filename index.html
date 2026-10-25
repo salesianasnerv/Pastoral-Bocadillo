@@ -381,15 +381,16 @@
   </div>
   <div class="presenta-info">
     <details class="info-bloque">
-      <summary><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5M16 4.5a3.5 3.5 0 0 1 0 7M18 14.8c1.9.7 3.1 2.4 3.5 5.2"/></svg><span>Tutores <small>Acceso: sin inicio de sesión</small></span></summary>
+      <summary><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5M16 4.5a3.5 3.5 0 0 1 0 7M18 14.8c1.9.7 3.1 2.4 3.5 5.2"/></svg><span>Tutores <small>Acceso: Microsoft 365 (cada tutor/a, su clase)</small></span></summary>
       <ul>
-        <li><b>Recuento de la clase:</b> elige etapa y clase y escribe cuántos se han apuntado a cada producto.</li>
+        <li><b>Recuento de la clase:</b> entra con tu cuenta del colegio; sale tu clase y escribes cuántos se han apuntado a cada producto.</li>
+        <li>Solo puede enviarlo el tutor o tutora de la clase o, si falta, alguien de Pastoral.</li>
         <li><b>Observaciones:</b> indica solo el número. No pongas ningún NOMBRE.</li>
         <li>Se puede volver a enviar para corregirlo mientras el bocadillo esté abierto.</li>
       </ul>
     </details>
     <details class="info-bloque">
-      <summary><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><span>Responsables de Pastoral <em class="aviso-etq">Solo con contraseña</em> <small>Acceso: contraseña de Pastoral</small></span></summary>
+      <summary><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg><span>Responsables de Pastoral <em class="aviso-etq">Solo grupo Pastoral</em> <small>Acceso: Microsoft 365, grupo Pastoral</small></span></summary>
       <ul>
         <li><b>Nuevo bocadillo:</b> crearlo con sus fechas y productos y abrirlo a los tutores.</li>
         <li><b>Resumen, por clase, lista de la compra y balance económico</b>, con descarga en PDF.</li>
@@ -422,6 +423,11 @@
       <div><strong>¿Es la primera vez?</strong>Mira en minuto y medio cómo enviar el recuento de tu clase.</div>
       <button type="button" class="btn" id="ver-tutorial">▶ Ver tutorial</button>
     </div>
+    <div id="t-entrar" class="card narrow" style="max-width:420px" hidden>
+      <h2>Entra con tu cuenta del colegio</h2>
+      <p class="muted">El recuento lo envía el tutor o tutora de cada clase o, si falta, alguien de Pastoral.</p>
+      <button class="btn" type="button" data-entrar-m365 style="width:100%">Entrar con Microsoft 365</button>
+    </div>
     <div id="t-cargando" class="cargando">Cargando…</div>
     <div id="t-error" class="aviso error" hidden></div>
     <div id="t-sin" class="card" hidden>
@@ -436,7 +442,7 @@
           <label>Etapa <select id="t-etapa"></select></label>
           <label>Clase <select id="t-curso"></select></label>
         </div>
-        <label style="margin-bottom:0">Tutor o tutora <input id="t-tutor" autocomplete="name" placeholder="Nombre y apellidos"></label>
+        <label style="margin-bottom:0">Lo envía <input id="t-tutor" autocomplete="name" placeholder="Nombre y apellidos"></label>
         <div id="t-dia" class="dia-etapa" hidden></div>
       </div>
 
@@ -494,6 +500,11 @@
   <section id="rol-pastoral" hidden>
     <div id="p-login" class="card narrow" style="max-width:420px">
       <h2>Acceso de Pastoral</h2>
+      <div id="p-login-m365" hidden>
+        <p class="muted">Solo para el grupo de Pastoral de Microsoft 365.</p>
+        <div id="p-login-error2" class="aviso error" hidden></div>
+        <button class="btn" type="button" data-entrar-m365 style="width:100%">Entrar con Microsoft 365</button>
+      </div>
       <form id="p-login-form">
         <label>Contraseña <input type="password" id="p-clave" autocomplete="current-password"></label>
         <div id="p-login-error" class="aviso error" hidden></div>
@@ -589,9 +600,40 @@
    Pega aquí la URL de la aplicación web de Apps Script (termina en /exec).
    Mientras esté vacía, la web funciona en modo prueba (datos solo en este navegador).
    ========================================================================= */
-const API_URL = 'https://script.google.com/macros/s/AKfycbwCl8ZL32r6O4wsZkVO6rmeca23ruYoAP71LHzo93YKabG-iF1J67URKCxZSRw5nFI2dQ/exec';
+const API_URL_REAL = 'https://script.google.com/macros/s/AKfycbwCl8ZL32r6O4wsZkVO6rmeca23ruYoAP71LHzo93YKabG-iF1J67URKCxZSRw5nFI2dQ/exec';
+// Rama «prueba»: implementación aparte del mismo Apps Script (Implementar → Nueva implementación), para probar
+// el código nuevo sin tocar la web real. Vacía = la prueba usa la misma que la web real.
+const API_URL_PRUEBA = 'https://script.google.com/macros/s/AKfycbwCl8ZL32r6O4wsZkVO6rmeca23ruYoAP71LHzo93YKabG-iF1J67URKCxZSRw5nFI2dQ/exec';
+const API_URL = location.hostname.includes('-git-prueba-') && API_URL_PRUEBA ? API_URL_PRUEBA : API_URL_REAL;
 
 const DEMO = !API_URL;
+
+/* Inicio de sesión con Microsoft 365 (Supabase común «Acceso Microsoft 365», como Bachillerato).
+   El Apps Script comprueba con la sesión quién es: tutor/a de cada clase o grupo Pastoral. */
+const SUPABASE_URL = 'https://hblayjaknhfxieqbzrlq.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhibGF5amFrbmhmeGllcWJ6cmxxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEyMjg0ODEsImV4cCI6MjEwNjgwNDQ4MX0.K2iWyQAt9upNBXUhdZuV-Nle9fkCMYgQ6jTBBO0MluE';
+let sbCliente = null;
+function cargarSupabase() {
+  return (sbCliente ||= new Promise((res, rej) => {
+    const sc = Object.assign(document.createElement('script'), { src: 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js' });
+    sc.onload = () => res(window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON));
+    sc.onerror = () => { sbCliente = null; rej(new Error('No hay conexión. Comprueba internet e inténtalo de nuevo.')); };
+    document.head.appendChild(sc);
+  }));
+}
+async function tokenM365() {
+  if (DEMO) return '';
+  const { data: { session } } = await (await cargarSupabase()).auth.getSession();
+  return session?.access_token || '';
+}
+async function entrarM365() {
+  const sb = await cargarSupabase();
+  try { sessionStorage.setItem('bs-volver', $('rol-pastoral').hidden ? 'tutores' : 'pastoral'); } catch {}
+  const { error } = await sb.auth.signInWithOAuth({ provider: 'azure', options: { scopes: 'email profile', redirectTo: location.origin + location.pathname } });
+  if (error) alert(error.message);
+}
+async function salirM365() { if (!DEMO) await (await cargarSupabase()).auth.signOut(); }
+document.addEventListener('click', e => { if (e.target.closest('[data-entrar-m365]')) entrarM365(); });
 
 const MENUS = [
   { id: 'infantil', nombre: 'Infantil' },
@@ -815,7 +857,7 @@ async function api(action, data = {}) {
   }
   let res;
   try {
-    res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action, ...data }) });
+    res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action, token: await tokenM365(), ...data }) });
   } catch {
     throw new Error('No hay conexión. Comprueba internet e inténtalo de nuevo.');
   }
@@ -933,8 +975,10 @@ function demoApi(action, d) {
 const T = { datos: null, camp: null, curso: null, previo: null, cant: {} };
 
 async function iniciarTutores() {
-  $('t-cargando').hidden = false;
   $('t-error').hidden = true;
+  if (!DEMO && !(await tokenM365().catch(() => ''))) { $('t-entrar').hidden = false; $('t-cargando').hidden = true; return; }
+  $('t-entrar').hidden = true;
+  $('t-cargando').hidden = false;
   try {
     T.datos = await api('publico');
   } catch (e) {
@@ -945,7 +989,16 @@ async function iniciarTutores() {
   }
   $('t-cargando').hidden = true;
   const camps = T.datos.campanas.sort((a, b) => a.fecha.localeCompare(b.fecha));
+  // Sin Pastoral, cada tutor/a solo ve su clase (lo decide el Apps Script con la pestaña «Tutorías» del panel)
+  const yo = T.datos.yo;
+  if (yo && !yo.pastoral) T.datos.cursos = (T.datos.cursos || []).filter(c => (yo.mias || []).includes(c.id));
   const cursos = T.datos.cursos || [];
+  if (yo) { $('t-tutor').value = yo.nombre; $('t-tutor').readOnly = true; }
+  if (yo && !yo.pastoral && !cursos.length) {
+    $('t-sin').hidden = false; $('t-form').hidden = true;
+    $('t-sin').innerHTML = `<h2>No apareces como tutor o tutora de ninguna clase</h2><p class="muted" style="margin:0">Si lo eres, pide al Equipo Directivo que lo revise en el panel de Administración («Tutorías»). Mientras, puede enviar el recuento alguien de Pastoral.</p>`;
+    return;
+  }
   if (!camps.length || !cursos.length) { $('t-sin').hidden = false; $('t-form').hidden = true; return; }
   $('t-sin').hidden = true;
   $('t-form').hidden = false;
@@ -961,10 +1014,12 @@ async function iniciarTutores() {
 
   const etapas = ETAPAS.filter(e => cursos.some(c => c.etapa === e.id));
   $('t-etapa').innerHTML = `<option value="">Elige la etapa</option>` + etapas.map(e => `<option>${esc(e.id)}</option>`).join('');
-  const cursoGuardado = cursos.find(c => c.id === guardada.curso);
-  if (cursoGuardado) $('t-etapa').value = cursoGuardado.etapa;
-  rellenarCursos(cursoGuardado ? cursoGuardado.id : '');
-  if (guardada.tutor) $('t-tutor').value = guardada.tutor;
+  // Se abre en la última clase usada o, si no, en la tutoría de quien entra (también si es de Pastoral)
+  const inicial = cursos.find(c => c.id === guardada.curso) || cursos.find(c => (yo?.mias || []).includes(c.id))
+    || (cursos.length === 1 ? cursos[0] : null);
+  if (inicial) $('t-etapa').value = inicial.etapa;
+  rellenarCursos(inicial ? inicial.id : '');
+  if (guardada.tutor && !yo) $('t-tutor').value = guardada.tutor;
   cargarCurso();
 }
 
@@ -1219,6 +1274,14 @@ function repartoPorClase(camp, cursos) {
    ========================================================================= */
 async function iniciarPastoral() {
   cargarFira();
+  if (!DEMO) {
+    // Con Microsoft 365: se entra si hay sesión; el Apps Script comprueba que es del grupo Pastoral
+    $('p-login-form').hidden = true; $('p-login-m365').hidden = false;
+    if (!P.clave && await tokenM365().catch(() => '')) {
+      try { await api('login'); P.clave = 'm365'; }
+      catch (e) { $('p-login-error2').textContent = e.message; $('p-login-error2').hidden = false; }
+    }
+  }
   if (!P.clave) { $('p-login').hidden = false; $('p-app').hidden = true; return; }
   $('p-login').hidden = true; $('p-app').hidden = false;
   if (!P.datos) await recargarPanel();
@@ -1232,7 +1295,7 @@ async function recargarPanel(mantener = true) {
     // Las copias de trabajo de los editores se descartan: siempre se parte de lo guardado en la hoja
     P.edit = null; P.gastos = null;
   } catch (e) {
-    if (/contraseña/i.test(e.message)) { P.clave = null; sesion.set(null); iniciarPastoral(); return; }
+    if (/contraseña|sesión|Pastoral|Microsoft/i.test(e.message)) { P.clave = null; sesion.set(null); iniciarPastoral(); return; }
     $('p-contenido').innerHTML = `<div class="aviso error">${esc(e.message)}</div>`;
     return;
   }
@@ -1878,7 +1941,7 @@ async function accionPanel(e) {
   const camp = campActual();
   switch (b.dataset.acc) {
     case 'recargar': await recargarPanel(); mensaje('Datos actualizados.'); break;
-    case 'salir': P.clave = null; P.datos = null; sesion.set(null); iniciarPastoral(); break;
+    case 'salir': P.clave = null; P.datos = null; sesion.set(null); await salirM365(); iniciarPastoral(); break;
     case 'nueva': abrirNueva(); break;
     case 'nuevoCurso': {
       const actual = P.datos.cursoActual;
@@ -2476,7 +2539,8 @@ document.querySelectorAll('.role-tab').forEach(b => b.onclick = () => {
   $('rol-pastoral').hidden = rol !== 'pastoral';
   $('t-barra').hidden = rol !== 'tutores' || !T.curso;
   if (rol === 'pastoral') iniciarPastoral();
-  try { location.hash = rol === 'pastoral' ? 'pastoral' : ''; } catch {}
+  // Al volver de Microsoft 365 el enlace trae la sesión (#access_token=…): no se toca hasta que Supabase la lea
+  if (!/access_token=|error_description=/.test(location.hash)) try { location.hash = rol === 'pastoral' ? 'pastoral' : ''; } catch {}
 });
 
 if (DEMO) {
@@ -2485,7 +2549,11 @@ if (DEMO) {
 }
 iniciarTutores();
 // Con #tutores o #pastoral en el enlace se abre directamente ese papel
-if (location.hash === '#pastoral') document.querySelector('[data-rol="pastoral"]').click();
+// (y al volver de iniciar sesión con Microsoft 365, el papel que se estaba usando)
+let volver = null;
+try { volver = sessionStorage.getItem('bs-volver'); sessionStorage.removeItem('bs-volver'); } catch {}
+if (location.hash === '#pastoral' || volver === 'pastoral') document.querySelector('[data-rol="pastoral"]').click();
+else if (volver === 'tutores') document.querySelector('[data-rol="tutores"]').click();
 else if (location.hash === '#tutores') document.querySelector('[data-rol="tutores"]').click();
 
 /* ---------- App instalable ---------- */
