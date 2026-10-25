@@ -297,9 +297,6 @@
 
   .alergias { margin-top: 1.2rem; padding: .9rem 1rem; border-radius: 12px; background: rgba(238, 113, 42, .08); border: 1px solid rgba(238, 113, 42, .35); }
   .alergias h3 { margin: 0 0 .2rem; color: var(--naranja-hover); }
-  .alergias-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 2fr; gap: .6rem; }
-  .alergias-grid label { margin: 0; }
-  @media (max-width: 560px) { .alergias-grid { grid-template-columns: 1fr 1fr 1fr; } .alergias-grid label:last-child { grid-column: 1 / -1; } }
   .aviso-alergias { background: rgba(238, 113, 42, .1); border: 1px solid rgba(238, 113, 42, .4); border-radius: 12px; padding: .7rem 1rem; margin: .8rem 0; font-size: .93rem; }
   .dia-semana { color: var(--azul); font-weight: 600; margin-left: .3rem; }
   .dia-semana:not(:empty)::before { content: "· "; color: var(--text-muted); font-weight: 400; }
@@ -453,16 +450,35 @@
         <div class="alergias">
           <h3>⚠️ Alergias e intolerancias</h3>
           <p class="muted small" style="margin:0 0 .6rem">Indica solo <strong>cuántos alumnos/as</strong> las tienen. <strong>No escribas nombres.</strong></p>
-          <div class="alergias-grid">
-            <label>Sin gluten <input type="number" inputmode="numeric" min="0" max="99" id="t-al-gluten" placeholder="0"></label>
-            <label>Sin lactosa <input type="number" inputmode="numeric" min="0" max="99" id="t-al-lactosa" placeholder="0"></label>
-            <label>Otra <input type="number" inputmode="numeric" min="0" max="99" id="t-al-otra" placeholder="0"></label>
-            <label>¿Cuál? <input type="text" id="t-al-cual" maxlength="60" placeholder="Por ejemplo: huevo, frutos secos"></label>
+          <div id="t-alergias">
+            <div class="prod" data-al="gluten">
+              <div><div class="prod-nombre">Gluten</div><div class="prod-precio">Celíacos o intolerancia al gluten</div></div>
+              <div class="stepper">
+                <button type="button" data-d="-1" aria-label="Quitar uno">−</button>
+                <input type="number" inputmode="numeric" min="0" max="99" value="0" id="t-al-gluten" aria-label="Gluten">
+                <button type="button" data-d="1" aria-label="Añadir uno">+</button>
+              </div></div>
+            <div class="prod" data-al="lactosa">
+              <div><div class="prod-nombre">Lactosa</div><div class="prod-precio">Intolerancia a la lactosa</div></div>
+              <div class="stepper">
+                <button type="button" data-d="-1" aria-label="Quitar uno">−</button>
+                <input type="number" inputmode="numeric" min="0" max="99" value="0" id="t-al-lactosa" aria-label="Lactosa">
+                <button type="button" data-d="1" aria-label="Añadir uno">+</button>
+              </div></div>
+            <div class="prod" data-al="otra">
+              <div><div class="prod-nombre">Otras</div><div class="prod-precio">Cualquier otra alergia o intolerancia</div></div>
+              <div class="stepper">
+                <button type="button" data-d="-1" aria-label="Quitar uno">−</button>
+                <input type="number" inputmode="numeric" min="0" max="99" value="0" id="t-al-otra" aria-label="Otras">
+                <button type="button" data-d="1" aria-label="Añadir uno">+</button>
+              </div></div>
           </div>
+          <label id="t-al-cual-lbl" style="margin:.6rem 0 0">¿Cuáles son las otras alergias o intolerancias? <input type="text" id="t-al-cual" maxlength="60" placeholder="Por ejemplo: huevo, frutos secos. Sin nombres."></label>
         </div>
         <label style="margin:1rem 0 0">Observaciones (opcional)
-          <textarea id="t-obs" placeholder="Cualquier otra cosa que queráis indicar. No pongas nombres de alumnos/as."></textarea>
+          <textarea id="t-obs" placeholder="Cualquier otra cosa que queráis indicar."></textarea>
         </label>
+        <p class="muted small" style="margin:.3rem 0 0"><strong>No escribas ningún dato personal ni nombres de alumnos/as.</strong></p>
       </div>
     </div>
   </section>
@@ -964,8 +980,23 @@ function rellenarCursos(sel) {
 
 function ponerAlergias(a) {
   a = a || {};
-  $('t-al-gluten').value = a.gluten || ''; $('t-al-lactosa').value = a.lactosa || ''; $('t-al-otra').value = a.otra || ''; $('t-al-cual').value = a.cual || '';
+  ['gluten', 'lactosa', 'otra'].forEach(k => { const inp = $('t-al-' + k); inp.value = a[k] || 0; inp.classList.toggle('pos', !!a[k]); });
+  $('t-al-cual').value = a.cual || '';
 }
+// Contadores de alergias: igual que los de los productos, de 0 a 99
+function cambiarAlergia(inp, n) {
+  n = Math.max(0, Math.min(99, n));
+  inp.value = n;
+  inp.classList.toggle('pos', n > 0);
+}
+$('t-alergias').addEventListener('click', e => {
+  const b = e.target.closest('button[data-d]');
+  if (!b) return;
+  const inp = b.closest('.prod').querySelector('input');
+  cambiarAlergia(inp, (parseInt(inp.value) || 0) + Number(b.dataset.d));
+});
+$('t-alergias').addEventListener('input', e => { if (e.target.tagName === 'INPUT') cambiarAlergia(e.target, parseInt(e.target.value) || 0); });
+$('t-alergias').addEventListener('focusin', e => { if (e.target.tagName === 'INPUT') e.target.select(); });
 function leerAlergias() {
   const n = id => Math.max(0, Math.min(99, parseInt($(id).value) || 0));
   return { gluten: n('t-al-gluten'), lactosa: n('t-al-lactosa'), otra: n('t-al-otra'), cual: $('t-al-cual').value.trim().slice(0, 60) };
@@ -1071,7 +1102,7 @@ $('t-enviar').onclick = async () => {
   const total = Object.values(T.cant).reduce((a, b) => a + (b || 0), 0);
   if (!total && !confirm('No has puesto ningún producto. ¿Enviar el recuento vacío (nadie se ha apuntado)?')) return;
   const alergias = leerAlergias();
-  if (alergias.otra && !alergias.cual) { $('t-al-cual').focus(); alert('Indica en «¿Cuál?» de qué alergia o intolerancia se trata (sin nombres de alumnos/as).'); return; }
+  if (alergias.otra && !alergias.cual) { $('t-al-cual').focus(); alert('Indica cuáles son las otras alergias o intolerancias (sin nombres de alumnos/as).'); return; }
   const btn = $('t-enviar');
   btn.disabled = true; btn.textContent = 'Enviando…';
   try {
