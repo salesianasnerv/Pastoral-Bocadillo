@@ -603,7 +603,7 @@
 const API_URL_REAL = 'https://script.google.com/macros/s/AKfycbwCl8ZL32r6O4wsZkVO6rmeca23ruYoAP71LHzo93YKabG-iF1J67URKCxZSRw5nFI2dQ/exec';
 // Rama «prueba»: implementación aparte del mismo Apps Script (Implementar → Nueva implementación), para probar
 // el código nuevo sin tocar la web real. Vacía = la prueba usa la misma que la web real.
-const API_URL_PRUEBA = '';
+const API_URL_PRUEBA = 'https://script.google.com/macros/s/AKfycbwCl8ZL32r6O4wsZkVO6rmeca23ruYoAP71LHzo93YKabG-iF1J67URKCxZSRw5nFI2dQ/exec';
 const API_URL = location.hostname.includes('-git-prueba-') && API_URL_PRUEBA ? API_URL_PRUEBA : API_URL_REAL;
 
 const DEMO = !API_URL;
