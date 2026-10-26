@@ -148,6 +148,9 @@
   .w-step i { width: 30px; height: 30px; border-radius: 8px; border: 1px solid #E2E8F0; background: #F8FAFC; color: #009abb; display: grid; place-items: center; font-style: normal; font-weight: 700; font-size: 17px; }
   .w-step u { text-decoration: none; font-size: 14px; width: 46px; height: 30px; border-radius: 8px; border: 1px solid #E2E8F0; display: grid; place-items: center; font-weight: 700; background: #fff; }
   .w-step u.pos { border-color: #009abb; color: #009abb; }
+  .w-alerg { margin-top: 12px; padding: 9px 12px 4px; border-radius: 10px; background: rgba(238,113,42,.08); border: 1px solid rgba(238,113,42,.35); }
+  .w-alerg h5 { margin: 0 0 2px; font-size: 13px; color: #c2410c; }
+  .w-alerg .w-prod:last-of-type { border-bottom: none; }
   .w-step u.sel span { background: rgba(0,154,187,.25); padding: 0 3px; border-radius: 3px; }
   .w-area { min-height: 50px; }
   .w-bar { position: absolute; left: 0; right: 0; bottom: 0; background: #fff; border-top: 1px solid #E2E8F0; box-shadow: 0 -6px 20px rgba(0,0,0,.06); padding: 9px 28px; display: flex; align-items: center; justify-content: space-between; opacity: 0; z-index: 4; }
@@ -324,9 +327,23 @@
                       <h4>¿Cuántos se han apuntado?</h4>
                       <div class="w-muted" style="font-size:11.5px">Escribe el número total de cada producto para toda la clase.</div>
                       <div id="w-lista"></div>
+                      <div class="w-alerg" id="w-alerg">
+                        <h5>⚠️ Alergias e intolerancias</h5>
+                        <div class="w-muted" style="font-size:11px">Indica solo <b>cuántos alumnos/as</b> las tienen. <b>No escribas nombres.</b></div>
+                        <div class="w-prod" id="p-al-gluten"><div><b>Gluten</b><small>Celíacos o intolerancia al gluten</small></div>
+                          <div class="w-step"><i>−</i><u id="q-al-gluten"><span>0</span></u><i id="mas-al-gluten">+</i></div></div>
+                        <div class="w-prod" id="p-al-lactosa"><div><b>Lactosa</b><small>Intolerancia a la lactosa</small></div>
+                          <div class="w-step"><i>−</i><u id="q-al-lactosa"><span>0</span></u><i id="mas-al-lactosa">+</i></div></div>
+                        <div class="w-prod" id="p-al-otra"><div><b>Otras</b><small>Cualquier otra alergia o intolerancia</small></div>
+                          <div class="w-step"><i>−</i><u id="q-al-otra"><span>0</span></u><i id="mas-al-otra">+</i></div></div>
+                        <label class="w-label" style="margin:6px 0 8px">¿Cuáles son las otras alergias o intolerancias?
+                          <div class="w-input vacio" id="in-cual">Por ejemplo: huevo, frutos secos. Sin nombres.</div>
+                        </label>
+                      </div>
                       <label class="w-label" style="margin:12px 0 0">Observaciones (opcional)
-                        <div class="w-area vacio" id="in-obs">Indica solo el número. No pongas ningún NOMBRE</div>
+                        <div class="w-area vacio" id="in-obs">Cualquier otra cosa que queráis indicar.</div>
                       </label>
+                      <div class="w-muted" style="font-size:11px;margin-top:4px"><b>No escribas ningún dato personal ni nombres de alumnos/as.</b></div>
                     </div>
                   </div>
                 </div>
@@ -360,7 +377,7 @@
             <p class="subtitulo" id="intro-sub"><span class="w"><span>Cómo</span></span> <span class="w"><span>enviar</span></span> <span class="w"><span>el</span></span> <span class="w"><span>recuento</span></span> <span class="w"><span>de</span></span> <span class="w"><span>tu</span></span> <span class="w"><span>clase</span></span></p>
             <div class="metas" id="intro-metas">
               <span class="meta"><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9 2h6"/></svg>Menos de 2 minutos</span>
-              <span class="meta"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg>7 pasos</span>
+              <span class="meta"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg>8 pasos</span>
               <span class="meta"><svg viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 7.5-2"/></svg>Con tu cuenta del colegio</span>
             </div>
           </div>
@@ -385,14 +402,14 @@
           <div class="firma" id="c-firma"><span class="logo-pill"><img src="logo.svg" alt="Salesianas Nervión"></span><span>pastoral-bocadillo.vercel.app · ¡Gracias por colaborar!</span></div>
         </section>
 
-        <div class="portada" id="portada"><div class="btn-play"><svg viewBox="0 0 24 24"><path d="M6 4l14 8-14 8z"/></svg></div><div class="portada-txt">Ver el tutorial · 1:26</div></div>
+        <div class="portada" id="portada"><div class="btn-play"><svg viewBox="0 0 24 24"><path d="M6 4l14 8-14 8z"/></svg></div><div class="portada-txt">Ver el tutorial · 1:36</div></div>
       </div>
     </div>
 
     <div class="controles">
       <button class="ctl" id="b-play" aria-label="Reproducir"><svg viewBox="0 0 24 24" id="ico-play"><path d="M7 4l13 8-13 8z" fill="currentColor"/></svg></button>
       <button class="ctl" id="b-atras" aria-label="Retroceder 5 segundos"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.4-5.7M4 4v4h4"/></svg></button>
-      <span class="tiempo" id="tiempo">0:00 / 1:26</span>
+      <span class="tiempo" id="tiempo">0:00 / 1:36</span>
       <div class="barra-t" id="barra-t"><div class="pista"></div><div class="lleno" id="lleno"></div><div id="marcas"></div><div class="bola" id="bola"></div><div class="globo" id="globo"></div></div>
       <button class="ctl" id="b-vel" aria-label="Velocidad">1×</button>
       <button class="ctl on" id="b-subt" aria-label="Subtítulos" title="Subtítulos"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M7 12h3M13 12h4M7 15h6M15 15h2"/></svg></button>
@@ -407,7 +424,7 @@
 <script>
 (() => {
 const $ = id => document.getElementById(id);
-const D = 86;
+const D = 96;
 
 /* ---------- Guion ---------- */
 const PASOS = [
@@ -415,11 +432,12 @@ const PASOS = [
   { t: 15, fin: 27, titulo: 'Tu clase ya aparece', texto: 'La web pone sola la <b>etapa</b> y <b>la clase de tu tutoría</b>.', tip: 'Verás el día exacto en que tu clase recibe el bocadillo. Pastoral puede elegir cualquier clase.' },
   { t: 27, fin: 34, titulo: 'Tu nombre, también', texto: 'Tu <b>nombre</b> sale de tu cuenta del colegio. No hay que escribirlo.', tip: '¿No aparece tu clase? Pide al Equipo Directivo que revise las tutorías.' },
   { t: 34, fin: 54, titulo: '¿Cuántos se han apuntado?', texto: 'Escribe el <b>total de cada producto</b> para toda la clase, o usa los botones <b>+</b> y <b>−</b>.', tip: 'En la barra de abajo ves al momento el total de productos y el importe.' },
-  { t: 54, fin: 60, titulo: 'Observaciones', texto: 'Indica solo el número. No pongas ningún NOMBRE.', tip: 'Es opcional: si no hay nada que avisar, déjalo en blanco.' },
-  { t: 60, fin: 69, titulo: 'Envía el recuento', texto: 'Pulsa el botón naranja <b>«Enviar recuento»</b>.', tip: 'Un mensaje verde te confirma que ha llegado. ¡Ya está!' },
-  { t: 69, fin: 78, titulo: '¿Hay que cambiar algo?', texto: 'Vuelve a entrar, cambia lo que necesites y pulsa <b>«Enviar corrección»</b>.', tip: 'El nuevo recuento sustituye al anterior mientras Pastoral mantenga el plazo abierto.' }
+  { t: 54, fin: 64, titulo: 'Alergias e intolerancias', texto: 'Indica con <b>+</b> y <b>−</b> <b>cuántos alumnos/as</b> tienen alergia o intolerancia al <b>gluten</b>, a la <b>lactosa</b> u <b>otras</b>.', tip: 'En «Otras», escribe cuáles son (por ejemplo, frutos secos). Nunca nombres.' },
+  { t: 64, fin: 70, titulo: 'Observaciones', texto: 'Si hay algo más que avisar, escríbelo aquí. <b>Ningún dato personal ni nombres.</b>', tip: 'Es opcional: si no hay nada que avisar, déjalo en blanco.' },
+  { t: 70, fin: 79, titulo: 'Envía el recuento', texto: 'Pulsa el botón naranja <b>«Enviar recuento»</b>.', tip: 'Un mensaje verde te confirma que ha llegado. ¡Ya está!' },
+  { t: 79, fin: 88, titulo: '¿Hay que cambiar algo?', texto: 'Vuelve a entrar, cambia lo que necesites y pulsa <b>«Enviar corrección»</b>.', tip: 'El nuevo recuento sustituye al anterior mientras Pastoral mantenga el plazo abierto.' }
 ];
-const CAPS = [{ t: 0, n: 'Inicio' }, ...PASOS.map((p, i) => ({ t: p.t, n: `${i + 1}. ${p.titulo}` })), { t: 78, n: 'Resumen' }];
+const CAPS = [{ t: 0, n: 'Inicio' }, ...PASOS.map((p, i) => ({ t: p.t, n: `${i + 1}. ${p.titulo}` })), { t: 88, n: 'Resumen' }];
 const SUBS = [
   [0.6, 5.4, 'Tutorial para tutores: cómo enviar el recuento del <b>Bocadillo solidario</b>.'],
   [6.2, 10.4, 'Entra en la web del Bocadillo solidario desde el ordenador o el móvil.'],
@@ -431,12 +449,14 @@ const SUBS = [
   [39.4, 42.6, '…o usa los botones <b>+</b> y <b>−</b> para sumar y restar.'],
   [42.6, 48, 'Rellena así todos los productos de tu clase.'],
   [48, 54, 'En la barra de abajo ves el <b>total de productos</b> y el <b>importe</b>.'],
-  [54, 60, 'En <b>Observaciones</b>, indica solo el número. No pongas ningún NOMBRE.'],
-  [60, 63.6, 'Pulsa <b>«Enviar recuento»</b>.'],
-  [63.6, 69, '¡Listo! El <b>mensaje verde</b> confirma que se ha enviado.'],
-  [69, 73, '¿Te has equivocado? Vuelve a entrar y cámbialo…'],
-  [73, 78, '…y pulsa <b>«Enviar corrección»</b>. Sustituye al anterior.'],
-  [79, 85.6, '¡Gracias por colaborar con el <b>Bocadillo solidario</b>!']
+  [54, 58.4, 'Indica <b>cuántos alumnos/as</b> tienen alergia o intolerancia: solo el número.'],
+  [58.4, 64, 'En <b>Otras</b>, escribe cuáles son. <b>Nunca nombres.</b>'],
+  [64, 70, 'En <b>Observaciones</b>, cualquier otro aviso. <b>Ningún dato personal ni nombres.</b>'],
+  [70, 73.6, 'Pulsa <b>«Enviar recuento»</b>.'],
+  [73.6, 79, '¡Listo! El <b>mensaje verde</b> confirma que se ha enviado.'],
+  [79, 83, '¿Te has equivocado? Vuelve a entrar y cámbialo…'],
+  [83, 88, '…y pulsa <b>«Enviar corrección»</b>. Sustituye al anterior.'],
+  [89, 95.6, '¡Gracias por colaborar con el <b>Bocadillo solidario</b>!']
 ];
 const PRODS = [
   ['Bocadillos', [['chopped', 'Bocadillo grande de chopped', 150], ['nocilla', 'Bocadillo grande de Nocilla', 150], ['chorizo', 'Bocadillo grande de chorizo', 150], ['tortilla', 'Bocadillo grande de tortilla', 200]]],
@@ -449,8 +469,9 @@ const CLASES = ['1º ESO A', '1º ESO B', '2º ESO A', '2º ESO B', '3º ESO A',
 const NOCILLA = [40.0, 40.5, 41.0, 41.5, 42.0];
 const T = { // momentos clave
   tab: 11.0, entra: 13.2, dia: 21.0,
-  chopped: 37.6, tortilla: 44.2, platano: 45.2, zumo: 46.2, coca: 47.2, platano2: 72.55,
-  envia: 61.75, enviado: 63.6, previo: 69.55, envia2: 74.25, corregido: 75.6
+  chopped: 37.6, tortilla: 44.2, platano: 45.2, zumo: 46.2, coca: 47.2, platano2: 82.55,
+  gluten: [56.65, 57.35], otra: 58.85, cual: [60.0, 61.6],
+  envia: 71.75, enviado: 73.6, previo: 79.55, envia2: 84.25, corregido: 85.6
 };
 
 /* ---------- Construcción del DOM ---------- */
@@ -539,11 +560,19 @@ function render(t) {
   }
   poner('w-total', 'text', eur(c));
   poner('w-uds', 'text', `${uds} producto${uds === 1 ? '' : 's'}`);
+  // Alergias e intolerancias (solo números)
+  const al = { gluten: T.gluten.filter(x => t >= x).length, lactosa: 0, otra: t >= T.otra ? 1 : 0 };
+  for (const id in al) poner('q-al-' + id, 'class', al[id] ? 'pos' : '');
+  for (const id in al) poner('q-al-' + id, 'html', `<span>${al[id]}</span>`);
+  const cual = tecleado('frutos secos', T.cual[0], T.cual[1], t);
+  const focoCual = t >= T.cual[0] - 0.4 && t < T.cual[1] + 0.6;
+  poner('in-cual', 'class', 'w-input' + (cual ? '' : ' vacio') + (focoCual ? ' foco' : ''));
+  poner('in-cual', 'html', (cual || (focoCual ? '' : 'Por ejemplo: huevo, frutos secos. Sin nombres.')) + (focoCual ? '<span class="caret"></span>' : ''));
   // Observaciones
-  const obs = tecleado('2 alumnos con alergia al gluten', 56.2, 58.6, t);
-  const focoObs = t >= 55.8 && t < 59.2;
+  const obs = tecleado('El dinero lo llevamos el jueves.', 66.2, 68.6, t);
+  const focoObs = t >= 65.8 && t < 69.2;
   poner('in-obs', 'class', 'w-area' + (obs ? '' : ' vacio') + (focoObs ? ' foco' : ''));
-  poner('in-obs', 'html', (obs || (focoObs ? '' : 'Indica solo el número. No pongas ningún NOMBRE')) + (focoObs ? '<span class="caret"></span>' : ''));
+  poner('in-obs', 'html', (obs || (focoObs ? '' : 'Cualquier otra cosa que queráis indicar.')) + (focoObs ? '<span class="caret"></span>' : ''));
   // Botón y avisos
   const enviando = (t >= T.envia && t < T.enviado - 0.6) || (t >= T.envia2 && t < T.corregido - 0.6);
   poner('w-btn', 'class', 'w-btn' + (enviando ? ' enviando' : ''));
@@ -598,10 +627,11 @@ function construir() {
   const M = {
     tab: R('w-tab-t'), etapa: R('sel-etapa'), clase: R('sel-clase'), tutor: R('in-tutor'), dia: R('w-dia'), card1: R('w-card1'),
     ms: R('w-ms'),
-    prods: R('w-prods'), slot: R('w-slot'), obs: R('in-obs'), total: R('w-total'), uds: R('w-uds'), btn: R('w-btn'), bar: R('w-bar')
+    prods: R('w-prods'), slot: R('w-slot'), obs: R('in-obs'), alerg: R('w-alerg'), cual: R('in-cual'), total: R('w-total'), uds: R('w-uds'), btn: R('w-btn'), bar: R('w-bar')
   };
   ['chopped', 'tortilla', 'platano', 'zumo', 'coca'].forEach(id => M['q' + id] = R('q-' + id));
   ['nocilla', 'platano'].forEach(id => M['mas' + id] = R('mas-' + id));
+  ['gluten', 'otra'].forEach(id => M['masal' + id] = R('mas-al-' + id));
   ['chopped', 'nocilla', 'tortilla', 'platano', 'zumo', 'coca'].forEach(id => M['p' + id] = R('p-' + id));
   M.totalBox = { x: M.total.x - 8, y: M.total.y - 6, w: Math.max(M.total.w, M.uds.w) + 16, h: M.uds.y + M.uds.h - M.total.y + 12 };
 
@@ -723,50 +753,62 @@ function construir() {
   anillo('anillo-vp', M.totalBox, 48.9, 4.6, 2);
   burbuja('burbuja-vp', '⚡ Se actualiza al momento', M.totalBox.x, M.bar.y - 46, 49.3, 4.3);
 
-  // Paso 5: observaciones
+  // Paso 5: alergias e intolerancias
   camara(VW / 2, VH / 2, 1, 54.0, 0.9);
-  desplazar(M.obs.y - VH * 0.45, 54.1, 0.9);
-  p = enPg(M.obs); mover(M.obs.x + 50, p[1], 55.0, 0.7); clic(55.75);
+  desplazar(M.alerg.y - VH * 0.22, 54.1, 0.9);
+  anillo('anillo-pg', M.alerg, 55.0, 2.4, 4);
+  burbuja('burbuja-pg', '🔢 Solo el número, nunca nombres', M.alerg.x + 20, M.alerg.y - 44, 55.2, 3.0);
+  p = enPg(M.masalgluten); mover(p[0], p[1], 55.9, 0.6);
+  T.gluten.forEach(x => { clic(x - 0.05); salto('#q-al-gluten', x); });
+  p = enPg(M.masalotra); mover(p[0], p[1], 58.0, 0.6);
+  clic(T.otra - 0.05); salto('#q-al-otra', T.otra);
+  p = enPg(M.cual); mover(M.cual.x + 60, p[1] + 6, 59.2, 0.6); clic(59.85);
+  burbuja('burbuja-pg', '✏️ Cuáles son, sin nombres', M.cual.x + 20, M.cual.y + M.cual.h + 12, 61.0, 2.6, true);
 
-  // Paso 6: enviar
-  camara(M.btn.cx - 40, M.bar.cy, 1.32, 60.0, 0.9);
-  mover(M.btn.cx, M.btn.cy, 60.4, 0.9);
-  anillo('anillo-vp', M.btn, 60.9, 0.9, 5);
+  // Paso 6: observaciones
+  camara(VW / 2, VH / 2, 1, 64, 0.9);
+  desplazar(M.obs.y - VH * 0.45, 64.1, 0.9);
+  p = enPg(M.obs); mover(M.obs.x + 50, p[1], 65, 0.7); clic(65.75);
+
+  // Paso 7: enviar
+  camara(M.btn.cx - 40, M.bar.cy, 1.32, 70, 0.9);
+  mover(M.btn.cx, M.btn.cy, 70.4, 0.9);
+  anillo('anillo-vp', M.btn, 70.9, 0.9, 5);
   clic(T.envia - 0.05);
-  desplazar(M.slot.y - VH * 0.3, 62.8, 0.8);
-  camIzq(M.slot.x - 10, M.slot.cy - S, 1.06, 62.6, 0.9);
+  desplazar(M.slot.y - VH * 0.3, 72.8, 0.8);
+  camIzq(M.slot.x - 10, M.slot.cy - S, 1.06, 72.6, 0.9);
   const avisoY = M.slot.cy;
   tl.fromTo('#w-aviso', { scale: 0.88 }, { scale: 1, duration: 0.5, ease: 'back.out(2.5)', immediateRender: false }, T.enviado);
   confeti(M.slot.cx, avisoY, T.enviado + 0.05, 70, 7);
-  mover(M.slot.x + M.slot.w - 40, M.slot.y + M.slot.h - S + 40, 63.4, 0.8);
+  mover(M.slot.x + M.slot.w - 40, M.slot.y + M.slot.h - S + 40, 73.4, 0.8);
 
-  // Paso 7: corregir
-  tl.to('#pg', { opacity: 0.25, duration: 0.3 }, 69.2);
-  tl.to('#pg', { opacity: 1, duration: 0.35 }, 69.6);
+  // Paso 8: corregir
+  tl.to('#pg', { opacity: 0.25, duration: 0.3 }, 79.2);
+  tl.to('#pg', { opacity: 1, duration: 0.35 }, 79.6);
   tl.fromTo('#w-aviso', { scale: 0.9 }, { scale: 1, duration: 0.4, ease: 'back.out(2)', immediateRender: false }, T.previo + 0.05);
-  burbuja('burbuja-pg', '✅ Ya está enviado: puedes corregirlo', M.slot.x + 20, M.slot.y + M.slot.h + 12, 69.9, 1.4, true);
-  camara(VW / 2, VH / 2, 1, 71.1, 0.8);
-  desplazar(M.pplatano.cy - VH * 0.45, 71.3, 0.8);
-  p = enPg(M.masplatano); mover(p[0], p[1], 71.7, 0.6);
+  burbuja('burbuja-pg', '✅ Ya está enviado: puedes corregirlo', M.slot.x + 20, M.slot.y + M.slot.h + 12, 79.9, 1.4, true);
+  camara(VW / 2, VH / 2, 1, 81.1, 0.8);
+  desplazar(M.pplatano.cy - VH * 0.45, 81.3, 0.8);
+  p = enPg(M.masplatano); mover(p[0], p[1], 81.7, 0.6);
   clic(T.platano2 - 0.05); salto('#q-platano', T.platano2); salto('#w-total', T.platano2);
-  camara(M.btn.cx - 40, M.bar.cy, 1.32, 72.9, 0.8);
-  mover(M.btn.cx, M.btn.cy, 73.2, 0.7);
-  anillo('anillo-vp', M.btn, 73.5, 0.8, 5);
+  camara(M.btn.cx - 40, M.bar.cy, 1.32, 82.9, 0.8);
+  mover(M.btn.cx, M.btn.cy, 83.2, 0.7);
+  anillo('anillo-vp', M.btn, 83.5, 0.8, 5);
   clic(T.envia2 - 0.05);
-  desplazar(M.slot.y - VH * 0.3, 74.8, 0.7);
-  camIzq(M.slot.x - 10, M.slot.cy - S, 1.06, 74.7, 0.8);
+  desplazar(M.slot.y - VH * 0.3, 84.8, 0.7);
+  camIzq(M.slot.x - 10, M.slot.cy - S, 1.06, 84.7, 0.8);
   tl.fromTo('#w-aviso', { scale: 0.88 }, { scale: 1, duration: 0.5, ease: 'back.out(2.5)', immediateRender: false }, T.corregido);
   confeti(M.slot.cx, M.slot.cy, T.corregido + 0.05, 45, 31);
 
-  /* --- Cierre 78-86 --- */
-  tl.fromTo('#cierre', { clipPath: 'circle(0% at 80% 85%)' }, { clipPath: 'circle(150% at 80% 85%)', duration: 1.1, ease: 'power3.inOut' }, 78);
-  tl.fromTo('#cierre .trama', { scale: 1.2 }, { scale: 1, duration: 8, ease: 'none' }, 78);
-  tl.from('#c-tit', { y: 40, opacity: 0, duration: 0.7, ease: 'back.out(1.6)' }, 78.7);
-  tl.from('#c-sub', { y: 20, opacity: 0, duration: 0.6, ease: 'power3.out' }, 79.0);
-  tl.from('#c-res .rcard', { y: 50, opacity: 0, rotationX: -30, duration: 0.7, stagger: 0.18, ease: 'back.out(1.4)' }, 79.4);
-  tl.from('#c-res .rn', { scale: 0, rotation: -90, duration: 0.5, stagger: 0.18, ease: 'back.out(2)' }, 79.6);
-  tl.from('#c-nota', { y: 20, opacity: 0, duration: 0.6, ease: 'power3.out' }, 80.8);
-  tl.from('#c-firma', { y: 20, opacity: 0, duration: 0.6, ease: 'power3.out' }, 81.3);
+  /* --- Cierre 88-96 --- */
+  tl.fromTo('#cierre', { clipPath: 'circle(0% at 80% 85%)' }, { clipPath: 'circle(150% at 80% 85%)', duration: 1.1, ease: 'power3.inOut' }, 88);
+  tl.fromTo('#cierre .trama', { scale: 1.2 }, { scale: 1, duration: 8, ease: 'none' }, 88);
+  tl.from('#c-tit', { y: 40, opacity: 0, duration: 0.7, ease: 'back.out(1.6)' }, 88.7);
+  tl.from('#c-sub', { y: 20, opacity: 0, duration: 0.6, ease: 'power3.out' }, 89);
+  tl.from('#c-res .rcard', { y: 50, opacity: 0, rotationX: -30, duration: 0.7, stagger: 0.18, ease: 'back.out(1.4)' }, 89.4);
+  tl.from('#c-res .rn', { scale: 0, rotation: -90, duration: 0.5, stagger: 0.18, ease: 'back.out(2)' }, 89.6);
+  tl.from('#c-nota', { y: 20, opacity: 0, duration: 0.6, ease: 'power3.out' }, 90.8);
+  tl.from('#c-firma', { y: 20, opacity: 0, duration: 0.6, ease: 'power3.out' }, 91.3);
   tl.set({}, {}, D);
 }
 
