@@ -503,6 +503,7 @@
       <div id="p-login-m365" hidden>
         <p class="muted">Solo para el grupo de Pastoral de Microsoft 365.</p>
         <div id="p-login-error2" class="aviso error" hidden></div>
+        <div id="p-login-comprobando" class="cargando" hidden>Comprobando tu acceso…</div>
         <button class="btn" type="button" data-entrar-m365 style="width:100%">Entrar con Microsoft 365</button>
       </div>
       <form id="p-login-form">
@@ -1278,8 +1279,13 @@ async function iniciarPastoral() {
     // Con Microsoft 365: se entra si hay sesión; el Apps Script comprueba que es del grupo Pastoral
     $('p-login-form').hidden = true; $('p-login-m365').hidden = false;
     if (!P.clave && await tokenM365().catch(() => '')) {
+      // Mientras el Apps Script comprueba el acceso (tarda unos segundos), se avisa y se oculta el botón
+      const boton = document.querySelector('#p-login-m365 [data-entrar-m365]');
+      $('p-login').hidden = false; $('p-app').hidden = true;
+      $('p-login-comprobando').hidden = false; boton.hidden = true; $('p-login-error2').hidden = true;
       try { await api('login'); P.clave = 'm365'; }
       catch (e) { $('p-login-error2').textContent = e.message; $('p-login-error2').hidden = false; }
+      $('p-login-comprobando').hidden = true; boton.hidden = false;
     }
   }
   if (!P.clave) { $('p-login').hidden = false; $('p-app').hidden = true; return; }
@@ -2539,6 +2545,8 @@ document.querySelectorAll('.role-tab').forEach(b => b.onclick = () => {
   $('rol-pastoral').hidden = rol !== 'pastoral';
   $('t-barra').hidden = rol !== 'tutores' || !T.curso;
   if (rol === 'pastoral') iniciarPastoral();
+  // La parte de tutores solo se carga cuando se abre (así, al entrar en Pastoral no se espera a dos llamadas)
+  if (rol === 'tutores' && !T.iniciado) { T.iniciado = true; iniciarTutores(); }
   // Al volver de Microsoft 365 el enlace trae la sesión (#access_token=…): no se toca hasta que Supabase la lea
   if (!/access_token=|error_description=/.test(location.hash)) try { location.hash = rol === 'pastoral' ? 'pastoral' : ''; } catch {}
 });
@@ -2547,7 +2555,6 @@ if (DEMO) {
   $('demo').hidden = false;
   $('demo-reset').onclick = () => { try { localStorage.removeItem('bs-demo'); } catch {} location.reload(); };
 }
-iniciarTutores();
 // Con #tutores o #pastoral en el enlace se abre directamente ese papel
 // (y al volver de iniciar sesión con Microsoft 365, el papel que se estaba usando)
 let volver = null;
