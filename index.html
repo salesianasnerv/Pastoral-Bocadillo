@@ -198,6 +198,8 @@
   }
   .btn:hover { background: var(--naranja-hover); }
   .btn:disabled { opacity: .55; cursor: wait; }
+  .btn-ms { gap: 10px; }
+  .btn-ms svg { width: 18px; height: 18px; flex: none; }
   .btn.sec { background: var(--azul-suave); color: var(--azul); }
   .btn.sec:hover { background: rgba(0,154,187,.22); }
   .btn.peligro { background: transparent; color: var(--rojo); border: 1px solid var(--border); }
@@ -426,7 +428,7 @@
     <div id="t-entrar" class="card narrow" style="max-width:420px" hidden>
       <h2>Entra con tu cuenta del colegio</h2>
       <p class="muted">El recuento lo envía el tutor o tutora de cada clase o, si falta, alguien de Pastoral.</p>
-      <button class="btn" type="button" data-entrar-m365 style="width:100%">Entrar con Microsoft 365</button>
+      <button class="btn btn-ms" type="button" data-entrar-m365 style="width:100%"><svg viewBox="0 0 21 21" aria-hidden="true"><rect x="1" y="1" width="9" height="9" fill="#f25022"/><rect x="11" y="1" width="9" height="9" fill="#7fba00"/><rect x="1" y="11" width="9" height="9" fill="#00a4ef"/><rect x="11" y="11" width="9" height="9" fill="#ffb900"/></svg>Entrar con Microsoft 365</button>
     </div>
     <div id="t-cargando" class="cargando">Cargando…</div>
     <div id="t-error" class="aviso error" hidden></div>
@@ -504,7 +506,7 @@
         <p class="muted">Solo para el grupo de Pastoral de Microsoft 365.</p>
         <div id="p-login-error2" class="aviso error" hidden></div>
         <div id="p-login-comprobando" class="cargando" hidden>Comprobando tu acceso…</div>
-        <button class="btn" type="button" data-entrar-m365 style="width:100%">Entrar con Microsoft 365</button>
+        <button class="btn btn-ms" type="button" data-entrar-m365 style="width:100%"><svg viewBox="0 0 21 21" aria-hidden="true"><rect x="1" y="1" width="9" height="9" fill="#f25022"/><rect x="11" y="1" width="9" height="9" fill="#7fba00"/><rect x="1" y="11" width="9" height="9" fill="#00a4ef"/><rect x="11" y="11" width="9" height="9" fill="#ffb900"/></svg>Entrar con Microsoft 365</button>
       </div>
       <form id="p-login-form">
         <label>Contraseña <input type="password" id="p-clave" autocomplete="current-password"></label>
