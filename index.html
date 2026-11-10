@@ -301,11 +301,20 @@
 
   .alergias { margin-top: 1.2rem; padding: .9rem 1rem; border-radius: 12px; background: rgba(238, 113, 42, .08); border: 1px solid rgba(238, 113, 42, .35); }
   .alergias h3 { margin: 0 0 .2rem; color: var(--naranja-hover); }
-  .al-pedidos { margin-top: .8rem; display: grid; gap: .6rem; }
-  .al-pedidos > p { margin: 0; }
-  .al-persona { background: var(--blanco, #fff); border: 1px solid rgba(238, 113, 42, .35); border-radius: 10px; padding: .6rem .8rem; display: grid; gap: .5rem; }
-  .al-persona-tit { font-weight: 600; color: var(--naranja-hover); font-size: .93rem; }
-  .al-persona .grid2 label, .al-persona label { margin: 0; font-size: .9rem; }
+  .prod-cols { display: flex; gap: .6rem; flex-wrap: wrap; justify-content: flex-end; }
+  .prod-col { display: grid; justify-items: center; gap: .15rem; }
+  .prod-col-tit { font-size: .72rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: .03em; }
+  .prod-col.al .prod-col-tit { color: var(--naranja-hover); }
+  .prod-col.al input.pos { border-color: var(--naranja); color: var(--naranja-hover); }
+  .prod-cols .stepper button { width: 32px; height: 34px; font-size: 1.1rem; }
+  .prod-cols .stepper input { width: 46px; }
+  @media (max-width: 560px) {
+    .prod.con-al { flex-direction: column; align-items: stretch; gap: .4rem; }
+    .prod.con-al .prod-cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: .3rem; }
+    .prod-cols .stepper { gap: .15rem; }
+    .prod-cols .stepper button { width: 28px; height: 32px; }
+    .prod-cols .stepper input { width: 38px; padding: .4rem 0; }
+  }
   .aviso-alergias { background: rgba(238, 113, 42, .1); border: 1px solid rgba(238, 113, 42, .4); border-radius: 12px; padding: .7rem 1rem; margin: .8rem 0; font-size: .93rem; }
   .dia-semana { color: var(--azul); font-weight: 600; margin-left: .3rem; }
   .dia-semana:not(:empty)::before { content: "· "; color: var(--text-muted); font-weight: 400; }
@@ -460,35 +469,21 @@
 
       <div id="t-productos-card" class="card" hidden>
         <h2 style="margin-bottom:0.2rem">¿Cuántos se han apuntado?</h2>
-        <p class="muted small" style="margin:0">Escribe el número total de cada producto para toda la clase.</p>
+        <p class="muted small" style="margin:0">Escribe cuántos de cada producto para toda la clase. En los bocadillos, lo <strong>sin gluten</strong> y <strong>sin lactosa</strong> va en su propia casilla y se suma solo al total: no lo cuentes también en «Normal».</p>
         <div id="t-productos"></div>
         <div class="alergias">
-          <h3>⚠️ Alergias e intolerancias</h3>
-          <p class="muted small" style="margin:0 0 .6rem">Indica solo <strong>cuántos alumnos/as</strong> las tienen. <strong>No escribas nombres.</strong></p>
+          <h3>⚠️ Otras alergias o intolerancias</h3>
+          <p class="muted small" style="margin:0 0 .6rem">Lo <strong>sin gluten</strong> y <strong>sin lactosa</strong> se apunta arriba, en cada bocadillo. Aquí, solo otras alergias (huevo, frutos secos…): <strong>cuántos alumnos/as</strong> y a qué. <strong>No escribas nombres.</strong></p>
           <div id="t-alergias">
-            <div class="prod" data-al="gluten">
-              <div><div class="prod-nombre">Gluten</div><div class="prod-precio">Celíacos o intolerancia al gluten</div></div>
-              <div class="stepper">
-                <button type="button" data-d="-1" aria-label="Quitar uno">−</button>
-                <input type="number" inputmode="numeric" min="0" max="99" value="0" id="t-al-gluten" aria-label="Gluten">
-                <button type="button" data-d="1" aria-label="Añadir uno">+</button>
-              </div></div>
-            <div class="prod" data-al="lactosa">
-              <div><div class="prod-nombre">Lactosa</div><div class="prod-precio">Intolerancia a la lactosa</div></div>
-              <div class="stepper">
-                <button type="button" data-d="-1" aria-label="Quitar uno">−</button>
-                <input type="number" inputmode="numeric" min="0" max="99" value="0" id="t-al-lactosa" aria-label="Lactosa">
-                <button type="button" data-d="1" aria-label="Añadir uno">+</button>
-              </div></div>
             <div class="prod" data-al="otra">
-              <div><div class="prod-nombre">Otras</div><div class="prod-precio">Cualquier otra alergia o intolerancia</div></div>
+              <div><div class="prod-nombre">Otras</div><div class="prod-precio">Alumnos/as con otra alergia o intolerancia</div></div>
               <div class="stepper">
                 <button type="button" data-d="-1" aria-label="Quitar uno">−</button>
                 <input type="number" inputmode="numeric" min="0" max="99" value="0" id="t-al-otra" aria-label="Otras">
                 <button type="button" data-d="1" aria-label="Añadir uno">+</button>
               </div></div>
           </div>
-          <div id="t-al-pedidos" class="al-pedidos" hidden></div>
+          <label id="t-al-cual-lbl" style="margin:.6rem 0 0">¿Cuáles? <input type="text" id="t-al-cual" maxlength="60" placeholder="Por ejemplo: huevo, frutos secos. Sin nombres."></label>
         </div>
         <label style="margin:1rem 0 0">Observaciones (opcional)
           <textarea id="t-obs" placeholder="Cualquier otra cosa que queráis indicar."></textarea>
@@ -817,35 +812,39 @@ const diasCortos = camp => tieneDosDias(camp) ? diasOrdenados(camp).map(fechaCor
 const nombreDia = f => f ? aFecha(f).toLocaleDateString('es-ES', { weekday: 'long' }) : '';
 
 // Alergias e intolerancias de una clase: solo números (nunca nombres)
+// a = { gluten, lactosa, otra, cual, porProducto: { gluten: {producto: n}, lactosa: {producto: n} } }
+// Lo sin gluten y sin lactosa se apunta en cada bocadillo y ya va sumado en las cantidades del recuento.
+function nombreProducto(id) {
+  const camps = [T.camp, ...((P.datos && P.datos.campanas) || [])].filter(Boolean);
+  for (const c of camps) { const p = c.catalogo.productos.find(x => x.id === id); if (p) return p.nombre; }
+  return id;
+}
+const detalleProductos = m => Object.entries(m || {}).filter(([, n]) => n > 0).map(([id, n]) => `${n} ${nombreProducto(id)}`).join(', ');
 function textoAlergias(a) {
   if (!a) return '';
   const p = [];
-  if (a.gluten) p.push(`${a.gluten} sin gluten`);
-  if (a.lactosa) p.push(`${a.lactosa} sin lactosa`);
+  const pp = a.porProducto || {};
+  if (a.gluten) p.push(`${a.gluten} sin gluten${detalleProductos(pp.gluten) ? ' (' + detalleProductos(pp.gluten) + ')' : ''}`);
+  if (a.lactosa) p.push(`${a.lactosa} sin lactosa${detalleProductos(pp.lactosa) ? ' (' + detalleProductos(pp.lactosa) + ')' : ''}`);
   if (a.otra) p.push(`${a.otra} ${a.cual ? 'con alergia o intolerancia a ' + a.cual : 'con otra alergia o intolerancia'}`);
-  // Qué ha pedido cada alumno/a con alergia (sin nombres): se agrupan los pedidos iguales
-  const ped = textoPedidosAlergia(a.pedidos);
-  return p.join(' · ') + (ped ? '. Han pedido: ' + ped : '');
-}
-const TIPOS_ALERGIA = { gluten: 'sin gluten', lactosa: 'sin lactosa', otra: 'otra alergia' };
-function textoPedidosAlergia(pedidos) {
-  if (!Array.isArray(pedidos) || !pedidos.length) return '';
-  const grupos = new Map();
-  pedidos.forEach(x => {
-    const tipo = x.tipo === 'otra' ? (x.alergia ? 'alergia a ' + x.alergia : TIPOS_ALERGIA.otra) : (TIPOS_ALERGIA[x.tipo] || '');
-    const que = [x.comida, x.fruta, x.bebida, x.extra].filter(Boolean).join(' + ') || 'nada';
-    const k = tipo + '|' + que;
-    grupos.set(k, { tipo, que, n: (grupos.get(k)?.n || 0) + 1 });
-  });
-  return [...grupos.values()].map(g => `${g.n} ${g.que} (${g.tipo})`).join('; ');
+  return p.join(' · ');
 }
 // Suma las alergias de varias clases (para la etapa y el colegio)
 function sumarAlergias(recs) {
-  const t = { gluten: 0, lactosa: 0, otra: 0, cuales: new Set() };
-  const pedidos = [];
-  recs.forEach(r => { const a = r && r.alergias; if (!a) return; t.gluten += a.gluten || 0; t.lactosa += a.lactosa || 0; t.otra += a.otra || 0; if (a.otra && a.cual) a.cual.toLowerCase().split(/\s*,\s*/).forEach(c => c && t.cuales.add(c)); if (Array.isArray(a.pedidos)) pedidos.push(...a.pedidos); });
-  return { gluten: t.gluten, lactosa: t.lactosa, otra: t.otra, cual: [...t.cuales].join(', '), pedidos };
+  const t = { gluten: 0, lactosa: 0, otra: 0, cuales: new Set(), porProducto: { gluten: {}, lactosa: {} } };
+  recs.forEach(r => {
+    const a = r && r.alergias; if (!a) return;
+    t.gluten += a.gluten || 0; t.lactosa += a.lactosa || 0; t.otra += a.otra || 0;
+    if (a.otra && a.cual) a.cual.toLowerCase().split(/\s*,\s*/).forEach(c => c && t.cuales.add(c));
+    ['gluten', 'lactosa'].forEach(k => Object.entries((a.porProducto || {})[k] || {}).forEach(([id, n]) => { t.porProducto[k][id] = (t.porProducto[k][id] || 0) + n; }));
+  });
+  return { gluten: t.gluten, lactosa: t.lactosa, otra: t.otra, cual: [...t.cuales].join(', '), porProducto: t.porProducto };
 }
+// Qué columnas de alergia lleva cada producto: solo los bocadillos (el pan sin gluten es especial);
+// sin lactosa, todos menos los que llevan leche (la Nocilla)
+const NO_APTO = { lactosa: ['nocilla', 'leche', 'batido', 'yogur'] };
+const apto = (tipo, p) => !(NO_APTO[tipo] || []).some(t => p.nombre.toLowerCase().includes(t));
+const columnasAlergia = p => p.categoria !== 'comida' ? [] : ['gluten', 'lactosa'].filter(k => apto(k, p));
 
 function fechaHora(iso) {
   if (!iso) return '';
@@ -893,7 +892,7 @@ async function api(action, data = {}) {
 
 // Copia del script de Apps Script que guarda los datos en este navegador (solo modo prueba)
 function demoDb() {
-  let db = store.get('bs-demo-2', null);
+  let db = store.get('bs-demo-4', null);
   if (!db) {
     db = { cursos: null, campanas: [], recuentos: [] };
     const cursos = cursosPorDefecto();
@@ -909,21 +908,23 @@ function demoDb() {
         if (n) cantidades[p.id] = n;
       });
       const t = new Date(Date.now() - Math.random() * 4 * 864e5).toISOString();
-      // Algunas clases de ejemplo con alergias y lo que ha pedido cada alumno/a
-      const comidas = cat.productos.filter(p => p.categoria === 'comida' && p.menus.includes(c.menu)).map(p => p.nombre);
-      const bebidas = cat.productos.filter(p => p.categoria === 'bebida' && p.menus.includes(c.menu)).map(p => p.nombre);
-      const alergias = i % 5 === 1 ? { gluten: 1, lactosa: 0, otra: 0, cual: '', pedidos: [{ tipo: 'gluten', comida: comidas[0], bebida: bebidas[0] }] }
-        : i % 7 === 3 ? { gluten: 0, lactosa: 1, otra: 1, cual: 'frutos secos', pedidos: [{ tipo: 'lactosa', comida: comidas.find(n => !/nocilla/i.test(n)), bebida: bebidas.find(n => !/leche|batido|yogur/i.test(n)) }, { tipo: 'otra', alergia: 'frutos secos', comida: comidas[0], bebida: null }] }
-        : {};
+      // Algunas clases de ejemplo con bocadillos sin gluten o sin lactosa (ya sumados en las cantidades) y otras alergias
+      const boc = cat.productos.filter(p => p.categoria === 'comida' && p.menus.includes(c.menu));
+      const alergias = { gluten: 0, lactosa: 0, otra: 0, cual: '', porProducto: { gluten: {}, lactosa: {} } };
+      if (i % 4 === 1 && boc[0]) { alergias.porProducto.gluten[boc[0].id] = 1; alergias.gluten = 1; }
+      const sinLeche = boc.find(p => apto('lactosa', p));
+      if (i % 6 === 3 && sinLeche) { alergias.porProducto.lactosa[sinLeche.id] = 1; alergias.lactosa = 1; }
+      if (i % 9 === 2) { alergias.otra = 1; alergias.cual = 'frutos secos'; }
+      ['gluten', 'lactosa'].forEach(k => Object.entries(alergias.porProducto[k]).forEach(([id, n]) => { cantidades[id] = (cantidades[id] || 0) + n; }));
       db.recuentos.push({ campana: 'demo1', cursoId: c.id, curso: c.nombre, etapa: c.etapa, tutor: nombres[i % nombres.length], cantidades, alergias, observaciones: '', enviado: t, actualizado: t });
     });
-    store.set('bs-demo-2', db);
+    store.set('bs-demo-4', db);
   }
   return db;
 }
 function demoApi(action, d) {
   const db = demoDb();
-  const guardar = () => store.set('bs-demo-2', db);
+  const guardar = () => store.set('bs-demo-4', db);
   const auth = () => { if (d.clave !== 'prueba') throw new Error('Contraseña incorrecta.'); };
   // Igual que en el script: el 1 de septiembre se empieza solo el curso nuevo
   const hoy = cursoEscolar(new Date().toISOString().slice(0, 10));
@@ -1003,7 +1004,7 @@ function demoApi(action, d) {
 /* =========================================================================
    TUTORES
    ========================================================================= */
-const T = { datos: null, camp: null, curso: null, previo: null, cant: {}, alPed: [] };
+const T = { datos: null, camp: null, curso: null, previo: null, cant: {}, cantA: { gluten: {}, lactosa: {} } };
 
 async function iniciarTutores() {
   $('t-error').hidden = true;
@@ -1066,68 +1067,14 @@ function rellenarCursos(sel) {
 
 function ponerAlergias(a) {
   a = a || {};
-  ['gluten', 'lactosa', 'otra'].forEach(k => { const inp = $('t-al-' + k); inp.value = a[k] || 0; inp.classList.toggle('pos', !!a[k]); });
-  // Recuentos antiguos sin detalle: la alergia «otra» común se pone en cada alumno/a
-  T.alPed = Array.isArray(a.pedidos) ? clone(a.pedidos) : [];
-  if (!T.alPed.length && a.cual) for (let i = 0; i < (a.otra || 0); i++) T.alPed.push({ tipo: 'otra', alergia: a.cual, comida: '', fruta: '', bebida: '', extra: '' });
-  pintarPedidosAlergia();
+  const inp = $('t-al-otra'); inp.value = a.otra || 0; inp.classList.toggle('pos', !!a.otra);
+  $('t-al-cual').value = a.cual || '';
 }
-// Por cada alumno/a con alergia, qué ha pedido (bocadillo y bebida) y, en «Otras», a qué. Nunca nombres.
-function guardarPedidosAlergia() {
-  const filas = [...document.querySelectorAll('#t-al-pedidos .al-persona')];
-  if (!filas.length) return;
-  T.alPed = filas.map(f => ({ tipo: f.dataset.tipo, alergia: f.querySelector('[data-c="alergia"]')?.value.trim().slice(0, 40) || '',
-    ...Object.fromEntries(CAMPOS_ALERGIA.map(([c]) => [c, f.querySelector(`[data-c="${c}"]`)?.value ?? '-'])) }));
-}
-// Qué se pregunta de cada alumno/a con alergia: [dato, categoría del catálogo, título, «no pide»]
-const CAMPOS_ALERGIA = [['comida', 'comida', 'Bocadillo', 'No pide bocadillo'], ['fruta', 'fruta', 'Fruta', 'No pide fruta'],
-  ['bebida', 'bebida', 'Bebida', 'No pide bebida'], ['extra', 'extra', 'Extras', 'No pide extras']];
-// Lo que no se puede pedir con cada alergia (se busca en el nombre del producto, así sirve aunque Pastoral cambie el catálogo).
-// Gluten: cualquier bocadillo vale, porque se hace con pan especial. Lactosa: nada con leche.
-const NO_APTO = { lactosa: ['nocilla', 'leche', 'batido', 'yogur'] };
-const apto = (tipo, p) => !(NO_APTO[tipo] || []).some(t => p.nombre.toLowerCase().includes(t));
-function pintarPedidosAlergia() {
-  const caja = $('t-al-pedidos');
-  if (!T.curso || !T.camp) { caja.hidden = true; return; }
-  const n = k => Math.max(0, Math.min(99, parseInt($('t-al-' + k).value) || 0));
-  const antes = T.alPed || [];
-  const filas = [];
-  ['gluten', 'lactosa', 'otra'].forEach(tipo => {
-    const prev = antes.filter(x => x.tipo === tipo);
-    for (let i = 0; i < n(tipo); i++) filas.push(prev[i] || { tipo, alergia: '', comida: '', fruta: '', bebida: '', extra: '' });
-  });
-  // Si se cambia el tipo de alergia, se quita lo que ya no se puede pedir
-  const prodsMenu = T.camp.catalogo.productos.filter(p => p.menus.includes(T.curso.menu));
-  filas.forEach(f => CAMPOS_ALERGIA.forEach(([c]) => { const p = prodsMenu.find(x => x.nombre === f[c]); if (p && !apto(f.tipo, p)) f[c] = ''; }));
-  T.alPed = filas;
-  if (!filas.length) { caja.hidden = true; caja.innerHTML = ''; return; }
-  const prods = T.camp.catalogo.productos.filter(p => p.menus.includes(T.curso.menu));
-  const opciones = (cats, valor, nada, tipo) => `<option value="">Elige…</option><option value="-" ${valor === '-' ? 'selected' : ''}>${nada}</option>`
-    + prods.filter(p => cats.includes(p.categoria) && apto(tipo, p)).map(p => `<option ${p.nombre === valor ? 'selected' : ''}>${esc(p.nombre)}</option>`).join('');
-  const cuenta = {};
-  caja.innerHTML = `<p class="small"><strong>¿Qué ha pedido cada alumno/a con alergia?</strong> Así Pastoral puede preparar su pedido aparte. Sin nombres.</p>`
-    + filas.map(f => {
-      cuenta[f.tipo] = (cuenta[f.tipo] || 0) + 1;
-      const tit = f.tipo === 'gluten' ? 'Sin gluten' : f.tipo === 'lactosa' ? 'Sin lactosa' : 'Otra alergia';
-      const nota = f.tipo === 'gluten' ? 'El bocadillo se prepara con pan sin gluten.' : f.tipo === 'lactosa' ? 'No salen la Nocilla, la leche, el batido ni el yogur.' : '';
-      return `<div class="al-persona" data-tipo="${f.tipo}">
-        <div class="al-persona-tit">⚠️ ${tit} · alumno/a ${cuenta[f.tipo]}${nota ? `<div class="muted small" style="font-weight:400">${nota}</div>` : ''}</div>
-        ${f.tipo === 'otra' ? `<label>¿A qué? <input type="text" data-c="alergia" maxlength="40" value="${esc(f.alergia)}" placeholder="Por ejemplo: huevo, frutos secos"></label>` : ''}
-        <div class="grid2">${CAMPOS_ALERGIA.filter(([, cat]) => prods.some(p => p.categoria === cat)).map(([c, cat, tit, nada]) =>
-          `<label>${tit} <select data-c="${c}">${opciones([cat], (f[c] ?? '') === '' ? '' : (f[c] || '-'), nada, f.tipo)}</select></label>`).join('')}
-        </div></div>`;
-    }).join('');
-  caja.hidden = false;
-}
-$('t-al-pedidos').addEventListener('change', guardarPedidosAlergia);
-$('t-al-pedidos').addEventListener('input', guardarPedidosAlergia);
-// Contadores de alergias: igual que los de los productos, de 0 a 99
+// Contador de «Otras»: igual que los de los productos, de 0 a 99
 function cambiarAlergia(inp, n) {
   n = Math.max(0, Math.min(99, n));
   inp.value = n;
   inp.classList.toggle('pos', n > 0);
-  guardarPedidosAlergia();
-  pintarPedidosAlergia();
 }
 $('t-alergias').addEventListener('click', e => {
   const b = e.target.closest('button[data-d]');
@@ -1137,21 +1084,22 @@ $('t-alergias').addEventListener('click', e => {
 });
 $('t-alergias').addEventListener('input', e => { if (e.target.tagName === 'INPUT') cambiarAlergia(e.target, parseInt(e.target.value) || 0); });
 $('t-alergias').addEventListener('focusin', e => { if (e.target.tagName === 'INPUT') e.target.select(); });
+const sumaObj = o => Object.values(o || {}).reduce((a, b) => a + (b || 0), 0);
 function leerAlergias() {
-  const n = id => Math.max(0, Math.min(99, parseInt($(id).value) || 0));
-  guardarPedidosAlergia();
-  const pedidos = (T.alPed || []).map(x => ({ tipo: x.tipo, ...(x.tipo === 'otra' ? { alergia: x.alergia } : {}),
-    ...Object.fromEntries(CAMPOS_ALERGIA.map(([c]) => [c, !x[c] || x[c] === '-' ? null : x[c]])) }));
-  const cual = [...new Set(pedidos.filter(x => x.tipo === 'otra' && x.alergia).map(x => x.alergia.toLowerCase()))].join(', ').slice(0, 60);
-  return { gluten: n('t-al-gluten'), lactosa: n('t-al-lactosa'), otra: n('t-al-otra'), cual, pedidos };
+  const limpio = o => Object.fromEntries(Object.entries(o).filter(([, n]) => n > 0));
+  const porProducto = { gluten: limpio(T.cantA.gluten), lactosa: limpio(T.cantA.lactosa) };
+  return { gluten: sumaObj(porProducto.gluten), lactosa: sumaObj(porProducto.lactosa),
+    otra: Math.max(0, Math.min(99, parseInt($('t-al-otra').value) || 0)), cual: $('t-al-cual').value.trim().slice(0, 60), porProducto };
 }
+// Total de un producto: normal + sin gluten + sin lactosa
+const totalProducto = id => (T.cant[id] || 0) + (T.cantA.gluten[id] || 0) + (T.cantA.lactosa[id] || 0);
 
 async function cargarCurso() {
   $('t-ok').hidden = true;
   const id = $('t-curso').value;
   T.curso = (T.datos.cursos || []).find(c => c.id === id) || null;
   T.previo = null;
-  T.cant = {};
+  T.cant = {}; T.cantA = { gluten: {}, lactosa: {} };
   if (!T.curso) {
     $('t-productos-card').hidden = true; $('t-barra').hidden = true; $('t-previo').hidden = true; $('t-dia').hidden = true;
     return;
@@ -1167,7 +1115,10 @@ async function cargarCurso() {
     T.previo = r.recuento;
   } catch (e) { T.previo = null; }
   if (T.previo) {
-    T.cant = { ...T.previo.cantidades };
+    // En el recuento guardado las cantidades ya incluyen lo sin gluten y sin lactosa: se separan otra vez
+    const pp = (T.previo.alergias && T.previo.alergias.porProducto) || {};
+    T.cantA = { gluten: { ...(pp.gluten || {}) }, lactosa: { ...(pp.lactosa || {}) } };
+    T.cant = Object.fromEntries(Object.entries(T.previo.cantidades).map(([id, n]) => [id, Math.max(0, n - (T.cantA.gluten[id] || 0) - (T.cantA.lactosa[id] || 0))]));
     $('t-obs').value = T.previo.observaciones || '';
     ponerAlergias(T.previo.alergias);
     if (!$('t-tutor').value) $('t-tutor').value = T.previo.tutor;
@@ -1187,22 +1138,29 @@ function pintarPrevio() {
 
 function pintarProductos() {
   const prods = T.camp.catalogo.productos.filter(p => p.menus.includes(T.curso.menu));
+  const stepper = (p, k, n, max) => `<div class="stepper">
+          <button type="button" data-d="-1" data-k="${k}" aria-label="Quitar uno">−</button>
+          <input type="number" inputmode="numeric" min="0" max="${max}" value="${n}" data-k="${k}" class="${n ? 'pos' : ''}" aria-label="${esc(p.nombre)}${k === 'n' ? '' : k === 'gluten' ? ' sin gluten' : ' sin lactosa'}">
+          <button type="button" data-d="1" data-k="${k}" aria-label="Añadir uno">+</button>
+        </div>`;
   $('t-productos').innerHTML = CATEGORIAS.map(cat => {
     const ps = prods.filter(p => p.categoria === cat.id);
     if (!ps.length) return '';
     return `<div class="cat-head">${esc(cat.nombre)}</div>` + ps.map(p => {
+      const cols = columnasAlergia(p);
       const n = T.cant[p.id] || 0;
-      return `<div class="prod" data-id="${esc(p.id)}">
+      if (!cols.length) return `<div class="prod" data-id="${esc(p.id)}">
         <div><div class="prod-nombre">${esc(p.nombre)}</div><div class="prod-precio">${eur(cent(p.precio))}</div></div>
-        <div class="stepper">
-          <button type="button" data-d="-1" aria-label="Quitar uno">−</button>
-          <input type="number" inputmode="numeric" min="0" max="500" value="${n}" class="${n ? 'pos' : ''}" aria-label="${esc(p.nombre)}">
-          <button type="button" data-d="1" aria-label="Añadir uno">+</button>
+        ${stepper(p, 'n', n, 500)}</div>`;
+      return `<div class="prod con-al" data-id="${esc(p.id)}">
+        <div><div class="prod-nombre">${esc(p.nombre)}</div><div class="prod-precio">${eur(cent(p.precio))} · <span data-tot>${totalProducto(p.id)}</span> en total</div></div>
+        <div class="prod-cols">
+          <div class="prod-col"><span class="prod-col-tit">Normal</span>${stepper(p, 'n', n, 500)}</div>
+          ${cols.map(k => `<div class="prod-col al"><span class="prod-col-tit">${k === 'gluten' ? 'Sin gluten' : 'Sin lactosa'}</span>${stepper(p, k, T.cantA[k][p.id] || 0, 99)}</div>`).join('')}
         </div></div>`;
     }).join('');
   }).join('');
   $('t-barra').hidden = $('rol-tutores').hidden;
-  pintarPedidosAlergia();
   actualizarTotal();
 }
 
@@ -1210,32 +1168,31 @@ function actualizarTotal() {
   let c = 0, u = 0;
   T.camp.catalogo.productos.forEach(p => {
     if (!T.curso.menu || !p.menus.includes(T.curso.menu)) return;
-    const n = T.cant[p.id] || 0;
+    const n = totalProducto(p.id);
     u += n; c += n * cent(p.precio);
   });
+  document.querySelectorAll('#t-productos .prod [data-tot]').forEach(el => { el.textContent = totalProducto(el.closest('.prod').dataset.id); });
   $('t-total').textContent = eur(c);
   $('t-uds').textContent = `${num(u)} producto${u === 1 ? '' : 's'}`;
   $('t-enviar').textContent = T.previo ? 'Enviar corrección' : 'Enviar recuento';
 }
 
+function ponerCantidad(inp, n) {
+  const k = inp.dataset.k || 'n';
+  n = Math.max(0, Math.min(k === 'n' ? 500 : 99, n));
+  inp.value = n;
+  inp.classList.toggle('pos', n > 0);
+  const id = inp.closest('.prod').dataset.id;
+  if (k === 'n') T.cant[id] = n; else T.cantA[k][id] = n;
+  actualizarTotal();
+}
 $('t-productos').addEventListener('click', e => {
   const b = e.target.closest('button[data-d]');
   if (!b) return;
-  const fila = b.closest('.prod');
-  const inp = fila.querySelector('input');
-  const n = Math.max(0, Math.min(500, (parseInt(inp.value) || 0) + Number(b.dataset.d)));
-  inp.value = n;
-  inp.classList.toggle('pos', n > 0);
-  T.cant[fila.dataset.id] = n;
-  actualizarTotal();
+  const inp = b.closest('.stepper').querySelector('input');
+  ponerCantidad(inp, (parseInt(inp.value) || 0) + Number(b.dataset.d));
 });
-$('t-productos').addEventListener('input', e => {
-  if (e.target.tagName !== 'INPUT') return;
-  const n = Math.max(0, Math.min(500, parseInt(e.target.value) || 0));
-  e.target.classList.toggle('pos', n > 0);
-  T.cant[e.target.closest('.prod').dataset.id] = n;
-  actualizarTotal();
-});
+$('t-productos').addEventListener('input', e => { if (e.target.tagName === 'INPUT') ponerCantidad(e.target, parseInt(e.target.value) || 0); });
 $('t-productos').addEventListener('focusin', e => { if (e.target.tagName === 'INPUT') e.target.select(); });
 $('t-etapa').onchange = () => { rellenarCursos(''); cargarCurso(); };
 $('t-curso').onchange = cargarCurso;
@@ -1244,16 +1201,16 @@ $('t-tutor').onchange = () => store.set('bs-tutor', { ...store.get('bs-tutor', {
 $('t-enviar').onclick = async () => {
   const tutor = $('t-tutor').value.trim();
   if (!tutor) { $('t-tutor').focus(); alert('Escribe el nombre del tutor o tutora.'); return; }
-  const total = Object.values(T.cant).reduce((a, b) => a + (b || 0), 0);
+  const cantidades = {};
+  T.camp.catalogo.productos.forEach(p => { const n = totalProducto(p.id); if (n > 0 && p.menus.includes(T.curso.menu)) cantidades[p.id] = n; });
+  const total = sumaObj(cantidades);
   if (!total && !confirm('No has puesto ningún producto. ¿Enviar el recuento vacío (nadie se ha apuntado)?')) return;
   const alergias = leerAlergias();
-  const sinElegir = [...document.querySelectorAll('#t-al-pedidos .al-persona')].flatMap(f => [...f.querySelectorAll('select, input')])
-    .find(el => !el.value.trim());
-  if (sinElegir) { sinElegir.focus(); alert(sinElegir.tagName === 'INPUT' ? 'Indica a qué es alérgico/a cada alumno/a de «Otras» (sin nombres).' : 'Indica qué ha pedido cada alumno/a con alergia (en cada desplegable, lo que ha pedido o «No pide»).'); return; }
+  if (alergias.otra && !alergias.cual) { $('t-al-cual').focus(); alert('Indica cuáles son las otras alergias o intolerancias (sin nombres de alumnos/as).'); return; }
   const btn = $('t-enviar');
   btn.disabled = true; btn.textContent = 'Enviando…';
   try {
-    const r = await api('enviar', { campana: T.camp.id, curso: T.curso.id, tutor, cantidades: T.cant, alergias, observaciones: $('t-obs').value.trim() });
+    const r = await api('enviar', { campana: T.camp.id, curso: T.curso.id, tutor, cantidades, alergias, observaciones: $('t-obs').value.trim() });
     store.set('bs-tutor', { ...store.get('bs-tutor', {}), tutor });
     const corr = !!T.previo;
     T.previo = r.recuento;
@@ -1676,7 +1633,7 @@ function listado(camp, cursos, etapas) {
     return tabla(['Etapa', 'Sin gluten', 'Sin lactosa', 'Otras', '¿Cuáles?'],
       filas.map(({ e, a }) => `<tr><td><strong>${esc(e)}</strong></td>${celdaN(a.gluten)}${celdaN(a.lactosa)}${celdaN(a.otra)}<td>${esc(a.cual)}</td></tr>`),
       ['Total', num(t.gluten), num(t.lactosa), num(t.otra), esc(t.cual)], ['', 'n', 'n', 'n', ''])
-      + (t.pedidos.length ? `<p class="small" style="margin:.6rem 0 0"><strong>Qué han pedido:</strong> ${esc(textoPedidosAlergia(t.pedidos))}</p>` : '');
+      + ((t.gluten || t.lactosa) ? `<p class="small" style="margin:.6rem 0 0"><strong>Qué han pedido:</strong> ${esc([t.gluten ? 'sin gluten: ' + detalleProductos(t.porProducto.gluten) : '', t.lactosa ? 'sin lactosa: ' + detalleProductos(t.porProducto.lactosa) : ''].filter(Boolean).join(' · '))}</p>` : '');
   };
   const dias = diasDe(camp);
   switch (k) {
@@ -1717,7 +1674,7 @@ function listado(camp, cursos, etapas) {
       return tablaAlergiasEtapa(cursos);
     case 'alergias-desglose': {
       const filas = cursos.map(c => ({ c, r: recDe(camp, c) })).filter(x => x.r && textoAlergias(x.r.alergias));
-      return filas.length ? tabla(['Clase', 'Día', 'Alergias y lo que han pedido'],
+      return filas.length ? tabla(['Clase', 'Día', 'Alergias e intolerancias'],
         filas.map(({ c, r }) => `<tr><td><strong>${esc(c.nombre)}</strong><div class="muted small">${esc(c.etapa)}</div></td><td>${esc(nombreDia(fechaCurso(camp, c) || camp.fecha))}</td><td style="white-space:normal">${esc(textoAlergias(r.alergias))}</td></tr>`),
         null, ['', '', ''], { primera: 150, derecha: [] }) : '<p class="muted small" style="margin:0">Ningún alumno/a con alergias o intolerancias.</p>';
     }
@@ -1725,12 +1682,12 @@ function listado(camp, cursos, etapas) {
       return dias.map(f => `<h3>📅 ${esc(tituloDia(f))}</h3>` + tablaAlergiasEtapa(cursosDelDia(camp, cursos, f))).join('');
     case 'compra-totales': {
       const l = listaCompra(camp, cursos);
-      return avisoAl(cursos) + (l.length ? tablaCompra(l) : vacio);
+      return avisoAl(cursos) + (l.length ? tablaCompra(l, panSinGluten(camp, cursos)) : vacio);
     }
     case 'compra-etapas':
-      return etapas.map(e => { const cs = cursos.filter(c => c.etapa === e); const l = listaCompra(camp, cs); return l.length ? `<h3>${esc(e)}</h3>${avisoAl(cs)}${tablaCompra(l)}` : ''; }).join('') || vacio;
+      return etapas.map(e => { const cs = cursos.filter(c => c.etapa === e); const l = listaCompra(camp, cs); return l.length ? `<h3>${esc(e)}</h3>${avisoAl(cs)}${tablaCompra(l, panSinGluten(camp, cs))}` : ''; }).join('') || vacio;
     case 'compra-dias':
-      return dias.map(f => { const cs = cursosDelDia(camp, cursos, f); const l = listaCompra(camp, cs); return `<h3>📅 ${esc(tituloDia(f))}</h3>${avisoAl(cs)}${l.length ? tablaCompra(l) : vacio}`; }).join('')
+      return dias.map(f => { const cs = cursosDelDia(camp, cursos, f); const l = listaCompra(camp, cs); return `<h3>📅 ${esc(tituloDia(f))}</h3>${avisoAl(cs)}${l.length ? tablaCompra(l, panSinGluten(camp, cs)) : vacio}`; }).join('')
         + (dias.length > 1 ? '<p class="muted small" style="margin:.4rem 0 0">Cada día se redondea por separado (por ejemplo, las tortillas), así que la suma de los dos días puede ser algo mayor que el total.</p>' : '');
   }
   return '';
@@ -1871,9 +1828,16 @@ function vistaClases(camp) {
     </div>`;
 }
 
-function tablaCompra(lista) {
+// Pan que tiene que ser sin gluten: el de los bocadillos sin gluten (artículos de la compra cuyo id empieza por «pan»)
+function panSinGluten(camp, cursos) {
+  const g = sumarAlergias(cursos.map(c => recsDe(camp.id).find(r => r.cursoId === c.id))).porProducto.gluten;
+  const res = {};
+  camp.catalogo.productos.forEach(p => { const n = g[p.id] || 0; if (n) p.compra.forEach(x => { if (/^pan/.test(x.articulo)) res[x.articulo] = (res[x.articulo] || 0) + Math.ceil(n * factorCompra(x)); }); });
+  return res;
+}
+function tablaCompra(lista, sinGluten = {}) {
   return tabla(['Artículo', 'Dónde', 'Cantidad', 'A comprar'],
-    lista.map(a => `<tr><td><strong>${esc(a.nombre)}</strong></td><td class="${a.tienda ? '' : 'muted'}" style="text-align:center">${esc(a.tienda || '—')}</td><td class="n">${num(a.total)} ${esc(a.unidad)}</td><td class="n">${a.packs != null ? `<strong>${num(a.packs)} ${esc(a.packNombre || 'paquetes')}</strong> <span class="muted small">(de ${a.pack})</span>` : '<span class="muted">—</span>'}</td></tr>`),
+    lista.map(a => `<tr><td><strong>${esc(a.nombre)}</strong></td><td class="${a.tienda ? '' : 'muted'}" style="text-align:center">${esc(a.tienda || '—')}</td><td class="n">${num(a.total)} ${esc(a.unidad)}${sinGluten[a.id] ? `<div class="small" style="color:var(--naranja-hover);font-weight:600">de ellas ${num(sinGluten[a.id])} sin gluten</div>` : ''}</td><td class="n">${a.packs != null ? `<strong>${num(a.packs)} ${esc(a.packNombre || 'paquetes')}</strong> <span class="muted small">(de ${a.pack})</span>` : '<span class="muted">—</span>'}</td></tr>`),
     null, ['', '', 'n', 'n'], { primera: 240 });
 }
 
@@ -1898,7 +1862,7 @@ function vistaCompra(camp) {
         </div>
       </div>
       ${(() => { const al = textoAlergias(sumarAlergias(cs.map(c => recsDe(camp.id).find(r => r.cursoId === c.id)))); return al ? `<div class="aviso-alergias">⚠️ <strong>Alergias e intolerancias:</strong> ${esc(al)}. Tenedlo en cuenta al comprar (por ejemplo, pan sin gluten).</div>` : ''; })()}
-      ${lista.length ? tablaCompra(lista)
+      ${lista.length ? tablaCompra(lista, panSinGluten(camp, cs))
       : '<p class="muted" style="margin:0">Todavía no hay recuentos en este ámbito.</p>'}
       <p class="muted small" style="margin:.4rem 0 0">Las cantidades con decimales (por ejemplo, las tortillas) se redondean hacia arriba.</p>
     </div>
@@ -2702,7 +2666,7 @@ document.querySelectorAll('.role-tab').forEach(b => b.onclick = () => {
 
 if (DEMO) {
   $('demo').hidden = false;
-  $('demo-reset').onclick = () => { try { localStorage.removeItem('bs-demo-2'); } catch {} location.reload(); };
+  $('demo-reset').onclick = () => { try { localStorage.removeItem('bs-demo-4'); } catch {} location.reload(); };
 }
 // Con #tutores o #pastoral en el enlace se abre directamente ese papel
 // (y al volver de iniciar sesión con Microsoft 365, el papel que se estaba usando)
