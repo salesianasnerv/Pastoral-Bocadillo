@@ -2071,24 +2071,31 @@ function tablaCompra(lista, sinGluten = {}) {
     null, ['', '', 'n', 'n'], { primera: 240 });
 }
 
+// Ámbito de la lista de la compra: 'colegio', una etapa o 'dia:AAAA-MM-DD'
+const cursosAmbito = (camp, cursos, a) => a === 'colegio' ? cursos : a.startsWith('dia:') ? cursosDelDia(camp, cursos, a.slice(4)) : cursos.filter(c => c.etapa === a);
+const nombreAmbito = a => a === 'colegio' ? 'Colegio' : a.startsWith('dia:') ? tituloDia(a.slice(4)) : a;
 function vistaCompra(camp) {
   const cursos = cursosDe(camp);
   const etapas = etapasCon(cursos);
-  if (P.ambito !== 'colegio' && !etapas.includes(P.ambito)) P.ambito = 'colegio';
-  const cs = P.ambito === 'colegio' ? cursos : cursos.filter(c => c.etapa === P.ambito);
+  const dias = diasDe(camp).map(f => 'dia:' + f);
+  if (P.ambito !== 'colegio' && !etapas.includes(P.ambito) && !dias.includes(P.ambito)) P.ambito = 'colegio';
+  const modo = P.ambito === 'colegio' ? 'colegio' : P.ambito.startsWith('dia:') ? 'dias' : 'etapas';
+  const cs = cursosAmbito(camp, cursos, P.ambito);
   const lista = listaCompra(camp, cs);
   const rep = repartoPorClase(camp, cs);
   return `
-    <div class="chips">
-      <button class="chip ${P.ambito === 'colegio' ? 'active' : ''}" data-ambito="colegio">Todo el colegio</button>
-      ${etapas.map(e => `<button class="chip ${e === P.ambito ? 'active' : ''}" data-ambito="${esc(e)}">${esc(e)}</button>`).join('')}
+    <div class="chips" style="margin-bottom:.5rem">
+      <button class="chip ${modo === 'colegio' ? 'active' : ''}" data-ambito="colegio">🏢 Todo el colegio</button>
+      <button class="chip ${modo === 'etapas' ? 'active' : ''}" data-ambito="${esc(modo === 'etapas' ? P.ambito : etapas[0] || 'colegio')}">🎓 Por etapas</button>
+      <button class="chip ${modo === 'dias' ? 'active' : ''}" data-ambito="${esc(modo === 'dias' ? P.ambito : dias[0])}">📅 Por días</button>
     </div>
+    ${modo === 'colegio' ? '' : `<div class="chips modos" style="margin-bottom:1rem">${(modo === 'etapas' ? etapas : dias).map(a => `<button class="chip ${a === P.ambito ? 'active' : ''}" data-ambito="${esc(a)}">${esc(nombreAmbito(a))}</button>`).join('')}</div>`}
     <div class="card">
       <div class="acciones" style="justify-content:space-between;margin-bottom:.8rem">
-        <h2 style="margin:0">Lista de la compra · ${P.ambito === 'colegio' ? 'Colegio' : esc(P.ambito)}</h2>
+        <h2 style="margin:0">Lista de la compra · ${esc(nombreAmbito(P.ambito))}</h2>
         <div class="acciones">
           <button class="btn sec" data-pdf="compra-ambito">📄 PDF de esta lista</button>
-          <button class="btn" data-pdf="compra-todo">📄 PDF completo (colegio + etapas)</button>
+          <button class="btn" data-pdf="compra-todo">📄 PDF completo (colegio, etapas y días)</button>
         </div>
       </div>
       ${lista.length ? tablaCompra(lista, panSinGluten(camp, cs))
@@ -2915,16 +2922,17 @@ function generarPDF(tipo, camp, cursoId) {
 
   if (tipo === 'compra-ambito' || tipo === 'compra-todo') {
     if (!(doc = nuevoPDF())) return;
-    const ambitos = tipo === 'compra-todo' ? ['colegio', ...etapas] : [P.ambito];
+    const dias = tieneDosDias(camp) ? diasDe(camp).map(f => 'dia:' + f) : [];
+    const ambitos = tipo === 'compra-todo' ? ['colegio', ...etapas, ...dias] : [P.ambito];
     ambitos.forEach((a, i) => {
       if (i > 0) doc.addPage('a4', 'portrait');
-      const cs = a === 'colegio' ? cursos : cursos.filter(c => c.etapa === a);
+      const cs = cursosAmbito(camp, cursos, a);
       const s = sumar(camp, cs);
-      const y = cabecera(doc, camp, 'Lista de la compra · ' + (a === 'colegio' ? 'Colegio' : a), `${s.enviados} de ${s.total} clases han enviado · Recaudado: ${eurPDF(s.centimos)}`);
-      seccionCompra(doc, camp, cs, a === 'colegio' ? 'Total del colegio' : 'Etapa · ' + a, y);
+      const y = cabecera(doc, camp, 'Lista de la compra · ' + nombreAmbito(a), `${s.enviados} de ${s.total} clases han enviado · Recaudado: ${eurPDF(s.centimos)}`);
+      seccionCompra(doc, camp, cs, a === 'colegio' ? 'Total del colegio' : a.startsWith('dia:') ? 'Día · ' + nombreAmbito(a) : 'Etapa · ' + a, y);
     });
     piePDF(doc);
-    doc.save(nombreArchivo(camp, 'lista-compra-' + (tipo === 'compra-todo' ? 'completa' : P.ambito)));
+    doc.save(nombreArchivo(camp, 'lista-compra-' + (tipo === 'compra-todo' ? 'completa' : P.ambito.replace('dia:', ''))));
   }
 }
 
