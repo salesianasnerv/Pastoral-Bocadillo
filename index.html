@@ -775,7 +775,7 @@ function catalogoPorDefecto() {
       A('pan-mini', 'Pan mini bocadillo (Infantil)', 'piezas', 0, '', 'Mercadona'),
       A('pan-pequeno', 'Molletes (1º-3º EPO)', 'piezas', 0, '', 'Panadería La Espiga'),
       A('pan-grande', 'Andaluzas (4º EPO en adelante)', 'piezas', 0, '', 'Panadería La Espiga'),
-      A('chopped', 'Chopped', 'lonchas', 120, 'piezas', 'Sercody'),
+      A('chopped', 'Chopped', 'lonchas', 170, 'piezas', 'Sercody'),
       A('chorizo', 'Chorizo/salchichón', 'lonchas', 125, 'piezas', 'Sercody'),
       A('nocilla', 'Nocilla', 'botes', 0, '', 'Sercody'),
       A('tortilla', 'Tortilla', 'tortillas', 0, '', 'Sercody'),
@@ -792,13 +792,13 @@ function catalogoPorDefecto() {
     ],
     productos: [
       P('mini-chopped', 'Mini bocadillo de chopped', 1, 'comida', ['infantil'], [['pan-mini', 1], ['chopped', 2]]),
-      P('mini-nocilla', 'Mini bocadillo de Nocilla', 1, 'comida', ['infantil'], [['pan-mini', 1], ['nocilla', 1, 11]]),
-      P('boc-peq-chopped', 'Bocadillo pequeño de chopped', 1.5, 'comida', ['primaria'], [['pan-pequeno', 1], ['chopped', 3]]),
-      P('boc-peq-nocilla', 'Bocadillo pequeño de Nocilla', 1.5, 'comida', ['primaria'], [['pan-pequeno', 1], ['nocilla', 1, 11]]),
+      P('mini-nocilla', 'Mini bocadillo de Nocilla', 1, 'comida', ['infantil'], [['pan-mini', 1], ['nocilla', 1, 18]]),
+      P('boc-peq-chopped', 'Bocadillo pequeño de chopped', 1.5, 'comida', ['primaria'], [['pan-pequeno', 1], ['chopped', 2]]),
+      P('boc-peq-nocilla', 'Bocadillo pequeño de Nocilla', 1.5, 'comida', ['primaria'], [['pan-pequeno', 1], ['nocilla', 1, 15]]),
       P('boc-peq-chorizo', 'Bocadillo pequeño de chorizo', 1.5, 'comida', ['primaria'], [['pan-pequeno', 1], ['chorizo', 5]]),
-      P('boc-gr-chopped', 'Bocadillo grande de chopped', 1.5, 'comida', grandes, [['pan-grande', 1], ['chopped', 4]]),
-      P('boc-gr-nocilla', 'Bocadillo grande de Nocilla', 1.5, 'comida', grandes, [['pan-grande', 1], ['nocilla', 1, 11]]),
-      P('boc-gr-chorizo', 'Bocadillo grande de chorizo', 1.5, 'comida', grandes, [['pan-grande', 1], ['chorizo', 9]]),
+      P('boc-gr-chopped', 'Bocadillo grande de chopped', 1.5, 'comida', grandes, [['pan-grande', 1], ['chopped', 3]]),
+      P('boc-gr-nocilla', 'Bocadillo grande de Nocilla', 1.5, 'comida', grandes, [['pan-grande', 1], ['nocilla', 1, 7]]),
+      P('boc-gr-chorizo', 'Bocadillo grande de chorizo', 1.5, 'comida', grandes, [['pan-grande', 1], ['chorizo', 8]]),
       P('boc-gr-tortilla', 'Bocadillo grande de tortilla', 2, 'comida', ['mayores'], [['pan-grande', 1], ['tortilla', 1, 5]]),
       P('mahonesa', 'Sobre de mayonesa', 0.2, 'extra', ['mayores'], [['mahonesa', 1]], 'Extras'),
       P('platano', 'Plátano', 1, 'fruta', todos, [['platano', 1]], 'Fruta'),
@@ -962,7 +962,7 @@ async function api(action, data = {}) {
 
 // Copia del script de Apps Script que guarda los datos en este navegador (solo modo prueba)
 function demoDb() {
-  let db = store.get('bs-demo-5', null);
+  let db = store.get('bs-demo-6', null);
   if (!db) {
     db = { cursos: null, campanas: [], recuentos: [] };
     const cursos = cursosPorDefecto();
@@ -988,13 +988,13 @@ function demoDb() {
       ['gluten', 'lactosa'].forEach(k => Object.entries(alergias.porProducto[k]).forEach(([id, n]) => { cantidades[id] = (cantidades[id] || 0) + n; }));
       db.recuentos.push({ campana: 'demo1', cursoId: c.id, curso: c.nombre, etapa: c.etapa, tutor: nombres[i % nombres.length], cantidades, alergias, observaciones: '', enviado: t, actualizado: t });
     });
-    store.set('bs-demo-5', db);
+    store.set('bs-demo-6', db);
   }
   return db;
 }
 function demoApi(action, d) {
   const db = demoDb();
-  const guardar = () => store.set('bs-demo-5', db);
+  const guardar = () => store.set('bs-demo-6', db);
   const auth = () => { if (d.clave !== 'prueba') throw new Error('Contraseña incorrecta.'); };
   // Igual que en el script: el 1 de septiembre se empieza solo el curso nuevo
   const hoy = cursoEscolar(new Date().toISOString().slice(0, 10));
@@ -3058,7 +3058,7 @@ document.querySelectorAll('.role-tab').forEach(b => b.onclick = () => {
 
 if (DEMO) {
   $('demo').hidden = false;
-  $('demo-reset').onclick = () => { try { localStorage.removeItem('bs-demo-5'); } catch {} location.reload(); };
+  $('demo-reset').onclick = () => { try { localStorage.removeItem('bs-demo-6'); } catch {} location.reload(); };
 }
 // Con #tutores o #pastoral en el enlace se abre directamente ese papel
 // (y al volver de iniciar sesión con Microsoft 365, el papel que se estaba usando)
