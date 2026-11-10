@@ -524,8 +524,8 @@
         </label>
         <p class="muted small" style="margin:.3rem 0 0"><strong>No escribas ningún dato personal ni nombres de alumnos/as.</strong></p>
         <div class="adjuntos">
-          <div class="prod-nombre">📎 Lista de la clase (opcional)</div>
-          <p class="muted small" style="margin:.2rem 0 .6rem">Para quien haga el reparto, si no lo haces tú. Haz una foto con el móvil o adjunta una imagen o un PDF (hasta 3). Solo la ve el profesorado del colegio en «Reparto» y se borra unos días después del bocadillo.</p>
+          <div class="prod-nombre">📎 Lista de la clase</div>
+          <p class="muted small" style="margin:.2rem 0 .6rem">Para quien haga el reparto, si no lo haces tú. Haz una foto con el móvil o adjunta una imagen o un PDF (hasta 3). Es necesaria para enviar el recuento. Solo la ve el profesorado del colegio en «Reparto» y se borra unos días después del bocadillo.</p>
           <label class="btn sec btn-adj" style="margin:0">📷 Hacer foto o adjuntar<input type="file" id="t-adj" accept="image/*,application/pdf" multiple></label>
           <div id="t-adj-lista" class="adj-lista"></div>
         </div>
@@ -624,7 +624,7 @@
         <div id="p-subtabs">
           <div class="subtabs">
             <button class="subtab active" data-sub="resumen">📊 Resumen</button>
-            <button class="subtab" data-sub="clases">🏫 Por clase</button>
+            <button class="subtab" data-sub="listados">📋 Listados</button>
             <button class="subtab" data-sub="compra">🛒 Lista de la compra</button>
             <button class="subtab" data-sub="balance">💶 Balance económico</button>
             <button class="btn-editar" id="p-editar" aria-expanded="false">✏️ Editar</button>
@@ -1375,6 +1375,7 @@ $('t-tutor').onchange = () => store.set('bs-tutor', { ...store.get('bs-tutor', {
 $('t-enviar').onclick = async () => {
   const tutor = $('t-tutor').value.trim();
   if (!tutor) { $('t-tutor').focus(); alert('Escribe el nombre del tutor o tutora.'); return; }
+  if (!(T.adj || []).length) { $('t-adj').closest('.adjuntos').scrollIntoView({ behavior: 'smooth', block: 'center' }); alert('Adjunta la foto o el documento con la lista de la clase.'); return; }
   leerOtras();
   const cantidades = {};
   T.camp.catalogo.productos.forEach(p => { const n = totalProducto(p.id); if (n > 0 && p.menus.includes(T.curso.menu)) cantidades[p.id] = n; });
@@ -1406,7 +1407,7 @@ $('t-enviar').onclick = async () => {
 /* =========================================================================
    PASTORAL: cálculos
    ========================================================================= */
-const P = { clave: sesion.get(), datos: null, anio: null, campId: null, sub: 'resumen', lista: 'clase', modo: 'totales', etapa: 'Infantil', ambito: 'colegio', edit: null, editCamp: null };
+const P = { clave: sesion.get(), datos: null, anio: null, campId: null, sub: 'resumen', lista: 'preparar', modo: 'dias', etapa: 'Infantil', ambito: 'colegio', edit: null, editCamp: null };
 
 const campActual = () => P.datos.campanas.find(c => c.id === P.campId);
 const recsDe = campId => P.datos.recuentos.filter(r => r.campana === campId);
@@ -1598,7 +1599,7 @@ function pintarPanel() {
 
 function pintarSub() {
   const camp = campActual();
-  const f = { resumen: vistaResumen, clases: vistaClases, compra: vistaCompra, balance: vistaBalance, productos: vistaProductos, fechas: vistaFechas, cursos: vistaCursos, editar: vistaElegirEdicion }[P.sub];
+  const f = { resumen: vistaResumen, listados: vistaListados, clases: vistaClases, compra: vistaCompra, balance: vistaBalance, productos: vistaProductos, fechas: vistaFechas, cursos: vistaCursos, editar: vistaElegirEdicion }[P.sub];
   $('p-contenido').innerHTML = f(camp);
 }
 
@@ -1675,50 +1676,43 @@ function tarjetaBalance(camp) {
 }
 
 function vistaBalance(camp) {
-  if (!P.gastos || P.gastosCamp !== camp.id) { P.gastos = clone(gastosDe(camp)); P.gastosCamp = camp.id; }
   const cursos = cursosDe(camp);
   const etapas = etapasCon(cursos);
   const tot = sumar(camp, cursos);
   const tiendas = tiendasDe(camp);
+  const gastos = gastosDe(camp);
   return `
     <div class="kpis" id="b-kpis">${kpisBalance(camp)}</div>
     <div class="card">
       <div class="acciones" style="justify-content:space-between;margin-bottom:.4rem">
-        <h2 style="margin:0">Gastos</h2>
+        <h2 style="margin:0">Ingresos</h2>
         <button class="btn" data-pdf="balance">📄 PDF del balance</button>
       </div>
-      <p class="muted small" style="margin-top:0">Apunta lo que ha costado cada compra (por ejemplo, el importe de cada ticket).</p>
-      <datalist id="b-tiendas">${tiendas.map(t => `<option value="${esc(t)}">`).join('')}</datalist>
-      ${P.gastos.length ? `<div class="gasto gasto-cab muted small"><span>Concepto</span><span>Tienda</span><span>Importe (€)</span><span></span></div>` : ''}
-      ${P.gastos.map((g, i) => `
-        <div class="gasto">
-          <input data-g="${i}" data-gk="concepto" value="${esc(g.concepto)}" placeholder="Por ejemplo: Compra de bebidas">
-          <input data-g="${i}" data-gk="tienda" value="${esc(g.tienda)}" list="b-tiendas" placeholder="Tienda">
-          <input data-g="${i}" data-gk="importe" value="${esc(typeof g.importe === 'number' ? (g.importe ? g.importe.toFixed(2).replace('.', ',') : '') : (g.importe ?? ''))}" inputmode="decimal" placeholder="0,00" style="text-align:right">
-          <button class="x" data-quitar-g="${i}" title="Quitar gasto">🗑</button>
-        </div>`).join('')}
-      <div class="acciones" style="margin-top:.6rem">
-        <button class="btn sec" data-anadir-g>+ Añadir gasto</button>
-        ${tiendas.length ? `<button class="btn sec" data-gastos-tiendas title="Crea una línea por cada tienda de la lista de la compra">+ Una línea por tienda (${tiendas.map(esc).join(', ')})</button>` : ''}
-      </div>
-    </div>
-    <div class="guardar-barra">
-      <span class="small" style="margin-right:auto">Total gastos: <strong id="b-total-gastos">${eur(centGastos(P.gastos))}</strong></span>
-      <button class="btn sec" data-gastos="descartar">Descartar cambios</button>
-      <button class="btn" data-gastos="guardar">💾 Guardar gastos</button>
-    </div>
-    <div class="card" style="margin-top:1rem">
-      <h2>Ingresos por etapa</h2>
       <p class="muted small" style="margin-top:0">Lo que suman los recuentos enviados por los tutores.</p>
       ${tabla(['Etapa', 'Clases', 'Ingresos'],
         etapas.map(e => { const s = sumar(camp, cursos.filter(c => c.etapa === e)); return `<tr><td><strong>${esc(e)}</strong></td><td class="n">${s.enviados} / ${s.total}</td><td class="n"><strong>${eur(s.centimos)}</strong></td></tr>`; }),
-        ['Total', `${tot.enviados} / ${tot.total}`, eur(tot.centimos)], ['', 'n', 'n'])}
+        ['Total ingresos', `${tot.enviados} / ${tot.total}`, eur(tot.centimos)], ['', 'n', 'n'])}
+    </div>
+    <div class="card">
+      <h2>Gastos</h2>
+      <p class="muted small" style="margin-top:0">Apunta cada compra cuando tengas el ticket. Se guarda al momento y queda en esta lista.</p>
+      <datalist id="b-tiendas">${tiendas.map(t => `<option value="${esc(t)}">`).join('')}</datalist>
+      ${gastos.length ? tabla(['Concepto', 'Tienda', 'Fecha', 'Importe', ''],
+        gastos.map((g, i) => `<tr><td>${esc(g.concepto || '—')}</td><td style="text-align:center">${esc(g.tienda || '—')}</td><td style="text-align:center" class="small">${g.fecha ? esc(fechaCortaNum(g.fecha)) : '—'}</td><td class="n"><strong>${eur(cent(g.importe))}</strong></td><td><button class="btn peligro mini" data-quitar-g="${i}" title="Borrar este gasto">✕</button></td></tr>`),
+        ['Total gastos', '', '', eur(centGastos(gastos)), ''], ['', '', '', 'n', ''], { primera: 200, derecha: [96, 52] })
+      : '<p class="muted" style="margin:0 0 .6rem">Todavía no se ha apuntado ningún gasto.</p>'}
+      <form id="b-nuevo" class="gasto" style="margin-top:.8rem">
+        <input id="b-concepto" placeholder="Concepto (por ejemplo: Compra de bebidas)" required>
+        <input id="b-tienda" list="b-tiendas" placeholder="Tienda">
+        <input id="b-importe" inputmode="decimal" placeholder="0,00 €" style="text-align:right" required>
+        <button class="btn" type="submit" id="b-anadir">➕ Añadir gasto</button>
+      </form>
     </div>`;
 }
 
 function kpisBalance(camp) {
   const ingresos = sumar(camp, cursosDe(camp)).centimos;
-  const gastos = centGastos(P.gastosCamp === camp.id && P.gastos ? P.gastos : gastosDe(camp));
+  const gastos = centGastos(gastosDe(camp));
   const ganancia = ingresos - gastos;
   const margen = ingresos ? Math.round(ganancia / ingresos * 100) : 0;
   return `
@@ -1739,6 +1733,7 @@ function gastosCambio(e) {
 
 // Resumen: arriba los totales, el balance y las clases que faltan; debajo, listados que se eligen y se filtran
 const LISTADOS = {
+  preparar: { nombre: '🥪 Para preparar los bocadillos', modos: [['dias', 'Por día']] },
   clase: { nombre: '🏫 Por clase', modos: [['totales', 'Totales'], ['productos', 'Por productos']] },
   etapa: { nombre: '🎓 Por etapa', modos: [['totales', 'Totales'], ['productos', 'Por productos']] },
   colegio: { nombre: '🏢 Colegio', modos: [['totales', 'Totales'], ['productos', 'Por productos'], ['dias', 'Por días']] },
@@ -1776,15 +1771,57 @@ function vistaResumen(camp) {
       ${pend || '<p class="muted" style="margin:0">🎉 Todas las clases han enviado su recuento.</p>'}
     </div>
     <div class="card">
-      <h2 style="margin-bottom:.6rem">Listados</h2>
+      <div class="acciones" style="justify-content:space-between;margin-bottom:.8rem">
+        <h2 style="margin:0">Totales del colegio</h2>
+        <button class="btn sec" data-ir-listados>Ver todos los listados →</button>
+      </div>
+      ${listado(camp, cursos, etapas, 'colegio-totales')}
+    </div>`;
+}
+
+function vistaListados(camp) {
+  const cursos = cursosDe(camp);
+  const etapas = etapasCon(cursos);
+  if (!LISTADOS[P.lista]) P.lista = 'preparar';
+  const modos = LISTADOS[P.lista].modos;
+  if (!modos.some(([m]) => m === P.modo)) P.modo = modos[0][0];
+  return `<div class="card">
       <div class="chips" style="margin-bottom:.5rem">${Object.entries(LISTADOS).map(([k, l]) => `<button class="chip ${k === P.lista ? 'active' : ''}" data-lista="${k}">${l.nombre}</button>`).join('')}</div>
-      <div class="chips modos"><span class="muted small">Ver:</span>${modos.map(([m, t]) => `<button class="chip ${m === P.modo ? 'active' : ''}" data-modo="${m}">${t}</button>`).join('')}</div>
+      ${modos.length > 1 ? `<div class="chips modos"><span class="muted small">Ver:</span>${modos.map(([m, t]) => `<button class="chip ${m === P.modo ? 'active' : ''}" data-modo="${m}">${t}</button>`).join('')}</div>` : ''}
       ${listado(camp, cursos, etapas)}
     </div>`;
 }
 
-function listado(camp, cursos, etapas) {
-  const k = P.lista + '-' + P.modo;
+// Cómo se prepara cada bocadillo, a partir de lo que gasta en la lista de la compra:
+// «1 andaluza + 9 lonchas de chorizo/salchichón» y «1 tortilla por cada 5 bocadillos»
+const singular = u => u === 'unidades' ? 'unidad' : String(u || '').replace(/s$/, '');
+function instrucciones(camp, p) {
+  if (p.categoria !== 'comida') return '';
+  return p.compra.map(x => {
+    const a = camp.catalogo.articulos.find(y => y.id === x.articulo);
+    if (!a) return '';
+    const nombre = a.nombre.replace(/\s*\(.*\)\s*/, '').trim();
+    const n = Number(x.cantidad) || 0, cada = Number(x.cada) || 1;
+    const unidad = n === 1 ? singular(a.unidad) : a.unidad;
+    // «1 tortilla» (no «1 tortilla de tortilla») cuando el artículo ya se llama como su unidad
+    const mismo = nombre.toLowerCase().startsWith(singular(a.unidad).toLowerCase());
+    const que = /^pan/.test(a.id) ? `${num(n)} ${n === 1 ? 'pan' : 'panes'} (${nombre.toLowerCase()})` : mismo ? `${num(n)} ${unidad}` : `${num(n)} ${unidad} de ${nombre.toLowerCase()}`;
+    return cada > 1 ? `${que} por cada ${num(cada)} bocadillos` : que;
+  }).filter(Boolean).join(' + ');
+}
+// Lo que hay que preparar un día: total de cada producto y cuántos son sin gluten, sin lactosa u otra alergia
+function preparacionDia(camp, cursos, f) {
+  const cs = cursosDelDia(camp, cursos, f);
+  const tot = sumar(camp, cs).porProducto;
+  const al = sumarAlergias(cs.map(c => recDe(camp, c)));
+  const otras = cantOtras(al.otras);
+  const otrasQue = {};
+  (al.otras || []).forEach(x => CAMPOS_OTRAS.forEach(([c]) => { const id = x[c]; if (id) (otrasQue[id] ||= new Set()).add(x.alergia || 'otra'); }));
+  return camp.catalogo.productos.filter(p => tot[p.id]).map(p => ({ p, total: tot[p.id], gluten: al.porProducto.gluten[p.id] || 0,
+    lactosa: al.porProducto.lactosa[p.id] || 0, otra: otras[p.id] || 0, otraQue: [...(otrasQue[p.id] || [])].join(', '), como: instrucciones(camp, p) }));
+}
+
+function listado(camp, cursos, etapas, k = P.lista + '-' + P.modo) {
   const vacio = '<p class="muted" style="margin:0">Todavía no hay recuentos.</p>';
   const filaCats = (titulo, s, extra = '') => `<tr><td><strong>${titulo}</strong>${extra}</td><td class="n">${s.enviados} / ${s.total}</td>${celdaN(s.porCat.comida)}${celdaN(s.porCat.fruta)}${celdaN(s.porCat.bebida)}${celdaN(s.porCat.extra)}<td class="n"><strong>${eur(s.centimos)}</strong></td></tr>`;
   const cabCats = ['', 'Clases', 'Bocadillos', 'Fruta', 'Bebidas', 'Extras', 'Dinero'];
@@ -1813,6 +1850,16 @@ function listado(camp, cursos, etapas) {
   };
   const dias = diasDe(camp);
   switch (k) {
+    case 'preparar-dias':
+      return `<p class="muted small" style="margin-top:0">Lo que hay que preparar cada día. Descarga el PDF del día o los carteles de cada producto (en grande, con cómo se prepara) para imprimirlos.</p>`
+        + dias.map(f => {
+          const filas = preparacionDia(camp, cursos, f);
+          return `<div class="acciones" style="justify-content:space-between;margin:1rem 0 .5rem"><h3 style="margin:0">📅 ${esc(tituloDia(f))}</h3>
+              <div class="acciones"><button class="btn sec" data-pdf="preparar" data-dia="${f}">📄 PDF del día</button><button class="btn" data-pdf="carteles" data-dia="${f}">🪧 Carteles de todos los productos</button></div></div>`
+            + (filas.length ? tabla(['Producto', 'Total', 'Sin gluten', 'Sin lactosa', 'Otra alergia', 'Cómo se prepara', ''],
+              filas.map(x => `<tr><td><strong>${esc(x.p.nombre)}</strong></td><td class="n"><strong>${num(x.total)}</strong></td>${celdaN(x.gluten)}${celdaN(x.lactosa)}<td class="n${x.otra ? '' : ' cero'}">${x.otra ? num(x.otra) + `<div class="small">${esc(x.otraQue)}</div>` : '·'}</td><td class="small" style="white-space:normal">${esc(x.como) || '<span class="muted">—</span>'}</td><td><button class="btn sec mini" data-pdf="cartel" data-dia="${f}" data-prod="${esc(x.p.id)}" title="Cartel de este producto">🪧</button></td></tr>`),
+              null, ['', 'n', 'n', 'n', 'n', '', ''], { primera: 190, derecha: [210, 52] }) : vacio);
+        }).join('');
     case 'clase-totales':
       return `<p class="muted small" style="margin-top:0">Lo que ha pedido cada clase, por tipo de producto.</p>` + tabla(cabCats.map((h, i) => i ? h : 'Clase'),
         etapas.flatMap(e => [`<tr class="fila-grupo"><td colspan="7">${esc(e)}</td></tr>`, ...cursos.filter(c => c.etapa === e).map(c => {
@@ -1858,12 +1905,12 @@ function listado(camp, cursos, etapas) {
       return dias.map(f => `<h3>📅 ${esc(tituloDia(f))}</h3>` + tablaAlergiasEtapa(cursosDelDia(camp, cursos, f))).join('');
     case 'compra-totales': {
       const l = listaCompra(camp, cursos);
-      return avisoAl(cursos) + (l.length ? tablaCompra(l, panSinGluten(camp, cursos)) : vacio);
+      return (l.length ? tablaCompra(l, panSinGluten(camp, cursos)) : vacio);
     }
     case 'compra-etapas':
-      return etapas.map(e => { const cs = cursos.filter(c => c.etapa === e); const l = listaCompra(camp, cs); return l.length ? `<h3>${esc(e)}</h3>${avisoAl(cs)}${tablaCompra(l, panSinGluten(camp, cs))}` : ''; }).join('') || vacio;
+      return etapas.map(e => { const cs = cursos.filter(c => c.etapa === e); const l = listaCompra(camp, cs); return l.length ? `<h3>${esc(e)}</h3>${tablaCompra(l, panSinGluten(camp, cs))}` : ''; }).join('') || vacio;
     case 'compra-dias':
-      return dias.map(f => { const cs = cursosDelDia(camp, cursos, f); const l = listaCompra(camp, cs); return `<h3>📅 ${esc(tituloDia(f))}</h3>${avisoAl(cs)}${l.length ? tablaCompra(l, panSinGluten(camp, cs)) : vacio}`; }).join('')
+      return dias.map(f => { const cs = cursosDelDia(camp, cursos, f); const l = listaCompra(camp, cs); return `<h3>📅 ${esc(tituloDia(f))}</h3>${l.length ? tablaCompra(l, panSinGluten(camp, cs)) : vacio}`; }).join('')
         + (dias.length > 1 ? '<p class="muted small" style="margin:.4rem 0 0">Cada día se redondea por separado (por ejemplo, las tortillas), así que la suma de los dos días puede ser algo mayor que el total.</p>' : '');
   }
   return '';
@@ -2044,7 +2091,6 @@ function vistaCompra(camp) {
           <button class="btn" data-pdf="compra-todo">📄 PDF completo (colegio + etapas)</button>
         </div>
       </div>
-      ${(() => { const al = textoAlergias(sumarAlergias(cs.map(c => recsDe(camp.id).find(r => r.cursoId === c.id)))); return al ? `<div class="aviso-alergias">⚠️ <strong>Alergias e intolerancias:</strong> ${esc(al)}. Tenedlo en cuenta al comprar (por ejemplo, pan sin gluten).</div>` : ''; })()}
       ${lista.length ? tablaCompra(lista, panSinGluten(camp, cs))
       : '<p class="muted" style="margin:0">Todavía no hay recuentos en este ámbito.</p>'}
       <p class="muted small" style="margin:.4rem 0 0">Las cantidades con decimales (por ejemplo, las tortillas) se redondean hacia arriba.</p>
@@ -2235,6 +2281,24 @@ $('p-subtabs').onclick = e => {
   pintarPanel();
 };
 
+async function guardarGastos(camp, gastos, boton, txt) {
+  await conBoton(boton, async () => {
+    await api('guardarCampana', { clave: P.clave, campana: { ...camp, gastos } });
+    camp.gastos = gastos;
+    mensaje(txt);
+    pintarSub();
+  });
+}
+$('p-contenido').addEventListener('submit', async e => {
+  if (e.target.id !== 'b-nuevo') return;
+  e.preventDefault();
+  const camp = campActual();
+  const importe = Math.round(leerImporte($('b-importe').value) * 100) / 100;
+  if (!$('b-concepto').value.trim() || !importe) { alert('Escribe el concepto y el importe del gasto.'); return; }
+  const g = { concepto: $('b-concepto').value.trim(), tienda: $('b-tienda').value.trim(), importe, fecha: new Date().toISOString().slice(0, 10) };
+  await guardarGastos(camp, [...gastosDe(camp), g], '#b-anadir', 'Gasto añadido.');
+});
+
 async function accionPanel(e) {
   const b = e.target.closest('[data-acc]');
   if (!b) return;
@@ -2342,30 +2406,16 @@ $('p-contenido').addEventListener('click', async e => {
   if (d.etapa) { P.etapa = d.etapa; pintarSub(); return; }
   if (d.ambito) { P.ambito = d.ambito; pintarSub(); return; }
   if (d.irCompra !== undefined) { P.sub = 'compra'; P.ambito = 'colegio'; pintarPanel(); return; }
+  if (d.irListados !== undefined) { P.sub = 'listados'; P.lista = 'colegio'; P.modo = 'totales'; pintarPanel(); return; }
   if (d.irBalance !== undefined) { P.sub = 'balance'; pintarPanel(); return; }
-  if (d.anadirG !== undefined || d.quitarG !== undefined || d.gastosTiendas !== undefined || d.gastos) {
-    if (d.anadirG !== undefined) P.gastos.push({ concepto: '', tienda: '', importe: '' });
-    else if (d.quitarG !== undefined) P.gastos.splice(Number(d.quitarG), 1);
-    else if (d.gastosTiendas !== undefined) {
-      const ya = new Set(P.gastos.map(g => String(g.tienda).trim().toLowerCase()));
-      tiendasDe(camp).filter(t => !ya.has(t.toLowerCase())).forEach(t => P.gastos.push({ concepto: 'Compra en ' + t, tienda: t, importe: '' }));
-    }
-    else if (d.gastos === 'descartar') P.gastos = null;
-    else if (d.gastos === 'guardar') {
-      const gastos = P.gastos.map(g => ({ concepto: String(g.concepto || '').trim(), tienda: String(g.tienda || '').trim(), importe: Math.round(leerImporte(g.importe) * 100) / 100 }))
-        .filter(g => g.concepto || g.tienda || g.importe);
-      await conBoton('[data-gastos="guardar"]', async () => {
-        await api('guardarCampana', { clave: P.clave, campana: { ...camp, gastos } });
-        camp.gastos = gastos;
-        P.gastos = null;
-        mensaje('Gastos guardados.');
-        pintarSub();
-      });
-      return;
-    }
-    const y = window.scrollY; pintarSub(); window.scrollTo(0, y);
+  // Gastos: cada uno se guarda (o se borra) al momento
+  if (d.quitarG !== undefined) {
+    // Se confirma en el propio botón (pulsar dos veces), sin ventanas emergentes
+    if (!t.dataset.confirmar) { t.dataset.confirmar = '1'; t.textContent = '¿Borrar?'; setTimeout(() => { if (t.isConnected) { delete t.dataset.confirmar; t.textContent = '✕'; } }, 4000); return; }
+    await guardarGastos(camp, gastosDe(camp).filter((_, i) => i !== Number(d.quitarG)), `[data-quitar-g="${d.quitarG}"]`, 'Gasto borrado.');
     return;
   }
+  if (d.pdf === 'preparar' || d.pdf === 'carteles' || d.pdf === 'cartel') { await cargarFira(); pdfPreparar(d.pdf, camp, d.dia, d.prod); return; }
   if (d.pdf) { await cargarFira(); generarPDF(d.pdf, camp, d.curso); return; }
   if (d.borrarRec) {
     const r = recsDe(camp.id).find(x => x.cursoId === d.borrarRec);
@@ -2597,12 +2647,6 @@ function seccionEtapa(doc, camp, etapa, y) {
 
 function seccionCompra(doc, camp, cursos, titulo, y, conReparto = true) {
   y = subtituloPDF(doc, y, titulo);
-  const al = textoAlergias(sumarAlergias(cursos.map(c => recsDe(camp.id).find(r => r.cursoId === c.id))));
-  if (al) {
-    doc.setFont(FUENTE, 'bold'); doc.setFontSize(9.5); doc.setTextColor(211, 90, 21);
-    const t = doc.splitTextToSize('Alergias e intolerancias: ' + al + '. Tenedlo en cuenta al comprar.', 180);
-    doc.text(t, 14, y + 2); doc.setTextColor(30); y += 3 + t.length * 4.5;
-  }
   const lista = listaCompra(camp, cursos);
   if (!lista.length) {
     doc.setFont(FUENTE, 'normal'); doc.setFontSize(10); doc.text('Sin recuentos todavía.', 14, y + 4);
@@ -2718,6 +2762,60 @@ function paginaLista(doc, camp, curso, r) {
   }
 }
 
+// Para preparar los bocadillos: PDF del día (tabla) y carteles por producto (uno por hoja, en grande)
+function pdfPreparar(tipo, camp, dia, prodId) {
+  const cursos = cursosDe(camp);
+  let filas = preparacionDia(camp, cursos, dia);
+  if (tipo === 'cartel') filas = filas.filter(x => x.p.id === prodId);
+  if (!filas.length) { alert('Todavía no hay nada que preparar ese día.'); return; }
+  const titDia = tituloDia(dia);
+  let doc;
+  if (tipo === 'preparar') {
+    if (!(doc = nuevoPDF('landscape'))) return;
+    let y = cabecera(doc, camp, 'Para preparar los bocadillos · ' + titDia, 'Total de cada producto y cuántos son para alumnado con alergia o intolerancia');
+    y = tablaPDF(doc, y, ['Producto', 'Total', 'Sin gluten', 'Sin lactosa', 'Otra alergia', 'Cómo se prepara'],
+      filas.map(x => [x.p.nombre, { content: numPDF(x.total), styles: { fontStyle: 'bold', fontSize: 13 } }, x.gluten ? numPDF(x.gluten) : '·', x.lactosa ? numPDF(x.lactosa) : '·',
+        x.otra ? `${numPDF(x.otra)} (${x.otraQue})` : '·', { content: x.como || '—', styles: { halign: 'left' } }]),
+      null, { fs: 11, derecha: false, cols: { 0: { cellWidth: 62 }, 1: { cellWidth: 20, halign: 'center' }, 2: { cellWidth: 22, halign: 'center' }, 3: { cellWidth: 22, halign: 'center' }, 4: { cellWidth: 38, halign: 'center' } } });
+    doc.setFont(FUENTE, 'bold'); doc.setFontSize(10); doc.setTextColor(211, 90, 21);
+    doc.text(doc.splitTextToSize('Los sin gluten se preparan con pan sin gluten y aparte, para que no se mezclen. Los de otras alergias, con cuidado y avisando a Pastoral si hay dudas.', 260), 14, y + 4);
+    piePDF(doc); doc.save(nombreArchivo(camp, 'preparar-' + dia)); return;
+  }
+  if (!(doc = nuevoPDF('landscape'))) return;
+  const w = doc.internal.pageSize.getWidth(), h = doc.internal.pageSize.getHeight();
+  filas.forEach((x, i) => {
+    if (i) doc.addPage('a4', 'landscape');
+    if (LOGO_PNG) doc.addImage(LOGO_PNG, 'JPEG', 14, 8, 34, 34 * 215 / 670, 'logo', 'FAST');
+    doc.setFont(FUENTE, 'bold'); doc.setFontSize(13); doc.setTextColor(...AZUL);
+    doc.text('Bocadillo solidario · ' + titDia, w - 14, 15, { align: 'right' });
+    doc.setDrawColor(...AZUL); doc.setLineWidth(0.6); doc.line(14, 21, w - 14, 21);
+    // Número enorme y el producto
+    doc.setTextColor(...AZUL); doc.setFontSize(110);
+    doc.text(numPDF(x.total), w / 2, 68, { align: 'center' });
+    doc.setTextColor(30); doc.setFontSize(30);
+    doc.text(doc.splitTextToSize(x.p.nombre, w - 40), w / 2, 86, { align: 'center' });
+    let y = 104;
+    const al = [x.gluten ? `${numPDF(x.gluten)} sin gluten` : '', x.lactosa ? `${numPDF(x.lactosa)} sin lactosa` : '', x.otra ? `${numPDF(x.otra)} con alergia a ${x.otraQue}` : ''].filter(Boolean);
+    if (al.length) {
+      doc.setFillColor(253, 236, 225); doc.setDrawColor(238, 113, 42); doc.setLineWidth(0.8);
+      doc.roundedRect(30, y - 9, w - 60, 16, 3, 3, 'FD');
+      doc.setFontSize(22); doc.setTextColor(211, 90, 21);
+      doc.text('De ellos: ' + al.join(' · '), w / 2, y + 2, { align: 'center' });
+      y += 20;
+    }
+    if (x.como) {
+      doc.setFontSize(14); doc.setTextColor(100); doc.text('CADA BOCADILLO LLEVA', w / 2, y + 4, { align: 'center' });
+      doc.setFontSize(24); doc.setTextColor(30);
+      const t = doc.splitTextToSize(x.como, w - 50);
+      doc.text(t, w / 2, y + 15, { align: 'center' });
+      y += 15 + t.length * 10;
+    }
+    if (x.gluten) { doc.setFontSize(15); doc.setTextColor(211, 90, 21); doc.text('Los sin gluten: con pan sin gluten y preparados aparte.', w / 2, Math.min(y + 6, h - 24), { align: 'center' }); }
+  });
+  piePDF(doc);
+  doc.save(nombreArchivo(camp, tipo === 'cartel' ? 'cartel-' + filas[0].p.nombre + '-' + dia : 'carteles-' + dia));
+}
+
 function generarPDF(tipo, camp, cursoId) {
   const cursos = cursosDe(camp);
   const etapas = etapasCon(cursos);
@@ -2742,9 +2840,9 @@ function generarPDF(tipo, camp, cursoId) {
     y = subtituloPDF(doc, y, 'Gastos');
     const gastos = gastosDe(camp);
     if (gastos.length) {
-      y = tablaPDF(doc, y + 1, ['Concepto', 'Tienda', 'Importe'],
-        gastos.map(g => [g.concepto || '—', { content: g.tienda || '—', styles: { halign: 'center' } }, eurPDF(cent(g.importe))]),
-        ['Total gastos', '', eurPDF(b.gastos)], { fs: 10, primera: 80 });
+      y = tablaPDF(doc, y + 1, ['Concepto', 'Tienda', 'Fecha', 'Importe'],
+        gastos.map(g => [g.concepto || '—', { content: g.tienda || '—', styles: { halign: 'center' } }, { content: g.fecha ? fechaCortaNum(g.fecha) : '—', styles: { halign: 'center' } }, eurPDF(cent(g.importe))]),
+        ['Total gastos', '', '', eurPDF(b.gastos)], { fs: 10, primera: 80 });
     } else {
       doc.setFont(FUENTE, 'normal'); doc.setFontSize(10); doc.text('Todavía no se han apuntado gastos.', 14, y + 4); y += 12;
     }
