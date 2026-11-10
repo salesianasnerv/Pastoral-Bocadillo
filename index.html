@@ -634,6 +634,7 @@
             <button class="subtab" data-sub="productos">🥪 Productos y precios</button>
             <button class="subtab" data-sub="fechas">📅 Nombre y fechas</button>
             <button class="subtab" data-sub="cursos">📋 Clases</button>
+            <button class="btn sec mini" data-acc="borrarListas" title="Borra las fotos y documentos con la lista de cada clase. Los recuentos y los tickets se quedan.">🧹 Borrar las listas de clase</button>
             <button class="btn peligro mini" data-acc="borrar">🗑 Borrar este bocadillo</button>
           </div>
         </div>
@@ -1069,6 +1070,14 @@ function demoApi(action, d) {
       db.campanas = db.campanas.filter(c => c.id !== d.id);
       db.recuentos = db.recuentos.filter(r => r.campana !== d.id);
       guardar(); return {};
+    // Pastoral borra las listas de clase de un bocadillo cuando lo decide (los recuentos y los tickets se quedan)
+    case 'borrarAdjuntos': {
+      auth();
+      let n = 0;
+      db.recuentos.filter(r => r.campana === d.campana).forEach(r => { if ((r.adjuntos || []).length) { n += r.adjuntos.length; r.adjuntos = []; r.listasBorradas = new Date().toISOString(); } });
+      guardar();
+      return { borrados: n };
+    }
     case 'guardarCursos': auth(); db.cursos = d.cursos; guardar(); return {};
     case 'borrarRecuento':
       auth();
@@ -2416,6 +2425,23 @@ async function accionPanel(e) {
       });
       break;
     }
+    case 'borrarListas': {
+      const n = recsDe(camp.id).reduce((a, r) => a + (r.adjuntos || []).length, 0);
+      if (!n) { mensaje('Este bocadillo no tiene listas de clase guardadas.'); break; }
+      // Doble pulsación para confirmar (también funciona donde no salen ventanas de aviso)
+      if (!b.dataset.confirmar) {
+        b.dataset.confirmar = '1'; b.textContent = `¿Borrar ${n} ${n === 1 ? 'lista' : 'listas'}? Pulsa otra vez`;
+        setTimeout(() => { if (b.isConnected) { delete b.dataset.confirmar; b.textContent = '🧹 Borrar las listas de clase'; } }, 5000);
+        break;
+      }
+      delete b.dataset.confirmar; b.textContent = '🧹 Borrar las listas de clase';
+      await conBoton('[data-acc="borrarListas"]', async () => {
+        await api('borrarAdjuntos', { clave: P.clave, campana: camp.id });
+        await recargarPanel(false);
+        mensaje(`Listas de clase borradas (${n}). Los recuentos y los tickets se mantienen.`);
+      });
+      break;
+    }
     case 'borrar': {
       const n = recsDe(camp.id).length;
       if (!confirm(`¿Borrar «${camp.titulo}» y sus ${n} recuentos? No se puede deshacer.`)) return;
@@ -3092,7 +3118,7 @@ function pintarReparto() {
     </div>
     <div class="card"><h2>📎 Lista de la clase</h2>
       ${adj.length ? `<p class="muted small" style="margin-top:0">Son datos del alumnado: no las descargues ni las reenvíes.</p><div class="reparto-fotos">${adj.map(a => esImagen(a) ? `<img src="${esc(srcAdj(a))}" alt="Lista adjunta: ${esc(a.nombre)}">` : `<a class="btn sec" href="${esc(srcAdj(a))}" target="_blank" rel="noopener">📄 Abrir ${esc(a.nombre)}</a>`).join('')}</div>`
-        : '<p class="muted" style="margin:0">El tutor o tutora no ha adjuntado ninguna lista.</p>'}
+        : `<p class="muted" style="margin:0">${r.listasBorradas ? 'Pastoral ya ha borrado la lista de esta clase.' : 'El tutor o tutora no ha adjuntado ninguna lista.'}</p>`}
     </div>`;
 }
 $('r-camp').onchange = pintarReparto;
