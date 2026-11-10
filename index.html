@@ -137,7 +137,7 @@
   }
 
   /* Pestañas */
-  .roles { display: flex; gap: 0.6rem; max-width: 560px; margin: 0 auto 1.6rem; }
+  .roles { display: flex; flex-wrap: wrap; gap: 0.6rem; max-width: 720px; margin: 0 auto 1.6rem; }
   .role-tab, .subtab {
     flex: 1; padding: 0.7rem 0.9rem; border-radius: 12px; border: 2px solid var(--border);
     background: var(--card); color: var(--text-muted); font: 700 0.92rem 'Fira Sans', sans-serif; cursor: pointer;
@@ -327,6 +327,18 @@
   .al-persona { background: var(--card); border: 1px solid rgba(238, 113, 42, .35); border-radius: 10px; padding: .6rem .8rem; display: grid; gap: .5rem; }
   .al-persona-tit { font-weight: 600; color: var(--naranja-hover); font-size: .93rem; }
   .al-persona label { margin: 0; font-size: .9rem; }
+  .adjuntos { margin-top: 1rem; padding-top: .9rem; border-top: 1px solid var(--border); }
+  .adj-lista { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .5rem; }
+  .adj { position: relative; width: 96px; height: 96px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); overflow: hidden; display: grid; place-items: center; text-align: center; font-size: .72rem; color: var(--text-muted); padding: .3rem; }
+  .adj img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .adj .x { position: absolute; top: 3px; right: 3px; width: 24px; height: 24px; border-radius: 50%; border: none; background: rgba(0,0,0,.6); color: #fff; cursor: pointer; font-size: .8rem; line-height: 1; }
+  .btn-adj { display: inline-flex; align-items: center; gap: .4rem; cursor: pointer; }
+  .btn-adj input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+  .reparto-lista .fila { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; padding: .45rem 0; border-bottom: 1px solid var(--border); font-size: 1.1rem; }
+  .reparto-lista .fila strong { font-size: 1.5rem; color: var(--azul); font-variant-numeric: tabular-nums; }
+  .reparto-lista .cat-head { margin-top: .8rem; }
+  .reparto-fotos { display: grid; gap: .8rem; }
+  .reparto-fotos img { width: 100%; border-radius: 10px; border: 1px solid var(--border); }
   .aviso-alergias { background: rgba(238, 113, 42, .1); border: 1px solid rgba(238, 113, 42, .4); border-radius: 12px; padding: .7rem 1rem; margin: .8rem 0; font-size: .93rem; }
   .dia-semana { color: var(--azul); font-weight: 600; margin-left: .3rem; }
   .dia-semana:not(:empty)::before { content: "· "; color: var(--text-muted); font-weight: 400; }
@@ -427,6 +439,14 @@
         <li><b>Editar:</b> productos y precios, nombre y fechas, y clases.</li>
       </ul>
     </details>
+    <details class="info-bloque">
+      <summary><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10"/></svg><span>Reparto <small>Acceso: Microsoft 365 (profesorado del colegio)</small></span></summary>
+      <ul>
+        <li><b>Para quien reparte el bocadillo en una clase</b> (aunque no sea su tutor/a).</li>
+        <li>Elige la clase y verás qué ha pedido, las alergias y la lista que ha adjuntado el tutor o tutora.</li>
+        <li>Las listas son datos del alumnado: no las descargues ni las reenvíes.</li>
+      </ul>
+    </details>
   </div>
 </section>
 <div class="wrap">
@@ -438,6 +458,7 @@
 
   <div class="roles">
     <button class="role-tab" data-rol="tutores">🧑‍🏫 Tutores</button>
+    <button class="role-tab" data-rol="reparto">🍽️ Reparto</button>
     <button class="role-tab" data-rol="pastoral">🗂️ Responsables de Pastoral</button>
   </div>
 
@@ -502,7 +523,34 @@
           <textarea id="t-obs" placeholder="Cualquier otra cosa que queráis indicar."></textarea>
         </label>
         <p class="muted small" style="margin:.3rem 0 0"><strong>No escribas ningún dato personal ni nombres de alumnos/as.</strong></p>
+        <div class="adjuntos">
+          <div class="prod-nombre">📎 Lista de la clase (opcional)</div>
+          <p class="muted small" style="margin:.2rem 0 .6rem">Para quien haga el reparto, si no lo haces tú. Haz una foto con el móvil o adjunta una imagen o un PDF (hasta 3). Solo la ve el profesorado del colegio en «Reparto» y se borra unos días después del bocadillo.</p>
+          <label class="btn sec btn-adj" style="margin:0">📷 Hacer foto o adjuntar<input type="file" id="t-adj" accept="image/*,application/pdf" multiple></label>
+          <div id="t-adj-lista" class="adj-lista"></div>
+        </div>
       </div>
+    </div>
+  </section>
+
+  <!-- ===================== REPARTO ===================== -->
+  <section id="rol-reparto" class="narrow" hidden>
+    <div id="r-entrar" class="card narrow" style="max-width:420px" hidden>
+      <h2>Entra con tu cuenta del colegio</h2>
+      <p class="muted">Para ver lo que ha pedido una clase el día del reparto.</p>
+      <button class="btn btn-ms" type="button" data-entrar-m365 style="width:100%"><svg viewBox="0 0 21 21" aria-hidden="true"><rect x="1" y="1" width="9" height="9" fill="#f25022"/><rect x="11" y="1" width="9" height="9" fill="#7fba00"/><rect x="1" y="11" width="9" height="9" fill="#00a4ef"/><rect x="11" y="11" width="9" height="9" fill="#ffb900"/></svg>Entrar con Microsoft 365</button>
+    </div>
+    <div id="r-cargando" class="cargando" hidden>Cargando…</div>
+    <div id="r-error" class="aviso error" hidden></div>
+    <div id="r-form" hidden>
+      <div class="card">
+        <label id="r-camp-lbl">Bocadillo solidario <select id="r-camp"></select></label>
+        <div class="grid2">
+          <label style="margin:0">Etapa <select id="r-etapa"></select></label>
+          <label style="margin:0">Clase <select id="r-curso"></select></label>
+        </div>
+      </div>
+      <div id="r-detalle"></div>
     </div>
   </section>
 
@@ -646,7 +694,7 @@ async function tokenM365() {
 }
 async function entrarM365() {
   const sb = await cargarSupabase();
-  try { sessionStorage.setItem('bs-volver', $('rol-pastoral').hidden ? 'tutores' : 'pastoral'); } catch {}
+  try { sessionStorage.setItem('bs-volver', !$('rol-pastoral').hidden ? 'pastoral' : !$('rol-reparto').hidden ? 'reparto' : 'tutores'); } catch {}
   const { error } = await sb.auth.signInWithOAuth({ provider: 'azure', options: { scopes: 'email profile', redirectTo: location.origin + location.pathname } });
   if (error) alert(error.message);
 }
@@ -957,6 +1005,13 @@ function demoApi(action, d) {
   }
   switch (action) {
     case 'publico': return { cursos: db.cursos, campanas: db.campanas.filter(c => c.estado === 'abierta').map(({ gastos, ...c }) => c) };
+    // Reparto: cualquier persona del profesorado ve lo pedido por cada clase en los bocadillos del curso
+    case 'reparto': {
+      const actual = db.cursoActual || cursoEscolar(new Date().toISOString().slice(0, 10));
+      const campanas = db.campanas.filter(c => (c.cursoEscolar || cursoEscolar(c.fecha)) === actual).sort((a, b) => b.fecha.localeCompare(a.fecha)).map(({ gastos, ...c }) => c);
+      const ids = new Set(campanas.map(c => c.id));
+      return { cursos: db.cursos, campanas, recuentos: db.recuentos.filter(r => ids.has(r.campana)) };
+    }
     case 'miRecuento': return { recuento: db.recuentos.find(r => r.campana === d.campana && r.cursoId === d.curso) || null };
     case 'enviar': {
       const camp = db.campanas.find(c => c.id === d.campana);
@@ -972,7 +1027,7 @@ function demoApi(action, d) {
       const ahora = new Date().toISOString();
       let r = db.recuentos.find(x => x.campana === camp.id && x.cursoId === curso.id);
       if (!r) { r = { campana: camp.id, cursoId: curso.id, enviado: ahora }; db.recuentos.push(r); }
-      Object.assign(r, { curso: curso.nombre, etapa: curso.etapa, tutor: d.tutor.trim(), cantidades, alergias: d.alergias || {}, observaciones: d.observaciones || '', actualizado: ahora });
+      Object.assign(r, { curso: curso.nombre, etapa: curso.etapa, tutor: d.tutor.trim(), cantidades, alergias: d.alergias || {}, observaciones: d.observaciones || '', adjuntos: (d.adjuntos || []).slice(0, 3), actualizado: ahora });
       guardar();
       return { recuento: r };
     }
@@ -1026,7 +1081,7 @@ function demoApi(action, d) {
 /* =========================================================================
    TUTORES
    ========================================================================= */
-const T = { datos: null, camp: null, curso: null, previo: null, cant: {}, cantA: { gluten: {}, lactosa: {} }, otras: [] };
+const T = { datos: null, camp: null, curso: null, previo: null, cant: {}, cantA: { gluten: {}, lactosa: {} }, otras: [], adj: [] };
 
 async function iniciarTutores() {
   $('t-error').hidden = true;
@@ -1158,6 +1213,59 @@ function cantOtras(lista = T.otras) {
   (lista || []).forEach(x => CAMPOS_OTRAS.forEach(([c]) => { const id = x[c]; if (id && id !== '-') m[id] = (m[id] || 0) + 1; }));
   return m;
 }
+/* ---------- Lista de la clase adjunta (foto o PDF) para quien reparte ---------- */
+const MAX_ADJ = 3, MAX_PDF = 4 * 1024 * 1024;
+// Las fotos se reducen (lado mayor 1600 px, JPEG) para que suban rápido y ocupen poco
+function reducirImagen(file) {
+  return new Promise((res, rej) => {
+    const img = new Image(), url = URL.createObjectURL(file);
+    img.onload = () => {
+      const k = Math.min(1, 1600 / Math.max(img.width, img.height));
+      const c = Object.assign(document.createElement('canvas'), { width: Math.round(img.width * k), height: Math.round(img.height * k) });
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url);
+      res(c.toDataURL('image/jpeg', 0.72));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); rej(new Error('No se ha podido leer la imagen ' + file.name + '.')); };
+    img.src = url;
+  });
+}
+const leerArchivo = file => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = () => rej(new Error('No se ha podido leer ' + file.name + '.')); r.readAsDataURL(file); });
+// Las fotos se ven directamente; los PDF se abren como archivo (los navegadores no abren un «data:» en otra pestaña)
+function dataABlobUrl(d) {
+  try { const [cab, b64] = d.split(','); const bin = atob(b64); const u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+    return URL.createObjectURL(new Blob([u], { type: cab.slice(5).split(';')[0] })); } catch { return d; }
+}
+const srcAdj = a => a.url || (a.datos && !/^data:image\//.test(a.datos) ? (a._blob ||= dataABlobUrl(a.datos)) : a.datos) || '';
+const esImagen = a => /^image\//.test(a.tipo || '') || /^data:image\//.test(a.datos || '');
+function pintarAdjuntos() {
+  $('t-adj-lista').innerHTML = (T.adj || []).map((a, i) => `<div class="adj" title="${esc(a.nombre)}">
+      ${esImagen(a) ? `<img src="${esc(srcAdj(a))}" alt="${esc(a.nombre)}">` : `<span>📄<br>${esc(a.nombre)}</span>`}
+      <button type="button" class="x" data-quitar-adj="${i}" aria-label="Quitar ${esc(a.nombre)}">✕</button></div>`).join('');
+}
+$('t-adj').addEventListener('change', async e => {
+  const files = [...e.target.files];
+  e.target.value = '';
+  for (const f of files) {
+    if ((T.adj || []).length >= MAX_ADJ) { alert(`Como mucho ${MAX_ADJ} archivos.`); break; }
+    try {
+      if (f.type === 'application/pdf') {
+        if (f.size > MAX_PDF) { alert(`${f.name} es demasiado grande (máximo 4 MB). Prueba a hacer una foto.`); continue; }
+        T.adj.push({ nombre: f.name, tipo: f.type, datos: await leerArchivo(f) });
+      } else if (/^image\//.test(f.type)) {
+        T.adj.push({ nombre: f.name.replace(/\.[^.]+$/, '') + '.jpg', tipo: 'image/jpeg', datos: await reducirImagen(f) });
+      } else alert(`${f.name}: solo se pueden adjuntar fotos o PDF.`);
+    } catch (err) { alert(err.message); }
+  }
+  pintarAdjuntos();
+});
+$('t-adj-lista').addEventListener('click', e => {
+  const b = e.target.closest('[data-quitar-adj]');
+  if (!b) return;
+  T.adj.splice(Number(b.dataset.quitarAdj), 1);
+  pintarAdjuntos();
+});
+
 // Total de un producto: normal + sin gluten + sin lactosa
 const totalProducto = id => (T.cant[id] || 0) + (T.cantA.gluten[id] || 0) + (T.cantA.lactosa[id] || 0) + (cantOtras()[id] || 0);
 
@@ -1166,7 +1274,7 @@ async function cargarCurso() {
   const id = $('t-curso').value;
   T.curso = (T.datos.cursos || []).find(c => c.id === id) || null;
   T.previo = null;
-  T.cant = {}; T.cantA = { gluten: {}, lactosa: {} }; T.otras = [];
+  T.cant = {}; T.cantA = { gluten: {}, lactosa: {} }; T.otras = []; T.adj = []; pintarAdjuntos();
   if (!T.curso) {
     $('t-productos-card').hidden = true; $('t-barra').hidden = true; $('t-previo').hidden = true; $('t-dia').hidden = true;
     return;
@@ -1188,6 +1296,7 @@ async function cargarCurso() {
     const otras = cantOtras(T.previo.alergias && T.previo.alergias.otras);
     T.cant = Object.fromEntries(Object.entries(T.previo.cantidades).map(([id, n]) => [id, Math.max(0, n - (T.cantA.gluten[id] || 0) - (T.cantA.lactosa[id] || 0) - (otras[id] || 0))]));
     $('t-obs').value = T.previo.observaciones || '';
+    T.adj = clone(T.previo.adjuntos || []); pintarAdjuntos();
     ponerAlergias(T.previo.alergias);
     if (!$('t-tutor').value) $('t-tutor').value = T.previo.tutor;
   } else {
@@ -1277,7 +1386,7 @@ $('t-enviar').onclick = async () => {
   const btn = $('t-enviar');
   btn.disabled = true; btn.textContent = 'Enviando…';
   try {
-    const r = await api('enviar', { campana: T.camp.id, curso: T.curso.id, tutor, cantidades, alergias, observaciones: $('t-obs').value.trim() });
+    const r = await api('enviar', { campana: T.camp.id, curso: T.curso.id, tutor, cantidades, alergias, observaciones: $('t-obs').value.trim(), adjuntos: T.adj.map(({ _blob, ...a }) => a) });
     store.set('bs-tutor', { ...store.get('bs-tutor', {}), tutor });
     const corr = !!T.previo;
     T.previo = r.recuento;
@@ -2722,6 +2831,65 @@ function generarPDF(tipo, camp, cursoId) {
 }
 
 /* =========================================================================
+   REPARTO: lo que ha pedido una clase, sus alergias y la lista adjunta
+   ========================================================================= */
+const R = { datos: null };
+async function iniciarReparto() {
+  $('r-error').hidden = true;
+  if (!DEMO && !(await tokenM365().catch(() => ''))) { $('r-entrar').hidden = false; return; }
+  $('r-entrar').hidden = true; $('r-cargando').hidden = false;
+  try { R.datos = await api('reparto'); }
+  catch (e) { $('r-cargando').hidden = true; $('r-error').textContent = e.message; $('r-error').hidden = false; R.iniciado = false; return; }
+  $('r-cargando').hidden = true;
+  const camps = R.datos.campanas || [];
+  if (!camps.length) { $('r-error').textContent = 'Todavía no hay ningún bocadillo solidario este curso.'; $('r-error').hidden = false; return; }
+  $('r-form').hidden = false;
+  $('r-camp').innerHTML = camps.map(c => `<option value="${esc(c.id)}">${esc(c.titulo)} · ${esc(diasCortos(c))}</option>`).join('');
+  $('r-camp-lbl').hidden = camps.length < 2;
+  const etapas = ETAPAS.filter(e => (R.datos.cursos || []).some(c => c.etapa === e.id));
+  $('r-etapa').innerHTML = '<option value="">Elige la etapa</option>' + etapas.map(e => `<option>${esc(e.id)}</option>`).join('');
+  const g = store.get('bs-reparto', {});
+  if (g.etapa) $('r-etapa').value = g.etapa;
+  rellenarReparto(g.curso);
+}
+function rellenarReparto(sel) {
+  const cs = (R.datos.cursos || []).filter(c => c.etapa === $('r-etapa').value);
+  $('r-curso').innerHTML = '<option value="">Elige la clase</option>' + cs.map(c => `<option value="${esc(c.id)}">${esc(c.nombre)}</option>`).join('');
+  if (sel && cs.some(c => c.id === sel)) $('r-curso').value = sel;
+  pintarReparto();
+}
+function pintarReparto() {
+  const camp = (R.datos.campanas || []).find(c => c.id === $('r-camp').value);
+  const curso = (R.datos.cursos || []).find(c => c.id === $('r-curso').value);
+  store.set('bs-reparto', { etapa: $('r-etapa').value, curso: $('r-curso').value });
+  if (!camp || !curso) { $('r-detalle').innerHTML = ''; return; }
+  const r = (R.datos.recuentos || []).find(x => x.campana === camp.id && x.cursoId === curso.id);
+  const dia = fechaCurso(camp, curso);
+  if (!r) { $('r-detalle').innerHTML = `<div class="card"><h2>${esc(curso.nombre)}</h2><p class="muted" style="margin:0">Esta clase todavía no ha enviado su recuento.</p></div>`; return; }
+  const prods = camp.catalogo.productos.filter(p => r.cantidades[p.id]);
+  const pp = (r.alergias && r.alergias.porProducto) || {};
+  const total = prods.reduce((a, p) => a + r.cantidades[p.id], 0);
+  const al = textoAlergias(r.alergias);
+  const adj = r.adjuntos || [];
+  $('r-detalle').innerHTML = `<div class="card reparto-lista">
+      <h2 style="margin-bottom:.1rem">${esc(curso.nombre)}</h2>
+      <p class="muted small" style="margin:0">${esc(dia ? fechaLarga(dia) : diasTexto(camp))} · Tutor/a: ${esc(r.tutor)} · ${num(total)} productos</p>
+      ${al ? `<div class="aviso-alergias">⚠️ <strong>Alergias e intolerancias:</strong> ${esc(al)}.</div>` : ''}
+      ${CATEGORIAS.map(cat => { const ps = prods.filter(p => p.categoria === cat.id); return ps.length ? `<div class="cat-head">${esc(cat.nombre)}</div>` + ps.map(p => {
+        const extra = [pp.gluten && pp.gluten[p.id] ? `${pp.gluten[p.id]} sin gluten` : '', pp.lactosa && pp.lactosa[p.id] ? `${pp.lactosa[p.id]} sin lactosa` : ''].filter(Boolean).join(' · ');
+        return `<div class="fila"><span>${esc(p.nombre)}${extra ? `<div class="small" style="color:var(--naranja-hover);font-weight:600">de ellos ${esc(extra)}</div>` : ''}</span><strong>${num(r.cantidades[p.id])}</strong></div>`; }).join('') : ''; }).join('')}
+      ${r.observaciones ? `<h3>Observaciones</h3><p class="small" style="margin:0">${esc(r.observaciones)}</p>` : ''}
+    </div>
+    <div class="card"><h2>📎 Lista de la clase</h2>
+      ${adj.length ? `<p class="muted small" style="margin-top:0">Son datos del alumnado: no las descargues ni las reenvíes.</p><div class="reparto-fotos">${adj.map(a => esImagen(a) ? `<img src="${esc(srcAdj(a))}" alt="Lista adjunta: ${esc(a.nombre)}">` : `<a class="btn sec" href="${esc(srcAdj(a))}" target="_blank" rel="noopener">📄 Abrir ${esc(a.nombre)}</a>`).join('')}</div>`
+        : '<p class="muted" style="margin:0">El tutor o tutora no ha adjuntado ninguna lista.</p>'}
+    </div>`;
+}
+$('r-camp').onchange = pintarReparto;
+$('r-etapa').onchange = () => rellenarReparto('');
+$('r-curso').onchange = pintarReparto;
+
+/* =========================================================================
    ARRANQUE
    ========================================================================= */
 document.querySelectorAll('.role-tab').forEach(b => b.onclick = () => {
@@ -2730,12 +2898,14 @@ document.querySelectorAll('.role-tab').forEach(b => b.onclick = () => {
   const rol = b.dataset.rol;
   $('rol-tutores').hidden = rol !== 'tutores';
   $('rol-pastoral').hidden = rol !== 'pastoral';
+  $('rol-reparto').hidden = rol !== 'reparto';
+  if (rol === 'reparto' && !R.iniciado) { R.iniciado = true; iniciarReparto(); }
   $('t-barra').hidden = rol !== 'tutores' || !T.curso;
   if (rol === 'pastoral') iniciarPastoral();
   // La parte de tutores solo se carga cuando se abre (así, al entrar en Pastoral no se espera a dos llamadas)
   if (rol === 'tutores' && !T.iniciado) { T.iniciado = true; iniciarTutores(); }
   // Al volver de Microsoft 365 el enlace trae la sesión (#access_token=…): no se toca hasta que Supabase la lea
-  if (!/access_token=|error_description=/.test(location.hash)) try { location.hash = rol === 'pastoral' ? 'pastoral' : ''; } catch {}
+  if (!/access_token=|error_description=/.test(location.hash)) try { location.hash = rol === 'tutores' ? '' : rol; } catch {}
 });
 
 if (DEMO) {
@@ -2747,6 +2917,7 @@ if (DEMO) {
 let volver = null;
 try { volver = sessionStorage.getItem('bs-volver'); sessionStorage.removeItem('bs-volver'); } catch {}
 if (location.hash === '#pastoral' || volver === 'pastoral') document.querySelector('[data-rol="pastoral"]').click();
+else if (location.hash === '#reparto' || volver === 'reparto') document.querySelector('[data-rol="reparto"]').click();
 else if (volver === 'tutores') document.querySelector('[data-rol="tutores"]').click();
 else if (location.hash === '#tutores') document.querySelector('[data-rol="tutores"]').click();
 
