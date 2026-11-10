@@ -299,6 +299,11 @@
 
   .alergias { margin-top: 1.2rem; padding: .9rem 1rem; border-radius: 12px; background: rgba(238, 113, 42, .08); border: 1px solid rgba(238, 113, 42, .35); }
   .alergias h3 { margin: 0 0 .2rem; color: var(--naranja-hover); }
+  .al-pedidos { margin-top: .8rem; display: grid; gap: .6rem; }
+  .al-pedidos > p { margin: 0; }
+  .al-persona { background: var(--blanco, #fff); border: 1px solid rgba(238, 113, 42, .35); border-radius: 10px; padding: .6rem .8rem; display: grid; gap: .5rem; }
+  .al-persona-tit { font-weight: 600; color: var(--naranja-hover); font-size: .93rem; }
+  .al-persona .grid2 label, .al-persona label { margin: 0; font-size: .9rem; }
   .aviso-alergias { background: rgba(238, 113, 42, .1); border: 1px solid rgba(238, 113, 42, .4); border-radius: 12px; padding: .7rem 1rem; margin: .8rem 0; font-size: .93rem; }
   .dia-semana { color: var(--azul); font-weight: 600; margin-left: .3rem; }
   .dia-semana:not(:empty)::before { content: "· "; color: var(--text-muted); font-weight: 400; }
@@ -481,7 +486,7 @@
                 <button type="button" data-d="1" aria-label="Añadir uno">+</button>
               </div></div>
           </div>
-          <label id="t-al-cual-lbl" style="margin:.6rem 0 0">¿Cuáles son las otras alergias o intolerancias? <input type="text" id="t-al-cual" maxlength="60" placeholder="Por ejemplo: huevo, frutos secos. Sin nombres."></label>
+          <div id="t-al-pedidos" class="al-pedidos" hidden></div>
         </div>
         <label style="margin:1rem 0 0">Observaciones (opcional)
           <textarea id="t-obs" placeholder="Cualquier otra cosa que queráis indicar."></textarea>
@@ -816,13 +821,28 @@ function textoAlergias(a) {
   if (a.gluten) p.push(`${a.gluten} sin gluten`);
   if (a.lactosa) p.push(`${a.lactosa} sin lactosa`);
   if (a.otra) p.push(`${a.otra} ${a.cual ? 'con alergia o intolerancia a ' + a.cual : 'con otra alergia o intolerancia'}`);
-  return p.join(' · ');
+  // Qué ha pedido cada alumno/a con alergia (sin nombres): se agrupan los pedidos iguales
+  const ped = textoPedidosAlergia(a.pedidos);
+  return p.join(' · ') + (ped ? '. Han pedido: ' + ped : '');
+}
+const TIPOS_ALERGIA = { gluten: 'sin gluten', lactosa: 'sin lactosa', otra: 'otra alergia' };
+function textoPedidosAlergia(pedidos) {
+  if (!Array.isArray(pedidos) || !pedidos.length) return '';
+  const grupos = new Map();
+  pedidos.forEach(x => {
+    const tipo = x.tipo === 'otra' ? (x.alergia ? 'alergia a ' + x.alergia : TIPOS_ALERGIA.otra) : (TIPOS_ALERGIA[x.tipo] || '');
+    const que = [x.comida, x.fruta, x.bebida, x.extra].filter(Boolean).join(' + ') || 'nada';
+    const k = tipo + '|' + que;
+    grupos.set(k, { tipo, que, n: (grupos.get(k)?.n || 0) + 1 });
+  });
+  return [...grupos.values()].map(g => `${g.n} ${g.que} (${g.tipo})`).join('; ');
 }
 // Suma las alergias de varias clases (para la etapa y el colegio)
 function sumarAlergias(recs) {
   const t = { gluten: 0, lactosa: 0, otra: 0, cuales: new Set() };
-  recs.forEach(r => { const a = r && r.alergias; if (!a) return; t.gluten += a.gluten || 0; t.lactosa += a.lactosa || 0; t.otra += a.otra || 0; if (a.otra && a.cual) t.cuales.add(a.cual.toLowerCase()); });
-  return { gluten: t.gluten, lactosa: t.lactosa, otra: t.otra, cual: [...t.cuales].join(', ') };
+  const pedidos = [];
+  recs.forEach(r => { const a = r && r.alergias; if (!a) return; t.gluten += a.gluten || 0; t.lactosa += a.lactosa || 0; t.otra += a.otra || 0; if (a.otra && a.cual) a.cual.toLowerCase().split(/\s*,\s*/).forEach(c => c && t.cuales.add(c)); if (Array.isArray(a.pedidos)) pedidos.push(...a.pedidos); });
+  return { gluten: t.gluten, lactosa: t.lactosa, otra: t.otra, cual: [...t.cuales].join(', '), pedidos };
 }
 
 function fechaHora(iso) {
@@ -871,7 +891,7 @@ async function api(action, data = {}) {
 
 // Copia del script de Apps Script que guarda los datos en este navegador (solo modo prueba)
 function demoDb() {
-  let db = store.get('bs-demo', null);
+  let db = store.get('bs-demo-2', null);
   if (!db) {
     db = { cursos: null, campanas: [], recuentos: [] };
     const cursos = cursosPorDefecto();
@@ -887,15 +907,21 @@ function demoDb() {
         if (n) cantidades[p.id] = n;
       });
       const t = new Date(Date.now() - Math.random() * 4 * 864e5).toISOString();
-      db.recuentos.push({ campana: 'demo1', cursoId: c.id, curso: c.nombre, etapa: c.etapa, tutor: nombres[i % nombres.length], cantidades, observaciones: '', enviado: t, actualizado: t });
+      // Algunas clases de ejemplo con alergias y lo que ha pedido cada alumno/a
+      const comidas = cat.productos.filter(p => p.categoria === 'comida' && p.menus.includes(c.menu)).map(p => p.nombre);
+      const bebidas = cat.productos.filter(p => p.categoria === 'bebida' && p.menus.includes(c.menu)).map(p => p.nombre);
+      const alergias = i % 5 === 1 ? { gluten: 1, lactosa: 0, otra: 0, cual: '', pedidos: [{ tipo: 'gluten', comida: comidas[0], bebida: bebidas[0] }] }
+        : i % 7 === 3 ? { gluten: 0, lactosa: 1, otra: 1, cual: 'frutos secos', pedidos: [{ tipo: 'lactosa', comida: comidas[1] || comidas[0], bebida: bebidas[bebidas.length - 1] }, { tipo: 'otra', alergia: 'frutos secos', comida: comidas[0], bebida: null }] }
+        : {};
+      db.recuentos.push({ campana: 'demo1', cursoId: c.id, curso: c.nombre, etapa: c.etapa, tutor: nombres[i % nombres.length], cantidades, alergias, observaciones: '', enviado: t, actualizado: t });
     });
-    store.set('bs-demo', db);
+    store.set('bs-demo-2', db);
   }
   return db;
 }
 function demoApi(action, d) {
   const db = demoDb();
-  const guardar = () => store.set('bs-demo', db);
+  const guardar = () => store.set('bs-demo-2', db);
   const auth = () => { if (d.clave !== 'prueba') throw new Error('Contraseña incorrecta.'); };
   // Igual que en el script: el 1 de septiembre se empieza solo el curso nuevo
   const hoy = cursoEscolar(new Date().toISOString().slice(0, 10));
@@ -975,7 +1001,7 @@ function demoApi(action, d) {
 /* =========================================================================
    TUTORES
    ========================================================================= */
-const T = { datos: null, camp: null, curso: null, previo: null, cant: {} };
+const T = { datos: null, camp: null, curso: null, previo: null, cant: {}, alPed: [] };
 
 async function iniciarTutores() {
   $('t-error').hidden = true;
@@ -1039,13 +1065,59 @@ function rellenarCursos(sel) {
 function ponerAlergias(a) {
   a = a || {};
   ['gluten', 'lactosa', 'otra'].forEach(k => { const inp = $('t-al-' + k); inp.value = a[k] || 0; inp.classList.toggle('pos', !!a[k]); });
-  $('t-al-cual').value = a.cual || '';
+  // Recuentos antiguos sin detalle: la alergia «otra» común se pone en cada alumno/a
+  T.alPed = Array.isArray(a.pedidos) ? clone(a.pedidos) : [];
+  if (!T.alPed.length && a.cual) for (let i = 0; i < (a.otra || 0); i++) T.alPed.push({ tipo: 'otra', alergia: a.cual, comida: '', fruta: '', bebida: '', extra: '' });
+  pintarPedidosAlergia();
 }
+// Por cada alumno/a con alergia, qué ha pedido (bocadillo y bebida) y, en «Otras», a qué. Nunca nombres.
+function guardarPedidosAlergia() {
+  const filas = [...document.querySelectorAll('#t-al-pedidos .al-persona')];
+  if (!filas.length) return;
+  T.alPed = filas.map(f => ({ tipo: f.dataset.tipo, alergia: f.querySelector('[data-c="alergia"]')?.value.trim().slice(0, 40) || '',
+    ...Object.fromEntries(CAMPOS_ALERGIA.map(([c]) => [c, f.querySelector(`[data-c="${c}"]`)?.value ?? '-'])) }));
+}
+// Qué se pregunta de cada alumno/a con alergia: [dato, categoría del catálogo, título, «no pide»]
+const CAMPOS_ALERGIA = [['comida', 'comida', 'Bocadillo', 'No pide bocadillo'], ['fruta', 'fruta', 'Fruta', 'No pide fruta'],
+  ['bebida', 'bebida', 'Bebida', 'No pide bebida'], ['extra', 'extra', 'Extras', 'No pide extras']];
+function pintarPedidosAlergia() {
+  const caja = $('t-al-pedidos');
+  if (!T.curso || !T.camp) { caja.hidden = true; return; }
+  const n = k => Math.max(0, Math.min(99, parseInt($('t-al-' + k).value) || 0));
+  const antes = T.alPed || [];
+  const filas = [];
+  ['gluten', 'lactosa', 'otra'].forEach(tipo => {
+    const prev = antes.filter(x => x.tipo === tipo);
+    for (let i = 0; i < n(tipo); i++) filas.push(prev[i] || { tipo, alergia: '', comida: '', fruta: '', bebida: '', extra: '' });
+  });
+  T.alPed = filas;
+  if (!filas.length) { caja.hidden = true; caja.innerHTML = ''; return; }
+  const prods = T.camp.catalogo.productos.filter(p => p.menus.includes(T.curso.menu));
+  const opciones = (cats, valor, nada) => `<option value="">Elige…</option><option value="-" ${valor === '-' ? 'selected' : ''}>${nada}</option>`
+    + prods.filter(p => cats.includes(p.categoria)).map(p => `<option ${p.nombre === valor ? 'selected' : ''}>${esc(p.nombre)}</option>`).join('');
+  const cuenta = {};
+  caja.innerHTML = `<p class="small"><strong>¿Qué ha pedido cada alumno/a con alergia?</strong> Así Pastoral puede preparar su pedido aparte. Sin nombres.</p>`
+    + filas.map(f => {
+      cuenta[f.tipo] = (cuenta[f.tipo] || 0) + 1;
+      const tit = f.tipo === 'gluten' ? 'Sin gluten' : f.tipo === 'lactosa' ? 'Sin lactosa' : 'Otra alergia';
+      return `<div class="al-persona" data-tipo="${f.tipo}">
+        <div class="al-persona-tit">⚠️ ${tit} · alumno/a ${cuenta[f.tipo]}</div>
+        ${f.tipo === 'otra' ? `<label>¿A qué? <input type="text" data-c="alergia" maxlength="40" value="${esc(f.alergia)}" placeholder="Por ejemplo: huevo, frutos secos"></label>` : ''}
+        <div class="grid2">${CAMPOS_ALERGIA.filter(([, cat]) => prods.some(p => p.categoria === cat)).map(([c, cat, tit, nada]) =>
+          `<label>${tit} <select data-c="${c}">${opciones([cat], (f[c] ?? '') === '' ? '' : (f[c] || '-'), nada)}</select></label>`).join('')}
+        </div></div>`;
+    }).join('');
+  caja.hidden = false;
+}
+$('t-al-pedidos').addEventListener('change', guardarPedidosAlergia);
+$('t-al-pedidos').addEventListener('input', guardarPedidosAlergia);
 // Contadores de alergias: igual que los de los productos, de 0 a 99
 function cambiarAlergia(inp, n) {
   n = Math.max(0, Math.min(99, n));
   inp.value = n;
   inp.classList.toggle('pos', n > 0);
+  guardarPedidosAlergia();
+  pintarPedidosAlergia();
 }
 $('t-alergias').addEventListener('click', e => {
   const b = e.target.closest('button[data-d]');
@@ -1057,7 +1129,11 @@ $('t-alergias').addEventListener('input', e => { if (e.target.tagName === 'INPUT
 $('t-alergias').addEventListener('focusin', e => { if (e.target.tagName === 'INPUT') e.target.select(); });
 function leerAlergias() {
   const n = id => Math.max(0, Math.min(99, parseInt($(id).value) || 0));
-  return { gluten: n('t-al-gluten'), lactosa: n('t-al-lactosa'), otra: n('t-al-otra'), cual: $('t-al-cual').value.trim().slice(0, 60) };
+  guardarPedidosAlergia();
+  const pedidos = (T.alPed || []).map(x => ({ tipo: x.tipo, ...(x.tipo === 'otra' ? { alergia: x.alergia } : {}),
+    ...Object.fromEntries(CAMPOS_ALERGIA.map(([c]) => [c, !x[c] || x[c] === '-' ? null : x[c]])) }));
+  const cual = [...new Set(pedidos.filter(x => x.tipo === 'otra' && x.alergia).map(x => x.alergia.toLowerCase()))].join(', ').slice(0, 60);
+  return { gluten: n('t-al-gluten'), lactosa: n('t-al-lactosa'), otra: n('t-al-otra'), cual, pedidos };
 }
 
 async function cargarCurso() {
@@ -1116,6 +1192,7 @@ function pintarProductos() {
     }).join('');
   }).join('');
   $('t-barra').hidden = $('rol-tutores').hidden;
+  pintarPedidosAlergia();
   actualizarTotal();
 }
 
@@ -1160,7 +1237,9 @@ $('t-enviar').onclick = async () => {
   const total = Object.values(T.cant).reduce((a, b) => a + (b || 0), 0);
   if (!total && !confirm('No has puesto ningún producto. ¿Enviar el recuento vacío (nadie se ha apuntado)?')) return;
   const alergias = leerAlergias();
-  if (alergias.otra && !alergias.cual) { $('t-al-cual').focus(); alert('Indica cuáles son las otras alergias o intolerancias (sin nombres de alumnos/as).'); return; }
+  const sinElegir = [...document.querySelectorAll('#t-al-pedidos .al-persona')].flatMap(f => [...f.querySelectorAll('select, input')])
+    .find(el => !el.value.trim());
+  if (sinElegir) { sinElegir.focus(); alert(sinElegir.tagName === 'INPUT' ? 'Indica a qué es alérgico/a cada alumno/a de «Otras» (sin nombres).' : 'Indica qué ha pedido cada alumno/a con alergia (en cada desplegable, lo que ha pedido o «No pide»).'); return; }
   const btn = $('t-enviar');
   btn.disabled = true; btn.textContent = 'Enviando…';
   try {
@@ -1557,6 +1636,7 @@ function vistaResumen(camp) {
         ${tabla(['Etapa', 'Sin gluten', 'Sin lactosa', 'Otras', '¿Cuáles?'],
           filasAl.map(({ e, a }) => `<tr><td><strong>${esc(e)}</strong></td>${celdaN(a.gluten)}${celdaN(a.lactosa)}${celdaN(a.otra)}<td>${esc(a.cual)}</td></tr>`),
           ['Total colegio', num(t.gluten), num(t.lactosa), num(t.otra), esc(t.cual)], ['', 'n', 'n', 'n', ''])}
+        ${t.pedidos.length ? `<p class="small" style="margin:.6rem 0 0"><strong>Qué han pedido:</strong> ${esc(textoPedidosAlergia(t.pedidos))}</p>` : ''}
         <p class="muted small" style="margin:.4rem 0 0">Número de alumnos/as que han indicado los tutores. El detalle de cada clase está en «Por clase» y en las listas grandes.</p></div>`;
     })()}
     <div class="card">
@@ -2555,7 +2635,7 @@ document.querySelectorAll('.role-tab').forEach(b => b.onclick = () => {
 
 if (DEMO) {
   $('demo').hidden = false;
-  $('demo-reset').onclick = () => { try { localStorage.removeItem('bs-demo'); } catch {} location.reload(); };
+  $('demo-reset').onclick = () => { try { localStorage.removeItem('bs-demo-2'); } catch {} location.reload(); };
 }
 // Con #tutores o #pastoral en el enlace se abre directamente ese papel
 // (y al volver de iniciar sesión con Microsoft 365, el papel que se estaba usando)
