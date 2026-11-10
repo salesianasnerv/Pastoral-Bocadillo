@@ -1648,8 +1648,13 @@ function leerImporte(v) {
 }
 const gastosDe = camp => (camp.gastos || []);
 const centGastos = gastos => gastos.reduce((s, g) => s + cent(leerImporte(g.importe)), 0);
+// Bocadillos extra: se hacen con lo que sobra y se venden al mismo precio. Solo cuentan en ingresos y totales,
+// no en «Para preparar» ni en la compra. camp.extras = [{ dia, producto, n }]
+const extrasDe = camp => camp.extras || [];
+const precioDe = (camp, id) => cent((camp.catalogo.productos.find(p => p.id === id) || {}).precio || 0);
+const centExtras = camp => extrasDe(camp).reduce((a, x) => a + x.n * precioDe(camp, x.producto), 0);
 function balance(camp) {
-  const ingresos = sumar(camp, cursosDe(camp)).centimos;
+  const ingresos = sumar(camp, cursosDe(camp)).centimos + centExtras(camp);
   const gastos = centGastos(gastosDe(camp));
   return { ingresos, gastos, ganancia: ingresos - gastos, n: gastosDe(camp).length };
 }
@@ -1691,8 +1696,23 @@ function vistaBalance(camp) {
       <h2 style="margin-bottom:.4rem">Ingresos</h2>
       <p class="muted small" style="margin-top:0">Lo que suman los recuentos enviados por los tutores.</p>
       ${tabla(['Etapa', 'Clases', 'Ingresos'],
-        etapas.map(e => { const s = sumar(camp, cursos.filter(c => c.etapa === e)); return `<tr><td><strong>${esc(e)}</strong></td><td class="n">${s.enviados} / ${s.total}</td><td class="n"><strong>${eur(s.centimos)}</strong></td></tr>`; }),
-        ['Total ingresos', `${tot.enviados} / ${tot.total}`, eur(tot.centimos)], ['', 'n', 'n'])}
+        [...etapas.map(e => { const s = sumar(camp, cursos.filter(c => c.etapa === e)); return `<tr><td><strong>${esc(e)}</strong></td><td class="n">${s.enviados} / ${s.total}</td><td class="n"><strong>${eur(s.centimos)}</strong></td></tr>`; }),
+          ...(extrasDe(camp).length ? [`<tr><td><strong>Bocadillos extra</strong></td><td class="n">${num(extrasDe(camp).reduce((a, x) => a + x.n, 0))} uds.</td><td class="n"><strong>${eur(centExtras(camp))}</strong></td></tr>`] : [])],
+        ['Total ingresos', `${tot.enviados} / ${tot.total}`, eur(tot.centimos + centExtras(camp))], ['', 'n', 'n'])}
+    </div>
+    <div class="card">
+      <h2>Bocadillos extra</h2>
+      <p class="muted small" style="margin-top:0">Los que se hacen con lo que sobra y se venden al mismo precio. Apúntalos después: se suman a los ingresos, pero no a la compra ni a «Para preparar».</p>
+      ${extrasDe(camp).length ? tabla(['Día', 'Producto', 'Cantidad', 'Importe', ''],
+        extrasDe(camp).map((x, i) => `<tr><td>${esc(tituloDia(x.dia))}</td><td>${esc(nombreProducto(x.producto))}</td><td class="n">${num(x.n)}</td><td class="n"><strong>${eur(x.n * precioDe(camp, x.producto))}</strong></td><td><button class="btn peligro mini" data-quitar-x="${i}" title="Borrar">✕</button></td></tr>`),
+        ['Total', '', num(extrasDe(camp).reduce((a, x) => a + x.n, 0)), eur(centExtras(camp)), ''], ['', '', 'n', 'n', ''], { primera: 200, derecha: [52] })
+      : '<p class="muted" style="margin:0 0 .6rem">No se ha apuntado ningún bocadillo extra.</p>'}
+      <form id="x-nuevo" class="gasto" style="margin-top:.8rem">
+        <select id="x-dia">${diasDe(camp).map(f => `<option value="${f}">${esc(tituloDia(f))}</option>`).join('')}</select>
+        <select id="x-prod">${camp.catalogo.productos.map(p => `<option value="${esc(p.id)}">${esc(p.nombre)} · ${eur(cent(p.precio))}</option>`).join('')}</select>
+        <input id="x-n" type="number" inputmode="numeric" min="1" placeholder="Cantidad" required>
+        <button class="btn" type="submit" id="x-anadir">➕ Añadir extra</button>
+      </form>
     </div>
     <div class="card">
       <h2>Gastos</h2>
@@ -1720,7 +1740,7 @@ function vistaBalance(camp) {
 }
 
 function kpisBalance(camp) {
-  const ingresos = sumar(camp, cursosDe(camp)).centimos;
+  const ingresos = sumar(camp, cursosDe(camp)).centimos + centExtras(camp);
   const gastos = centGastos(gastosDe(camp));
   const ganancia = ingresos - gastos;
   const margen = ingresos ? Math.round(ganancia / ingresos * 100) : 0;
@@ -1769,7 +1789,7 @@ function vistaResumen(camp) {
   if (!modos.some(([m]) => m === P.modo)) P.modo = modos[0][0];
   return `
     <div class="kpis">
-      <div class="kpi"><div class="v">${eur(tot.centimos)}</div><div class="l">Recaudado</div></div>
+      <div class="kpi"><div class="v">${eur(tot.centimos + centExtras(camp))}</div><div class="l">Recaudado${extrasDe(camp).length ? ' (con extras)' : ''}</div></div>
       <div class="kpi"><div class="v">${num(tot.porCat.comida)}</div><div class="l">Bocadillos</div></div>
       <div class="kpi"><div class="v">${num(tot.porCat.bebida)}</div><div class="l">Bebidas</div></div>
       <div class="kpi"><div class="v">${tot.enviados}<span class="muted" style="font-size:1rem"> / ${tot.total}</span></div><div class="l">Clases que han enviado</div></div>
@@ -1895,10 +1915,14 @@ function listado(camp, cursos, etapas, k = P.lista + '-' + P.modo) {
         pieCats('Total colegio', tot), clsCats, { primera: 190 })
         + (dias.length > 1 ? '<p class="muted small" style="margin:.4rem 0 0">El Profesorado cuenta en los dos días (una lista cada día).</p>' : '');
     case 'colegio-productos': {
-      const prods = camp.catalogo.productos.filter(p => tot.porProducto[p.id]);
-      return prods.length ? tabla(['Producto', 'Precio', 'Unidades', 'Importe'],
-        prods.map(p => `<tr><td>${esc(p.nombre)}</td><td class="n">${eur(cent(p.precio))}</td><td class="n">${num(tot.porProducto[p.id])}</td><td class="n">${eur(tot.porProducto[p.id] * cent(p.precio))}</td></tr>`),
-        ['Total', '', num(Object.values(tot.porProducto).reduce((a, b) => a + b, 0)), eur(tot.centimos)], ['', 'n', 'n', 'n'], { primera: 220 }) : vacio;
+      const ex = {}; extrasDe(camp).forEach(x => { ex[x.producto] = (ex[x.producto] || 0) + x.n; });
+      const prods = camp.catalogo.productos.filter(p => tot.porProducto[p.id] || ex[p.id]);
+      const conEx = Object.keys(ex).length > 0;
+      const tEx = Object.values(ex).reduce((a, b) => a + b, 0);
+      return prods.length ? tabla(['Producto', 'Precio', 'Pedidos', ...(conEx ? ['Extra'] : []), 'Importe'],
+        prods.map(p => { const n = tot.porProducto[p.id] || 0, e = ex[p.id] || 0; return `<tr><td>${esc(p.nombre)}</td><td class="n">${eur(cent(p.precio))}</td><td class="n">${num(n)}</td>${conEx ? celdaN(e) : ''}<td class="n">${eur((n + e) * cent(p.precio))}</td></tr>`; }),
+        ['Total', '', num(Object.values(tot.porProducto).reduce((a, b) => a + b, 0)), ...(conEx ? [num(tEx)] : []), eur(tot.centimos + centExtras(camp))], ['', 'n', 'n', ...(conEx ? ['n'] : []), 'n'], { primera: 220 })
+        + (conEx ? '<p class="muted small" style="margin:.4rem 0 0">«Extra»: bocadillos hechos con lo que sobró (se apuntan en «Balance económico»).</p>' : '') : vacio;
     }
     case 'colegio-dias':
       return `<p class="muted small" style="margin-top:0">Unidades de cada producto que se preparan cada día.</p>` + tablaProductosCols(dias.map(f => ({ titulo: tituloDia(f), cursos: cursosDelDia(camp, cursos, f) })));
@@ -2337,6 +2361,15 @@ async function guardarGastos(camp, gastos, boton, txt) {
   });
 }
 $('p-contenido').addEventListener('submit', async e => {
+  if (e.target.id === 'x-nuevo') {
+    e.preventDefault();
+    const camp = campActual();
+    const n = Math.floor(Number($('x-n').value) || 0);
+    if (n < 1) { alert('Escribe cuántos bocadillos extra.'); return; }
+    const extras = [...extrasDe(camp), { dia: $('x-dia').value, producto: $('x-prod').value, n }];
+    await conBoton('#x-anadir', async () => { await api('guardarCampana', { clave: P.clave, campana: { ...camp, extras } }); camp.extras = extras; mensaje('Bocadillos extra apuntados.'); pintarSub(); });
+    return;
+  }
   if (e.target.id !== 'b-nuevo') return;
   e.preventDefault();
   const camp = campActual();
@@ -2463,6 +2496,12 @@ $('p-contenido').addEventListener('click', async e => {
   if (d.irBalance !== undefined) { P.sub = 'balance'; pintarPanel(); return; }
   if (d.editarG !== undefined) { B.editando = Number(d.editarG); B.ticket = null; pintarSub(); $('b-concepto').focus(); $('b-nuevo').scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
   if (d.cancelarG !== undefined) { B.editando = null; B.ticket = null; pintarSub(); return; }
+  if (d.quitarX !== undefined) {
+    if (!t.dataset.confirmar) { t.dataset.confirmar = '1'; t.textContent = '¿Borrar?'; setTimeout(() => { if (t.isConnected) { delete t.dataset.confirmar; t.textContent = '✕'; } }, 4000); return; }
+    const extras = extrasDe(camp).filter((_, i) => i !== Number(d.quitarX));
+    await conBoton(`[data-quitar-x="${d.quitarX}"]`, async () => { await api('guardarCampana', { clave: P.clave, campana: { ...camp, extras } }); camp.extras = extras; mensaje('Borrado.'); pintarSub(); });
+    return;
+  }
   // Gastos: cada uno se guarda (o se borra) al momento
   if (d.quitarG !== undefined) {
     // Se confirma en el propio botón (pulsar dos veces), sin ventanas emergentes
@@ -2912,9 +2951,17 @@ function generarPDF(tipo, camp, cursoId) {
     }
     y = subtituloPDF(doc, y, 'Ingresos por etapa');
     const tot = sumar(camp, cursos);
-    tablaPDF(doc, y + 1, ['Etapa', 'Clases', 'Ingresos'],
-      etapas.map(e => { const s = sumar(camp, cursos.filter(c => c.etapa === e)); return [e, `${s.enviados} / ${s.total}`, eurPDF(s.centimos)]; }),
-      ['Total', `${tot.enviados} / ${tot.total}`, eurPDF(tot.centimos)], { fs: 10 });
+    const nEx = extrasDe(camp).reduce((a, x) => a + x.n, 0);
+    y = tablaPDF(doc, y + 1, ['Etapa', 'Clases', 'Ingresos'],
+      [...etapas.map(e => { const s = sumar(camp, cursos.filter(c => c.etapa === e)); return [e, `${s.enviados} / ${s.total}`, eurPDF(s.centimos)]; }),
+        ...(nEx ? [['Bocadillos extra', `${numPDF(nEx)} uds.`, eurPDF(centExtras(camp))]] : [])],
+      ['Total', `${tot.enviados} / ${tot.total}`, eurPDF(tot.centimos + centExtras(camp))], { fs: 10 });
+    if (nEx) {
+      y = subtituloPDF(doc, y, 'Bocadillos extra');
+      tablaPDF(doc, y + 1, ['Día', 'Producto', 'Cantidad', 'Importe'],
+        extrasDe(camp).map(x => [tituloDia(x.dia), nombreProducto(x.producto), numPDF(x.n), eurPDF(x.n * precioDe(camp, x.producto))]),
+        ['Total', '', numPDF(nEx), eurPDF(centExtras(camp))], { fs: 10, primera: 60 });
+    }
     piePDF(doc); doc.save(nombreArchivo(camp, 'balance-economico')); return;
   }
 
