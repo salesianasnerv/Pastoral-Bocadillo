@@ -1080,6 +1080,10 @@ function guardarPedidosAlergia() {
 // Qué se pregunta de cada alumno/a con alergia: [dato, categoría del catálogo, título, «no pide»]
 const CAMPOS_ALERGIA = [['comida', 'comida', 'Bocadillo', 'No pide bocadillo'], ['fruta', 'fruta', 'Fruta', 'No pide fruta'],
   ['bebida', 'bebida', 'Bebida', 'No pide bebida'], ['extra', 'extra', 'Extras', 'No pide extras']];
+// Lo que no se puede pedir con cada alergia (se busca en el nombre del producto, así sirve aunque Pastoral cambie el catálogo).
+// Gluten: cualquier bocadillo vale, porque se hace con pan especial. Lactosa: nada con leche.
+const NO_APTO = { lactosa: ['nocilla', 'leche', 'batido', 'yogur'] };
+const apto = (tipo, p) => !(NO_APTO[tipo] || []).some(t => p.nombre.toLowerCase().includes(t));
 function pintarPedidosAlergia() {
   const caja = $('t-al-pedidos');
   if (!T.curso || !T.camp) { caja.hidden = true; return; }
@@ -1090,21 +1094,25 @@ function pintarPedidosAlergia() {
     const prev = antes.filter(x => x.tipo === tipo);
     for (let i = 0; i < n(tipo); i++) filas.push(prev[i] || { tipo, alergia: '', comida: '', fruta: '', bebida: '', extra: '' });
   });
+  // Si se cambia el tipo de alergia, se quita lo que ya no se puede pedir
+  const prodsMenu = T.camp.catalogo.productos.filter(p => p.menus.includes(T.curso.menu));
+  filas.forEach(f => CAMPOS_ALERGIA.forEach(([c]) => { const p = prodsMenu.find(x => x.nombre === f[c]); if (p && !apto(f.tipo, p)) f[c] = ''; }));
   T.alPed = filas;
   if (!filas.length) { caja.hidden = true; caja.innerHTML = ''; return; }
   const prods = T.camp.catalogo.productos.filter(p => p.menus.includes(T.curso.menu));
-  const opciones = (cats, valor, nada) => `<option value="">Elige…</option><option value="-" ${valor === '-' ? 'selected' : ''}>${nada}</option>`
-    + prods.filter(p => cats.includes(p.categoria)).map(p => `<option ${p.nombre === valor ? 'selected' : ''}>${esc(p.nombre)}</option>`).join('');
+  const opciones = (cats, valor, nada, tipo) => `<option value="">Elige…</option><option value="-" ${valor === '-' ? 'selected' : ''}>${nada}</option>`
+    + prods.filter(p => cats.includes(p.categoria) && apto(tipo, p)).map(p => `<option ${p.nombre === valor ? 'selected' : ''}>${esc(p.nombre)}</option>`).join('');
   const cuenta = {};
   caja.innerHTML = `<p class="small"><strong>¿Qué ha pedido cada alumno/a con alergia?</strong> Así Pastoral puede preparar su pedido aparte. Sin nombres.</p>`
     + filas.map(f => {
       cuenta[f.tipo] = (cuenta[f.tipo] || 0) + 1;
       const tit = f.tipo === 'gluten' ? 'Sin gluten' : f.tipo === 'lactosa' ? 'Sin lactosa' : 'Otra alergia';
+      const nota = f.tipo === 'gluten' ? 'El bocadillo se prepara con pan sin gluten.' : f.tipo === 'lactosa' ? 'No salen la Nocilla, la leche, el batido ni el yogur.' : '';
       return `<div class="al-persona" data-tipo="${f.tipo}">
-        <div class="al-persona-tit">⚠️ ${tit} · alumno/a ${cuenta[f.tipo]}</div>
+        <div class="al-persona-tit">⚠️ ${tit} · alumno/a ${cuenta[f.tipo]}${nota ? `<div class="muted small" style="font-weight:400">${nota}</div>` : ''}</div>
         ${f.tipo === 'otra' ? `<label>¿A qué? <input type="text" data-c="alergia" maxlength="40" value="${esc(f.alergia)}" placeholder="Por ejemplo: huevo, frutos secos"></label>` : ''}
         <div class="grid2">${CAMPOS_ALERGIA.filter(([, cat]) => prods.some(p => p.categoria === cat)).map(([c, cat, tit, nada]) =>
-          `<label>${tit} <select data-c="${c}">${opciones([cat], (f[c] ?? '') === '' ? '' : (f[c] || '-'), nada)}</select></label>`).join('')}
+          `<label>${tit} <select data-c="${c}">${opciones([cat], (f[c] ?? '') === '' ? '' : (f[c] || '-'), nada, f.tipo)}</select></label>`).join('')}
         </div></div>`;
     }).join('');
   caja.hidden = false;
