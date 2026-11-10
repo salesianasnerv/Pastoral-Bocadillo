@@ -1682,12 +1682,13 @@ function vistaBalance(camp) {
   const tiendas = tiendasDe(camp);
   const gastos = gastosDe(camp);
   return `
+    <div class="acciones" style="justify-content:space-between;margin-bottom:.8rem">
+      <h2 style="margin:0">💶 Balance económico</h2>
+      <button class="btn" data-pdf="balance" title="Ingresos, gastos y ganancia en un PDF">📄 PDF del balance completo</button>
+    </div>
     <div class="kpis" id="b-kpis">${kpisBalance(camp)}</div>
     <div class="card">
-      <div class="acciones" style="justify-content:space-between;margin-bottom:.4rem">
-        <h2 style="margin:0">Ingresos</h2>
-        <button class="btn" data-pdf="balance">📄 PDF del balance</button>
-      </div>
+      <h2 style="margin-bottom:.4rem">Ingresos</h2>
       <p class="muted small" style="margin-top:0">Lo que suman los recuentos enviados por los tutores.</p>
       ${tabla(['Etapa', 'Clases', 'Ingresos'],
         etapas.map(e => { const s = sumar(camp, cursos.filter(c => c.etapa === e)); return `<tr><td><strong>${esc(e)}</strong></td><td class="n">${s.enviados} / ${s.total}</td><td class="n"><strong>${eur(s.centimos)}</strong></td></tr>`; }),
@@ -1697,15 +1698,23 @@ function vistaBalance(camp) {
       <h2>Gastos</h2>
       <p class="muted small" style="margin-top:0">Apunta cada compra cuando tengas el ticket. Se guarda al momento y queda en esta lista.</p>
       <datalist id="b-tiendas">${tiendas.map(t => `<option value="${esc(t)}">`).join('')}</datalist>
-      ${gastos.length ? tabla(['Concepto', 'Tienda', 'Fecha', 'Importe', ''],
-        gastos.map((g, i) => `<tr><td>${esc(g.concepto || '—')}</td><td style="text-align:center">${esc(g.tienda || '—')}</td><td style="text-align:center" class="small">${g.fecha ? esc(fechaCortaNum(g.fecha)) : '—'}</td><td class="n"><strong>${eur(cent(g.importe))}</strong></td><td><button class="btn peligro mini" data-quitar-g="${i}" title="Borrar este gasto">✕</button></td></tr>`),
-        ['Total gastos', '', '', eur(centGastos(gastos)), ''], ['', '', '', 'n', ''], { primera: 200, derecha: [96, 52] })
+      ${gastos.length ? tabla(['Concepto', 'Tienda', 'Fecha', 'Importe', 'Ticket', ''],
+        gastos.map((g, i) => `<tr><td>${esc(g.concepto || '—')}</td><td style="text-align:center">${esc(g.tienda || '—')}</td><td style="text-align:center" class="small">${g.fecha ? esc(fechaCortaNum(g.fecha)) : '—'}</td><td class="n"><strong>${eur(cent(g.importe))}</strong></td>
+          <td style="text-align:center">${g.ticket ? `<a class="btn sec mini" href="${esc(enlaceArchivo(g.ticket))}" target="_blank" rel="noopener" title="${esc(g.ticket.nombre)}">🧾 Ver</a>` : `<label class="btn sec mini btn-adj" title="Adjuntar el ticket de este gasto">📎 Añadir<input type="file" accept="image/*,application/pdf" data-ticket-g="${i}"></label>`}</td>
+          <td><div class="acc-clase"><button class="btn sec mini" data-editar-g="${i}" title="Editar este gasto">✏️</button><button class="btn peligro mini" data-quitar-g="${i}" title="Borrar este gasto">✕</button></div></td></tr>`),
+        ['Total gastos', '', '', eur(centGastos(gastos)), '', ''], ['', '', '', 'n', '', ''], { primera: 180, derecha: [84, 92] })
       : '<p class="muted" style="margin:0 0 .6rem">Todavía no se ha apuntado ningún gasto.</p>'}
+      ${(() => { const ed = B.editando != null ? gastos[B.editando] : null; if (!ed) B.editando = null; return `
+      ${ed ? `<h3 style="margin:1rem 0 .3rem">✏️ Editando: ${esc(ed.concepto || ed.tienda)}</h3>` : ''}
       <form id="b-nuevo" class="gasto" style="margin-top:.8rem">
-        <input id="b-concepto" placeholder="Concepto (por ejemplo: Compra de bebidas)" required>
-        <input id="b-tienda" list="b-tiendas" placeholder="Tienda">
-        <input id="b-importe" inputmode="decimal" placeholder="0,00 €" style="text-align:right" required>
-        <button class="btn" type="submit" id="b-anadir">➕ Añadir gasto</button>
+        <input id="b-concepto" placeholder="Concepto (por ejemplo: Compra de bebidas)" value="${esc(ed ? ed.concepto : '')}" required>
+        <input id="b-tienda" list="b-tiendas" placeholder="Tienda" value="${esc(ed ? ed.tienda : '')}">
+        <input id="b-importe" inputmode="decimal" placeholder="0,00 €" style="text-align:right" value="${ed ? esc(String(ed.importe).replace('.', ',')) : ''}" required>
+        ${ed ? `<div class="acciones"><button class="btn" type="submit" id="b-anadir">💾 Guardar</button><button class="btn sec" type="button" data-cancelar-g>Cancelar</button></div>` : '<button class="btn" type="submit" id="b-anadir">➕ Añadir gasto</button>'}`; })()}
+        <div style="grid-column:1 / -1;display:flex;align-items:center;gap:.6rem;flex-wrap:wrap">
+          <label class="btn sec btn-adj" style="margin:0">🧾 Foto o escaneado del ticket<input type="file" id="b-ticket" accept="image/*,application/pdf"></label>
+          <span class="small muted" id="b-ticket-nombre">${B.ticket ? '✓ ' + esc(B.ticket.nombre) : B.editando != null && gastos[B.editando]?.ticket ? 'Ya tiene ticket: si eliges otro, se cambia.' : 'Opcional: también se puede añadir después.'}</span>
+        </div>
       </form>
     </div>`;
 }
@@ -2288,7 +2297,32 @@ $('p-subtabs').onclick = e => {
   pintarPanel();
 };
 
+// Ticket de un gasto: foto (reducida) o PDF, como la lista de la clase
+const B = { ticket: null, editando: null };
+async function leerTicket(f) {
+  if (f.type === 'application/pdf') {
+    if (f.size > MAX_PDF) throw new Error(`${f.name} es demasiado grande (máximo 4 MB). Prueba a hacer una foto.`);
+    return { nombre: f.name, tipo: f.type, datos: await leerArchivo(f) };
+  }
+  if (/^image\//.test(f.type)) return { nombre: f.name.replace(/\.[^.]+$/, '') + '.jpg', tipo: 'image/jpeg', datos: await reducirImagen(f) };
+  throw new Error(`${f.name}: solo se pueden adjuntar fotos o PDF.`);
+}
+// Enlace para abrir un archivo guardado (en la web real, el enlace que devuelva el Apps Script)
+const enlaceArchivo = a => a.url || (a._blob ||= dataABlobUrl(a.datos || ''));
+$('p-contenido').addEventListener('change', async e => {
+  const t = e.target;
+  if (t.id !== 'b-ticket' && t.dataset.ticketG === undefined) return;
+  const f = t.files[0]; t.value = '';
+  if (!f) return;
+  let ticket;
+  try { ticket = await leerTicket(f); } catch (err) { alert(err.message); return; }
+  if (t.id === 'b-ticket') { B.ticket = ticket; $('b-ticket-nombre').textContent = '✓ ' + ticket.nombre; return; }
+  const camp = campActual(), i = Number(t.dataset.ticketG);
+  await guardarGastos(camp, gastosDe(camp).map((g, j) => j === i ? { ...g, ticket } : g), null, 'Ticket añadido.');
+});
+
 async function guardarGastos(camp, gastos, boton, txt) {
+  gastos = gastos.map(g => { if (!g.ticket) return g; const { _blob, ...ticket } = g.ticket; return { ...g, ticket }; });
   await conBoton(boton, async () => {
     await api('guardarCampana', { clave: P.clave, campana: { ...camp, gastos } });
     camp.gastos = gastos;
@@ -2302,8 +2336,14 @@ $('p-contenido').addEventListener('submit', async e => {
   const camp = campActual();
   const importe = Math.round(leerImporte($('b-importe').value) * 100) / 100;
   if (!$('b-concepto').value.trim() || !importe) { alert('Escribe el concepto y el importe del gasto.'); return; }
-  const g = { concepto: $('b-concepto').value.trim(), tienda: $('b-tienda').value.trim(), importe, fecha: new Date().toISOString().slice(0, 10) };
-  await guardarGastos(camp, [...gastosDe(camp), g], '#b-anadir', 'Gasto añadido.');
+  const nuevo = { concepto: $('b-concepto').value.trim(), tienda: $('b-tienda').value.trim(), importe };
+  if (B.ticket) nuevo.ticket = B.ticket;
+  const i = B.editando;
+  const lista = i != null
+    ? gastosDe(camp).map((g, j) => j === i ? { ...g, ...nuevo } : g)
+    : [...gastosDe(camp), { ...nuevo, fecha: new Date().toISOString().slice(0, 10) }];
+  B.ticket = null; B.editando = null;
+  await guardarGastos(camp, lista, '#b-anadir', i != null ? 'Gasto guardado.' : 'Gasto añadido.');
 });
 
 async function accionPanel(e) {
@@ -2415,6 +2455,8 @@ $('p-contenido').addEventListener('click', async e => {
   if (d.irCompra !== undefined) { P.sub = 'compra'; P.ambito = 'colegio'; pintarPanel(); return; }
   if (d.irListados !== undefined) { P.sub = 'listados'; P.lista = 'colegio'; P.modo = 'totales'; pintarPanel(); return; }
   if (d.irBalance !== undefined) { P.sub = 'balance'; pintarPanel(); return; }
+  if (d.editarG !== undefined) { B.editando = Number(d.editarG); B.ticket = null; pintarSub(); $('b-concepto').focus(); $('b-nuevo').scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
+  if (d.cancelarG !== undefined) { B.editando = null; B.ticket = null; pintarSub(); return; }
   // Gastos: cada uno se guarda (o se borra) al momento
   if (d.quitarG !== undefined) {
     // Se confirma en el propio botón (pulsar dos veces), sin ventanas emergentes
