@@ -2127,7 +2127,8 @@ function vistaProductos(camp) {
     <div class="card" id="ed">
       <div class="aviso info acciones" style="justify-content:space-between">
         <span>¿Este bocadillo tiene productos antiguos? Puedes sustituirlos por los <strong>productos y precios iniciales</strong> (los actuales, con sus packs y tiendas).</span>
-        <button class="btn" data-ed="iniciales">↺ Cargar productos y precios iniciales</button>
+        <div class="acciones"><button class="btn sec" data-ed="cantidades" title="Lonchas, botes y tortillas por bocadillo y unidades de cada pack, sin tocar nombres ni precios">↺ Actualizar solo las cantidades</button>
+        <button class="btn" data-ed="iniciales">↺ Cargar productos y precios iniciales</button></div>
       </div>
       <h2>Productos de «${esc(camp.titulo)}»</h2>
       <p class="muted small" style="margin-top:0">Cada producto indica en qué etapas aparece y qué gasta de la lista de la compra por cada unidad pedida.</p>
@@ -2503,6 +2504,15 @@ $('p-contenido').addEventListener('click', async e => {
     c.articulos.splice(d.quitarA, 1);
   }
   else if (d.ed === 'descartar') { P.edit = null; }
+  // Pone las cantidades actuales (lonchas por bocadillo, bocadillos por bote o tortilla y unidades por pack)
+  // en los productos que ya existen, sin cambiar nombres, precios ni etapas
+  else if (d.ed === 'cantidades') {
+    const ini = catalogoPorDefecto();
+    let n = 0;
+    c.productos.forEach(p => { const q = ini.productos.find(x => x.id === p.id); if (q && JSON.stringify(q.compra) !== JSON.stringify(p.compra)) { p.compra = clone(q.compra); n++; } });
+    c.articulos.forEach(a => { const q = ini.articulos.find(x => x.id === a.id); if (q && (q.pack !== a.pack || q.unidad !== a.unidad)) { a.pack = q.pack; a.unidad = q.unidad; a.packNombre = q.packNombre; n++; } });
+    mensaje(n ? `Cantidades actualizadas en ${n} producto${n === 1 ? '' : 's'} o artículo${n === 1 ? '' : 's'}. Revísalas y pulsa «💾 Guardar productos».` : 'Las cantidades ya estaban al día.', 'info');
+  }
   else if (d.ed === 'iniciales') {
     const n = recsDe(camp.id).length;
     if (!confirm('¿Cargar los productos y precios iniciales en este bocadillo?' +
