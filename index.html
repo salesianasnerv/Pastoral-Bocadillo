@@ -174,6 +174,8 @@
     border-radius: 999px; padding: 0.35rem 0.8rem; font: 600 0.84rem 'Fira Sans', sans-serif; cursor: pointer;
   }
   .chip.active { background: var(--azul); color: #fff; border-color: var(--azul); }
+  .chips.modos { align-items: center; padding-top: .5rem; border-top: 1px dashed var(--border); }
+  .chips.modos .chip { font-size: .8rem; padding: .25rem .7rem; }
   .chip.pend { background: transparent; border-color: var(--border); color: var(--text-muted); cursor: default; }
 
   .card {
@@ -911,7 +913,7 @@ function demoDb() {
       const comidas = cat.productos.filter(p => p.categoria === 'comida' && p.menus.includes(c.menu)).map(p => p.nombre);
       const bebidas = cat.productos.filter(p => p.categoria === 'bebida' && p.menus.includes(c.menu)).map(p => p.nombre);
       const alergias = i % 5 === 1 ? { gluten: 1, lactosa: 0, otra: 0, cual: '', pedidos: [{ tipo: 'gluten', comida: comidas[0], bebida: bebidas[0] }] }
-        : i % 7 === 3 ? { gluten: 0, lactosa: 1, otra: 1, cual: 'frutos secos', pedidos: [{ tipo: 'lactosa', comida: comidas[1] || comidas[0], bebida: bebidas[bebidas.length - 1] }, { tipo: 'otra', alergia: 'frutos secos', comida: comidas[0], bebida: null }] }
+        : i % 7 === 3 ? { gluten: 0, lactosa: 1, otra: 1, cual: 'frutos secos', pedidos: [{ tipo: 'lactosa', comida: comidas.find(n => !/nocilla/i.test(n)), bebida: bebidas.find(n => !/leche|batido|yogur/i.test(n)) }, { tipo: 'otra', alergia: 'frutos secos', comida: comidas[0], bebida: null }] }
         : {};
       db.recuentos.push({ campana: 'demo1', cursoId: c.id, curso: c.nombre, etapa: c.etapa, tutor: nombres[i % nombres.length], cantidades, alergias, observaciones: '', enviado: t, actualizado: t });
     });
@@ -1271,7 +1273,7 @@ $('t-enviar').onclick = async () => {
 /* =========================================================================
    PASTORAL: cálculos
    ========================================================================= */
-const P = { clave: sesion.get(), datos: null, anio: null, campId: null, sub: 'resumen', etapa: 'Infantil', ambito: 'colegio', edit: null, editCamp: null };
+const P = { clave: sesion.get(), datos: null, anio: null, campId: null, sub: 'resumen', lista: 'clase', modo: 'totales', etapa: 'Infantil', ambito: 'colegio', edit: null, editCamp: null };
 
 const campActual = () => P.datos.campanas.find(c => c.id === P.campId);
 const recsDe = campId => P.datos.recuentos.filter(r => r.campana === campId);
@@ -1602,22 +1604,32 @@ function gastosCambio(e) {
   $('b-kpis').innerHTML = kpisBalance(camp);
 }
 
+// Resumen: arriba los totales, el balance y las clases que faltan; debajo, listados que se eligen y se filtran
+const LISTADOS = {
+  clase: { nombre: '🏫 Por clase', modos: [['totales', 'Totales'], ['productos', 'Por productos']] },
+  etapa: { nombre: '🎓 Por etapa', modos: [['totales', 'Totales'], ['productos', 'Por productos']] },
+  colegio: { nombre: '🏢 Colegio', modos: [['totales', 'Totales'], ['productos', 'Por productos'], ['dias', 'Por días']] },
+  alergias: { nombre: '⚠️ Alergias', modos: [['totales', 'Totales'], ['desglose', 'Por clase'], ['dias', 'Por días']] },
+  compra: { nombre: '🛒 Lista de la compra', modos: [['totales', 'Total'], ['etapas', 'Por etapas'], ['dias', 'Por días']] }
+};
+// Los días del bocadillo y las clases de cada uno (Infantil y Primaria un día; ESO, Bachillerato y CCFF el otro; Profesorado los dos)
+const diasDe = camp => tieneDosDias(camp) ? diasOrdenados(camp) : [camp.fecha];
+const cursosDelDia = (camp, cursos, f) => cursos.filter(c => (fechaCurso(camp, c) || f) === f);
+const tituloDia = f => { const t = fechaLarga(f); return t.charAt(0).toUpperCase() + t.slice(1); };
+const recDe = (camp, c) => recsDe(camp.id).find(r => r.cursoId === c.id);
+
 function vistaResumen(camp) {
   const cursos = cursosDe(camp);
   const tot = sumar(camp, cursos);
   const etapas = etapasCon(cursos);
   const recs = new Set(recsDe(camp.id).map(r => r.cursoId));
-  const filas = etapas.map(e => {
-    const cs = cursos.filter(c => c.etapa === e);
-    const s = sumar(camp, cs);
-    return `<tr><td><strong>${esc(e)}</strong></td><td class="n">${s.enviados} / ${s.total}</td>${celdaN(s.porCat.comida)}${celdaN(s.porCat.fruta)}${celdaN(s.porCat.bebida)}<td class="n"><strong>${eur(s.centimos)}</strong></td></tr>`;
-  });
   const pend = etapas.map(e => {
     const p = cursos.filter(c => c.etapa === e && !recs.has(c.id));
     return p.length ? `<div style="margin-bottom:.5rem"><strong class="small">${esc(e)}:</strong> ${p.map(c => `<span class="chip pend">${esc(c.nombre)}</span>`).join(' ')}</div>` : '';
   }).join('');
-  const prods = camp.catalogo.productos.filter(p => tot.porProducto[p.id]);
-  const compra = listaCompra(camp, cursos);
+  if (!LISTADOS[P.lista]) P.lista = 'clase';
+  const modos = LISTADOS[P.lista].modos;
+  if (!modos.some(([m]) => m === P.modo)) P.modo = modos[0][0];
   return `
     <div class="kpis">
       <div class="kpi"><div class="v">${eur(tot.centimos)}</div><div class="l">Recaudado</div></div>
@@ -1627,56 +1639,101 @@ function vistaResumen(camp) {
     </div>
     ${tarjetaBalance(camp)}
     <div class="card">
-      <div class="acciones" style="justify-content:space-between;margin-bottom:.8rem">
-        <h2 style="margin:0">Por etapa</h2>
-        <button class="btn" data-pdf="colegio">📄 PDF del colegio</button>
-      </div>
-      ${tabla(['Etapa', 'Clases', 'Bocadillos', 'Fruta', 'Bebidas', 'Dinero'], filas,
-        ['Total colegio', `${tot.enviados} / ${tot.total}`, num(tot.porCat.comida), num(tot.porCat.fruta), num(tot.porCat.bebida), eur(tot.centimos)],
-        ['', 'n', 'n', 'n', 'n', 'n'])}
-    </div>
-    ${(() => {
-      const filasAl = etapas.map(e => ({ e, a: sumarAlergias(cursos.filter(c => c.etapa === e).map(c => recsDe(camp.id).find(r => r.cursoId === c.id))) }))
-        .filter(x => x.a.gluten || x.a.lactosa || x.a.otra);
-      if (!filasAl.length) return '';
-      const t = sumarAlergias(recsDe(camp.id));
-      return `<div class="card"><h2>⚠️ Alergias e intolerancias</h2>
-        ${tabla(['Etapa', 'Sin gluten', 'Sin lactosa', 'Otras', '¿Cuáles?'],
-          filasAl.map(({ e, a }) => `<tr><td><strong>${esc(e)}</strong></td>${celdaN(a.gluten)}${celdaN(a.lactosa)}${celdaN(a.otra)}<td>${esc(a.cual)}</td></tr>`),
-          ['Total colegio', num(t.gluten), num(t.lactosa), num(t.otra), esc(t.cual)], ['', 'n', 'n', 'n', ''])}
-        ${t.pedidos.length ? `<p class="small" style="margin:.6rem 0 0"><strong>Qué han pedido:</strong> ${esc(textoPedidosAlergia(t.pedidos))}</p>` : ''}
-        <p class="muted small" style="margin:.4rem 0 0">Número de alumnos/as que han indicado los tutores. El detalle de cada clase está en «Por clase» y en las listas grandes.</p></div>`;
-    })()}
-    <div class="card">
-      <h2>Productos por etapa</h2>
-      <p class="muted small" style="margin-top:0">Unidades pedidas de cada producto, de más a menos pedido dentro de cada grupo. «—» significa que ese producto no se ofrece en esa etapa.</p>
-      ${(() => {
-        const { etapas, grupos } = productosPorEtapa(camp);
-        const filasPE = grupos.flatMap(g => [
-          `<tr class="fila-grupo"><td colspan="${etapas.length + 2}">${esc(g.nombre)}</td></tr>`,
-          ...g.filas.map(f => `<tr><td title="${esc(f.p.nombre)}">${esc(f.corto)}</td>${f.celdas.map(n => n === null ? '<td class="n cero">—</td>' : `<td class="n${n ? '' : ' cero'}">${num(n)}</td>`).join('')}<td class="n"><strong>${num(f.total)}</strong></td></tr>`)
-        ]);
-        return tabla(['Producto', ...etapas.map(esc), 'Total'], filasPE, null, ['', ...etapas.map(() => 'n'), 'n'], { primera: 190 });
-      })()}
-    </div>
-    <div class="card">
       <h2>Faltan por enviar ${tot.total - tot.enviados ? `(${tot.total - tot.enviados})` : ''}</h2>
       ${pend || '<p class="muted" style="margin:0">🎉 Todas las clases han enviado su recuento.</p>'}
     </div>
     <div class="card">
-      <h2>Total de cada producto en el colegio</h2>
-      ${prods.length ? tabla(['Producto', 'Precio', 'Unidades', 'Importe'],
-        prods.map(p => `<tr><td>${esc(p.nombre)}</td><td class="n">${eur(cent(p.precio))}</td><td class="n">${num(tot.porProducto[p.id])}</td><td class="n">${eur(tot.porProducto[p.id] * cent(p.precio))}</td></tr>`),
-        ['Total', '', num(Object.values(tot.porProducto).reduce((a, b) => a + b, 0)), eur(tot.centimos)], ['', 'n', 'n', 'n'])
-      : '<p class="muted" style="margin:0">Todavía no hay recuentos.</p>'}
-    </div>
-    <div class="card">
-      <div class="acciones" style="justify-content:space-between;margin-bottom:.8rem">
-        <h2 style="margin:0">Lista de la compra del colegio</h2>
-        <button class="btn sec" data-ir-compra>Ver por etapas →</button>
-      </div>
-      ${compra.length ? tablaCompra(compra) : '<p class="muted" style="margin:0">Todavía no hay recuentos.</p>'}
+      <h2 style="margin-bottom:.6rem">Listados</h2>
+      <div class="chips" style="margin-bottom:.5rem">${Object.entries(LISTADOS).map(([k, l]) => `<button class="chip ${k === P.lista ? 'active' : ''}" data-lista="${k}">${l.nombre}</button>`).join('')}</div>
+      <div class="chips modos"><span class="muted small">Ver:</span>${modos.map(([m, t]) => `<button class="chip ${m === P.modo ? 'active' : ''}" data-modo="${m}">${t}</button>`).join('')}</div>
+      ${listado(camp, cursos, etapas)}
     </div>`;
+}
+
+function listado(camp, cursos, etapas) {
+  const k = P.lista + '-' + P.modo;
+  const vacio = '<p class="muted" style="margin:0">Todavía no hay recuentos.</p>';
+  const filaCats = (titulo, s, extra = '') => `<tr><td><strong>${titulo}</strong>${extra}</td><td class="n">${s.enviados} / ${s.total}</td>${celdaN(s.porCat.comida)}${celdaN(s.porCat.fruta)}${celdaN(s.porCat.bebida)}${celdaN(s.porCat.extra)}<td class="n"><strong>${eur(s.centimos)}</strong></td></tr>`;
+  const cabCats = ['', 'Clases', 'Bocadillos', 'Fruta', 'Bebidas', 'Extras', 'Dinero'];
+  const pieCats = (t, s) => [t, `${s.enviados} / ${s.total}`, num(s.porCat.comida), num(s.porCat.fruta), num(s.porCat.bebida), num(s.porCat.extra), eur(s.centimos)];
+  const clsCats = ['', 'n', 'n', 'n', 'n', 'n', 'n'];
+  const tot = sumar(camp, cursos);
+  // Productos x columnas (días): [{titulo, cursos}]
+  const tablaProductosCols = cols => {
+    const sumas = cols.map(c => sumar(camp, c.cursos).porProducto);
+    const prods = camp.catalogo.productos.filter(p => tot.porProducto[p.id]);
+    if (!prods.length) return vacio;
+    return tabla(['Producto', ...cols.map(c => esc(c.titulo)), 'Total'],
+      prods.map(p => `<tr><td>${esc(p.nombre)}</td>${sumas.map(s => celdaN(s[p.id] || 0)).join('')}<td class="n"><strong>${num(tot.porProducto[p.id])}</strong></td></tr>`),
+      ['Total', ...sumas.map(s => num(Object.values(s).reduce((a, b) => a + b, 0))), num(Object.values(tot.porProducto).reduce((a, b) => a + b, 0))],
+      ['', ...cols.map(() => 'n'), 'n'], { primera: 220 });
+  };
+  const avisoAl = cs => { const al = textoAlergias(sumarAlergias(cs.map(c => recDe(camp, c)))); return al ? `<div class="aviso-alergias">⚠️ <strong>Alergias e intolerancias:</strong> ${esc(al)}.</div>` : ''; };
+  const tablaAlergiasEtapa = cs => {
+    const filas = etapasCon(cs).map(e => ({ e, a: sumarAlergias(cs.filter(c => c.etapa === e).map(c => recDe(camp, c))) })).filter(x => x.a.gluten || x.a.lactosa || x.a.otra);
+    if (!filas.length) return '<p class="muted small" style="margin:0">Ningún alumno/a con alergias o intolerancias.</p>';
+    const t = sumarAlergias(cs.map(c => recDe(camp, c)));
+    return tabla(['Etapa', 'Sin gluten', 'Sin lactosa', 'Otras', '¿Cuáles?'],
+      filas.map(({ e, a }) => `<tr><td><strong>${esc(e)}</strong></td>${celdaN(a.gluten)}${celdaN(a.lactosa)}${celdaN(a.otra)}<td>${esc(a.cual)}</td></tr>`),
+      ['Total', num(t.gluten), num(t.lactosa), num(t.otra), esc(t.cual)], ['', 'n', 'n', 'n', ''])
+      + (t.pedidos.length ? `<p class="small" style="margin:.6rem 0 0"><strong>Qué han pedido:</strong> ${esc(textoPedidosAlergia(t.pedidos))}</p>` : '');
+  };
+  const dias = diasDe(camp);
+  switch (k) {
+    case 'clase-totales':
+      return `<p class="muted small" style="margin-top:0">Lo que ha pedido cada clase, por tipo de producto.</p>` + tabla(cabCats.map((h, i) => i ? h : 'Clase'),
+        etapas.flatMap(e => [`<tr class="fila-grupo"><td colspan="7">${esc(e)}</td></tr>`, ...cursos.filter(c => c.etapa === e).map(c => {
+          const r = recDe(camp, c);
+          if (!r) return `<tr class="pend"><td><strong>${esc(c.nombre)}</strong></td><td colspan="6">Pendiente de enviar</td></tr>`;
+          const s = sumar(camp, [c]);
+          return `<tr><td><strong>${esc(c.nombre)}</strong>${textoAlergias(r.alergias) ? ' <span title="Tiene alergias">⚠️</span>' : ''}<div class="muted small">${esc(r.tutor)}</div></td><td class="n">✓</td>${celdaN(s.porCat.comida)}${celdaN(s.porCat.fruta)}${celdaN(s.porCat.bebida)}${celdaN(s.porCat.extra)}<td class="n"><strong>${eur(s.centimos)}</strong></td></tr>`;
+        })]), pieCats('Total colegio', tot), clsCats, { primera: 150 });
+    case 'clase-productos':
+      return `<p class="muted small" style="margin-top:0">Elige la etapa para ver cada producto clase por clase. Desde aquí se sacan las listas y los PDF de cada clase.</p>` + vistaClases(camp).replace('<div class="card">', '<div>');
+    case 'etapa-totales':
+      return `<div class="acciones" style="justify-content:flex-end;margin-bottom:.6rem"><button class="btn" data-pdf="colegio">📄 PDF del colegio</button></div>`
+        + tabla(cabCats.map((h, i) => i ? h : 'Etapa'), etapas.map(e => filaCats(esc(e), sumar(camp, cursos.filter(c => c.etapa === e)))), pieCats('Total colegio', tot), clsCats);
+    case 'etapa-productos': {
+      const { etapas: es, grupos } = productosPorEtapa(camp);
+      return `<p class="muted small" style="margin-top:0">Unidades de cada producto, de más a menos pedido dentro de cada grupo. «—»: no se ofrece en esa etapa.</p>` + tabla(['Producto', ...es.map(esc), 'Total'], grupos.flatMap(g => [
+        `<tr class="fila-grupo"><td colspan="${es.length + 2}">${esc(g.nombre)}</td></tr>`,
+        ...g.filas.map(f => `<tr><td title="${esc(f.p.nombre)}">${esc(f.corto)}</td>${f.celdas.map(n => n === null ? '<td class="n cero">—</td>' : `<td class="n${n ? '' : ' cero'}">${num(n)}</td>`).join('')}<td class="n"><strong>${num(f.total)}</strong></td></tr>`)
+      ]), null, ['', ...es.map(() => 'n'), 'n'], { primera: 190 });
+    }
+    case 'colegio-totales':
+      return tabla(['', 'Clases', 'Bocadillos', 'Fruta', 'Bebidas', 'Extras', 'Dinero'],
+        dias.length > 1 ? dias.map(f => filaCats(esc(tituloDia(f)), sumar(camp, cursosDelDia(camp, cursos, f)))) : [],
+        pieCats('Total colegio', tot), clsCats, { primera: 190 })
+        + (dias.length > 1 ? '<p class="muted small" style="margin:.4rem 0 0">El Profesorado cuenta en los dos días (una lista cada día).</p>' : '');
+    case 'colegio-productos': {
+      const prods = camp.catalogo.productos.filter(p => tot.porProducto[p.id]);
+      return prods.length ? tabla(['Producto', 'Precio', 'Unidades', 'Importe'],
+        prods.map(p => `<tr><td>${esc(p.nombre)}</td><td class="n">${eur(cent(p.precio))}</td><td class="n">${num(tot.porProducto[p.id])}</td><td class="n">${eur(tot.porProducto[p.id] * cent(p.precio))}</td></tr>`),
+        ['Total', '', num(Object.values(tot.porProducto).reduce((a, b) => a + b, 0)), eur(tot.centimos)], ['', 'n', 'n', 'n'], { primera: 220 }) : vacio;
+    }
+    case 'colegio-dias':
+      return `<p class="muted small" style="margin-top:0">Unidades de cada producto que se preparan cada día.</p>` + tablaProductosCols(dias.map(f => ({ titulo: tituloDia(f), cursos: cursosDelDia(camp, cursos, f) })));
+    case 'alergias-totales':
+      return tablaAlergiasEtapa(cursos);
+    case 'alergias-desglose': {
+      const filas = cursos.map(c => ({ c, r: recDe(camp, c) })).filter(x => x.r && textoAlergias(x.r.alergias));
+      return filas.length ? tabla(['Clase', 'Día', 'Alergias y lo que han pedido'],
+        filas.map(({ c, r }) => `<tr><td><strong>${esc(c.nombre)}</strong><div class="muted small">${esc(c.etapa)}</div></td><td>${esc(nombreDia(fechaCurso(camp, c) || camp.fecha))}</td><td style="white-space:normal">${esc(textoAlergias(r.alergias))}</td></tr>`),
+        null, ['', '', ''], { primera: 150, derecha: [] }) : '<p class="muted small" style="margin:0">Ningún alumno/a con alergias o intolerancias.</p>';
+    }
+    case 'alergias-dias':
+      return dias.map(f => `<h3>📅 ${esc(tituloDia(f))}</h3>` + tablaAlergiasEtapa(cursosDelDia(camp, cursos, f))).join('');
+    case 'compra-totales': {
+      const l = listaCompra(camp, cursos);
+      return avisoAl(cursos) + (l.length ? tablaCompra(l) : vacio);
+    }
+    case 'compra-etapas':
+      return etapas.map(e => { const cs = cursos.filter(c => c.etapa === e); const l = listaCompra(camp, cs); return l.length ? `<h3>${esc(e)}</h3>${avisoAl(cs)}${tablaCompra(l)}` : ''; }).join('') || vacio;
+    case 'compra-dias':
+      return dias.map(f => { const cs = cursosDelDia(camp, cursos, f); const l = listaCompra(camp, cs); return `<h3>📅 ${esc(tituloDia(f))}</h3>${avisoAl(cs)}${l.length ? tablaCompra(l) : vacio}`; }).join('')
+        + (dias.length > 1 ? '<p class="muted small" style="margin:.4rem 0 0">Cada día se redondea por separado (por ejemplo, las tortillas), así que la suma de los dos días puede ser algo mayor que el total.</p>' : '');
+  }
+  return '';
 }
 
 // Para las tablas anchas: "Bocadillo grande de chopped" -> grupo "Bocadillo grande", nombre "Chopped"
@@ -2133,6 +2190,8 @@ $('p-contenido').addEventListener('click', async e => {
   const d = t.dataset;
   const camp = campActual();
   if (d.pdf === 'total') { await cargarFira(); pdfTotal(); return; }
+  if (d.lista) { P.lista = d.lista; pintarSub(); return; }
+  if (d.modo) { P.modo = d.modo; pintarSub(); return; }
   if (d.etapa) { P.etapa = d.etapa; pintarSub(); return; }
   if (d.ambito) { P.ambito = d.ambito; pintarSub(); return; }
   if (d.irCompra !== undefined) { P.sub = 'compra'; P.ambito = 'colegio'; pintarPanel(); return; }
