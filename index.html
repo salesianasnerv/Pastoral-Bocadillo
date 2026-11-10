@@ -2020,36 +2020,41 @@ function vistaTotal() {
     </div>`;
 }
 
+const TODO_COLEGIO = '__todo';
 function vistaClases(camp) {
   const cursos = cursosDe(camp);
   const etapas = etapasCon(cursos);
-  if (!etapas.includes(P.etapa)) P.etapa = etapas[0];
-  const cs = cursos.filter(c => c.etapa === P.etapa);
-  const prods = productosEtapa(camp, P.etapa);
+  // «Todo el colegio»: todas las clases y todos los productos; «—» donde un producto no se ofrece a esa clase
+  const todo = P.etapa === TODO_COLEGIO;
+  if (!todo && !etapas.includes(P.etapa)) P.etapa = etapas[0];
+  const cs = todo ? cursos : cursos.filter(c => c.etapa === P.etapa);
+  const prods = todo ? productosDeCursos(camp, cursos) : productosEtapa(camp, P.etapa);
   const recs = new Map(recsDe(camp.id).map(r => [r.cursoId, r]));
   const s = sumar(camp, cs);
-  const filas = cs.map(c => {
+  const titulo = todo ? 'Todo el colegio' : P.etapa;
+  const filas = cs.flatMap((c, i) => {
     const r = recs.get(c.id);
-    if (!r) return `<tr class="pend"><td><strong>${esc(c.nombre)}</strong></td><td colspan="${prods.length + 2}">Pendiente de enviar</td><td></td></tr>`;
+    const grupo = todo && (i === 0 || cs[i - 1].etapa !== c.etapa) ? [`<tr class="fila-grupo"><td colspan="${prods.length + 3}">${esc(c.etapa)}</td></tr>`] : [];
+    if (!r) return [...grupo, `<tr class="pend"><td><strong>${esc(c.nombre)}</strong></td><td colspan="${prods.length + 1}">Pendiente de enviar</td><td></td></tr>`];
     const al = textoAlergias(r.alergias);
     const obs = (al ? ` <span title="Alergias: ${esc(al)}">⚠️</span>` : '') + (r.observaciones ? ` <span title="${esc(r.observaciones)}">💬</span>` : '');
-    return `<tr><td><strong>${esc(c.nombre)}</strong>${obs}<div class="muted small">${esc(r.tutor)}</div></td>
-      ${prods.map(p => celdaN(r.cantidades[p.id] || 0)).join('')}
+    return [...grupo, `<tr><td><strong>${esc(c.nombre)}</strong>${obs}<div class="muted small">${esc(r.tutor)}</div></td>
+      ${prods.map(p => todo && !p.menus.includes(c.menu) ? '<td class="n cero">—</td>' : celdaN(r.cantidades[p.id] || 0)).join('')}
       <td class="n"><strong>${eur(importeRecuento(camp, r))}</strong></td>
       <td><div class="acc-clase"><button class="btn mini" data-pdf="lista" data-curso="${esc(c.id)}" title="Lista en grande para colgar en la sala al preparar los bocadillos (sin precios)">📋 Lista</button>
           <button class="btn sec mini" data-pdf="clase" data-curso="${esc(c.id)}" title="Detalle de la clase con precios e importes">PDF</button>
-          <button class="btn peligro mini" data-borrar-rec="${esc(c.id)}" title="Borrar este recuento">✕</button></div></td></tr>`;
+          <button class="btn peligro mini" data-borrar-rec="${esc(c.id)}" title="Borrar este recuento">✕</button></div></td></tr>`];
   });
   const obsList = cs.map(c => recs.get(c.id)).filter(r => r && r.observaciones);
   const alList = cs.map(c => recs.get(c.id)).filter(r => r && textoAlergias(r.alergias));
   return `
-    <div class="chips">${etapas.map(e => `<button class="chip ${e === P.etapa ? 'active' : ''}" data-etapa="${esc(e)}">${esc(e)}</button>`).join('')}</div>
+    <div class="chips"><button class="chip ${todo ? 'active' : ''}" data-etapa="${TODO_COLEGIO}">🏢 Todo el colegio</button>${etapas.map(e => `<button class="chip ${e === P.etapa ? 'active' : ''}" data-etapa="${esc(e)}">${esc(e)}</button>`).join('')}</div>
     <div class="card">
       <div class="acciones" style="justify-content:space-between;margin-bottom:.8rem">
-        <h2 style="margin:0">${esc(P.etapa)} <span class="muted small">· ${s.enviados} de ${s.total} clases · ${eur(s.centimos)}</span></h2>
+        <h2 style="margin:0">${esc(titulo)} <span class="muted small">· ${s.enviados} de ${s.total} clases · ${eur(s.centimos)}</span></h2>
         <div class="acciones">
-          <button class="btn sec" data-pdf="listas-etapa" title="Una página por clase, en grande y sin precios, para preparar los bocadillos">📋 Listas de toda la etapa</button>
-          <button class="btn" data-pdf="etapa">📄 PDF de ${esc(P.etapa)}</button>
+          <button class="btn sec" data-pdf="listas-etapa" title="Una página por clase, en grande y sin precios, para preparar los bocadillos">📋 Listas de ${todo ? 'todas las clases' : 'toda la etapa'}</button>
+          <button class="btn" data-pdf="${todo ? 'colegio' : 'etapa'}">📄 PDF de ${esc(todo ? 'todo el colegio' : P.etapa)}</button>
         </div>
       </div>
       ${tabla(['Clase', ...prods.map(p => esc(p.nombre)), 'Importe', ''], filas,
@@ -2882,12 +2887,12 @@ function generarPDF(tipo, camp, cursoId) {
 
   if (tipo === 'lista' || tipo === 'listas-etapa') {
     const recs = new Map(recsDe(camp.id).map(r => [r.cursoId, r]));
-    const lista = (tipo === 'lista' ? cursos.filter(c => c.id === cursoId) : cursos.filter(c => c.etapa === P.etapa)).filter(c => recs.has(c.id));
+    const lista = (tipo === 'lista' ? cursos.filter(c => c.id === cursoId) : P.etapa === TODO_COLEGIO ? cursos : cursos.filter(c => c.etapa === P.etapa)).filter(c => recs.has(c.id));
     if (!lista.length) { alert('Todavía no hay recuentos en esta etapa.'); return; }
     if (!(doc = nuevoPDF())) return;
     lista.forEach((c, i) => { if (i) doc.addPage('a4', 'portrait'); paginaLista(doc, camp, c, recs.get(c.id)); });
     piePDF(doc);
-    doc.save(nombreArchivo(camp, 'lista-' + (tipo === 'lista' ? lista[0].nombre : P.etapa)));
+    doc.save(nombreArchivo(camp, 'lista-' + (tipo === 'lista' ? lista[0].nombre : P.etapa === TODO_COLEGIO ? 'colegio' : P.etapa)));
     return;
   }
 
