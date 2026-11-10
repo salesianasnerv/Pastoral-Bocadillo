@@ -481,11 +481,11 @@
 
       <div id="t-productos-card" class="card" hidden>
         <h2 style="margin-bottom:0.2rem">¿Cuántos se han apuntado?</h2>
-        <p class="muted small" style="margin:0">Escribe cuántos de cada producto para toda la clase. En los bocadillos, lo <strong>sin gluten</strong> y <strong>sin lactosa</strong> va en su propia casilla y se suma solo al total: no lo cuentes también en «Normal».</p>
+        <p class="muted small" style="margin:0">Escribe cuántos de cada producto para toda la clase. En los bocadillos, el zumo, el batido y la leche, lo <strong>sin gluten</strong> y <strong>sin lactosa</strong> va en su propia casilla y se suma solo al total: no lo cuentes también en «Normal».</p>
         <div id="t-productos"></div>
         <div class="alergias">
           <h3>⚠️ Otras alergias o intolerancias</h3>
-          <p class="muted small" style="margin:0 0 .6rem">Lo <strong>sin gluten</strong> y <strong>sin lactosa</strong> se apunta arriba, en cada bocadillo. Aquí, otras alergias (huevo, frutos secos…): <strong>cuántos alumnos/as</strong>, a qué es cada uno y qué pide. Lo que pidan se suma solo al total: no lo cuentes arriba. <strong>No escribas nombres.</strong></p>
+          <p class="muted small" style="margin:0 0 .6rem">Lo <strong>sin gluten</strong> y <strong>sin lactosa</strong> se apunta arriba, en cada producto. Aquí, otras alergias (huevo, frutos secos…): <strong>cuántos alumnos/as</strong>, a qué es cada uno y qué pide. Lo que pidan se suma solo al total: no lo cuentes arriba. <strong>No escribas nombres.</strong></p>
           <div id="t-alergias">
             <div class="prod" data-al="otra">
               <div><div class="prod-nombre">Otras</div><div class="prod-precio">Alumnos/as con otra alergia o intolerancia</div></div>
@@ -496,6 +496,7 @@
               </div></div>
           </div>
           <div id="t-otras" class="al-pedidos" hidden></div>
+          <p class="small" style="margin:.7rem 0 0">ℹ️ <strong>Según la alergia, Pastoral estudiará si lo que se ha elegido es posible</strong> (por ejemplo, con alergia a los frutos secos no se puede pedir Nocilla). En esos casos, avisa al responsable de Pastoral.</p>
         </div>
         <label style="margin:1rem 0 0">Observaciones (opcional)
           <textarea id="t-obs" placeholder="Cualquier otra cosa que queráis indicar."></textarea>
@@ -859,11 +860,13 @@ function sumarAlergias(recs) {
   });
   return { gluten: t.gluten, lactosa: t.lactosa, otra: t.otra, cual: [...t.cuales].join(', '), porProducto: t.porProducto, otras: t.otras };
 }
-// Qué columnas de alergia lleva cada producto: solo los bocadillos (el pan sin gluten es especial);
-// sin lactosa, todos menos los que llevan leche (la Nocilla)
-const NO_APTO = { lactosa: ['nocilla', 'leche', 'batido', 'yogur'] };
+// Qué columnas de alergia lleva cada producto (se busca en el nombre, así sirve aunque Pastoral cambie el catálogo):
+// bocadillos: sin gluten (pan especial) y sin lactosa (menos la Nocilla); zumo, batido y leche: sin lactosa
+const NO_APTO = { lactosa: ['nocilla'] };
+const BEBIDAS_SIN_LACTOSA = ['zumo', 'batido', 'leche'];
 const apto = (tipo, p) => !(NO_APTO[tipo] || []).some(t => p.nombre.toLowerCase().includes(t));
-const columnasAlergia = p => p.categoria !== 'comida' ? [] : ['gluten', 'lactosa'].filter(k => apto(k, p));
+const columnasAlergia = p => p.categoria === 'comida' ? ['gluten', 'lactosa'].filter(k => apto(k, p))
+  : p.categoria === 'bebida' && BEBIDAS_SIN_LACTOSA.some(t => p.nombre.toLowerCase().includes(t)) ? ['lactosa'] : [];
 
 function fechaHora(iso) {
   if (!iso) return '';
@@ -1892,16 +1895,23 @@ function vistaClases(camp) {
     </div>`;
 }
 
-// Pan que tiene que ser sin gluten: el de los bocadillos sin gluten (artículos de la compra cuyo id empieza por «pan»)
+// Lo que hay que comprar aparte: pan sin gluten (artículos cuyo id empieza por «pan») y bebidas sin lactosa
 function panSinGluten(camp, cursos) {
-  const g = sumarAlergias(cursos.map(c => recsDe(camp.id).find(r => r.cursoId === c.id))).porProducto.gluten;
+  const pp = sumarAlergias(cursos.map(c => recsDe(camp.id).find(r => r.cursoId === c.id))).porProducto;
   const res = {};
-  camp.catalogo.productos.forEach(p => { const n = g[p.id] || 0; if (n) p.compra.forEach(x => { if (/^pan/.test(x.articulo)) res[x.articulo] = (res[x.articulo] || 0) + Math.ceil(n * factorCompra(x)); }); });
+  const anadir = (art, k, n) => { res[art] = res[art] || {}; res[art][k] = (res[art][k] || 0) + n; };
+  camp.catalogo.productos.forEach(p => {
+    const g = pp.gluten[p.id] || 0, l = pp.lactosa[p.id] || 0;
+    p.compra.forEach(x => {
+      if (g && /^pan/.test(x.articulo)) anadir(x.articulo, 'gluten', Math.ceil(g * factorCompra(x)));
+      if (l && p.categoria === 'bebida') anadir(x.articulo, 'lactosa', Math.ceil(l * factorCompra(x)));
+    });
+  });
   return res;
 }
 function tablaCompra(lista, sinGluten = {}) {
   return tabla(['Artículo', 'Dónde', 'Cantidad', 'A comprar'],
-    lista.map(a => `<tr><td><strong>${esc(a.nombre)}</strong></td><td class="${a.tienda ? '' : 'muted'}" style="text-align:center">${esc(a.tienda || '—')}</td><td class="n">${num(a.total)} ${esc(a.unidad)}${sinGluten[a.id] ? `<div class="small" style="color:var(--naranja-hover);font-weight:600">de ellas ${num(sinGluten[a.id])} sin gluten</div>` : ''}</td><td class="n">${a.packs != null ? `<strong>${num(a.packs)} ${esc(a.packNombre || 'paquetes')}</strong> <span class="muted small">(de ${a.pack})</span>` : '<span class="muted">—</span>'}</td></tr>`),
+    lista.map(a => `<tr><td><strong>${esc(a.nombre)}</strong></td><td class="${a.tienda ? '' : 'muted'}" style="text-align:center">${esc(a.tienda || '—')}</td><td class="n">${num(a.total)} ${esc(a.unidad)}${sinGluten[a.id] ? `<div class="small" style="color:var(--naranja-hover);font-weight:600">de ellas ${[sinGluten[a.id].gluten ? num(sinGluten[a.id].gluten) + ' sin gluten' : '', sinGluten[a.id].lactosa ? num(sinGluten[a.id].lactosa) + ' sin lactosa' : ''].filter(Boolean).join(' y ')}</div>` : ''}</td><td class="n">${a.packs != null ? `<strong>${num(a.packs)} ${esc(a.packNombre || 'paquetes')}</strong> <span class="muted small">(de ${a.pack})</span>` : '<span class="muted">—</span>'}</td></tr>`),
     null, ['', '', 'n', 'n'], { primera: 240 });
 }
 
