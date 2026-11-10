@@ -525,7 +525,7 @@
         <p class="muted small" style="margin:.3rem 0 0"><strong>No escribas ningún dato personal ni nombres de alumnos/as.</strong></p>
         <div class="adjuntos">
           <div class="prod-nombre">📎 Lista de la clase</div>
-          <p class="muted small" style="margin:.2rem 0 .6rem">Para quien haga el reparto, si no lo haces tú. Haz una foto con el móvil o adjunta una imagen o un PDF (hasta 3). Es necesaria para enviar el recuento. Solo la ve el profesorado del colegio en «Reparto» y se borra unos días después del bocadillo.</p>
+          <p class="muted small" style="margin:.2rem 0 .6rem">Para quien haga el reparto, si no lo haces tú. Haz una foto con el móvil o adjunta una imagen o un PDF (hasta 3). Es necesaria para enviar el recuento. Solo la ve el profesorado del colegio en «Reparto» y se borra cuando lo decide Pastoral.</p>
           <label class="btn sec btn-adj" style="margin:0">📷 Hacer foto o adjuntar<input type="file" id="t-adj" accept="image/*,application/pdf" multiple></label>
           <div id="t-adj-lista" class="adj-lista"></div>
         </div>
@@ -1245,12 +1245,27 @@ function dataABlobUrl(d) {
   try { const [cab, b64] = d.split(','); const bin = atob(b64); const u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
     return URL.createObjectURL(new Blob([u], { type: cab.slice(5).split(';')[0] })); } catch { return d; }
 }
-const srcAdj = a => a.url || (a.datos && !/^data:image\//.test(a.datos) ? (a._blob ||= dataABlobUrl(a.datos)) : a.datos) || '';
+const srcAdj = a => a.url || (a.datos && !/^data:image\//.test(a.datos) ? (a._blob ||= dataABlobUrl(a.datos)) : a.datos) || ARCH[a.id] || '';
+// Listas y tickets guardados en el Drive privado de Pastoral: no hay enlace público, la web se los pide al Apps Script
+// (que comprueba quién los pide). Se guardan en este navegador mientras la página está abierta.
+const ARCH = {}, ARCH_PEND = {};
+function cargarArchivo(a) {
+  if (!a.id || ARCH[a.id]) return Promise.resolve(ARCH[a.id]);
+  return ARCH_PEND[a.id] ||= api('archivo', { id: a.id })
+    .then(r => (ARCH[a.id] = dataABlobUrl(r.datos)))
+    .finally(() => { delete ARCH_PEND[a.id]; });
+}
+// Pide los que falten y vuelve a pintar cuando lleguen
+function pedirArchivos(lista, repintar) {
+  const faltan = (lista || []).filter(a => a && a.id && !a.datos && !a.url && !ARCH[a.id]);
+  if (faltan.length) Promise.all(faltan.map(cargarArchivo)).then(repintar, e => alert('No se ha podido abrir la lista: ' + e.message));
+}
 const esImagen = a => /^image\//.test(a.tipo || '') || /^data:image\//.test(a.datos || '');
 function pintarAdjuntos() {
   $('t-adj-lista').innerHTML = (T.adj || []).map((a, i) => `<div class="adj" title="${esc(a.nombre)}">
       ${esImagen(a) ? `<img src="${esc(srcAdj(a))}" alt="${esc(a.nombre)}">` : `<span>📄<br>${esc(a.nombre)}</span>`}
       <button type="button" class="x" data-quitar-adj="${i}" aria-label="Quitar ${esc(a.nombre)}">✕</button></div>`).join('');
+  pedirArchivos((T.adj || []).filter(esImagen), pintarAdjuntos);
 }
 $('t-adj').addEventListener('change', async e => {
   const files = [...e.target.files];
@@ -1729,7 +1744,7 @@ function vistaBalance(camp) {
       <datalist id="b-tiendas">${tiendas.map(t => `<option value="${esc(t)}">`).join('')}</datalist>
       ${gastos.length ? tabla(['Concepto', 'Tienda', 'Fecha', 'Importe', 'Ticket', ''],
         gastos.map((g, i) => `<tr><td>${esc(g.concepto || '—')}</td><td style="text-align:center">${esc(g.tienda || '—')}</td><td style="text-align:center" class="small">${g.fecha ? esc(fechaCortaNum(g.fecha)) : '—'}</td><td class="n"><strong>${eur(cent(g.importe))}</strong></td>
-          <td style="text-align:center">${g.ticket ? `<a class="btn sec mini" href="${esc(enlaceArchivo(g.ticket))}" target="_blank" rel="noopener" title="${esc(g.ticket.nombre)}">🧾 Ver</a>` : `<label class="btn sec mini btn-adj" title="Adjuntar el ticket de este gasto">📎 Añadir<input type="file" accept="image/*,application/pdf" data-ticket-g="${i}"></label>`}</td>
+          <td style="text-align:center">${g.ticket ? `<button type="button" class="btn sec mini" data-ver-ticket="${i}" title="${esc(g.ticket.nombre)}">🧾 Ver</button>` : `<label class="btn sec mini btn-adj" title="Adjuntar el ticket de este gasto">📎 Añadir<input type="file" accept="image/*,application/pdf" data-ticket-g="${i}"></label>`}</td>
           <td><div class="acc-clase"><button class="btn sec mini" data-editar-g="${i}" title="Editar este gasto">✏️</button><button class="btn peligro mini" data-quitar-g="${i}" title="Borrar este gasto">✕</button></div></td></tr>`),
         ['Total gastos', '', '', eur(centGastos(gastos)), '', ''], ['', '', '', 'n', '', ''], { primera: 180, derecha: [84, 92] })
       : '<p class="muted" style="margin:0 0 .6rem">Todavía no se ha apuntado ningún gasto.</p>'}
@@ -2347,7 +2362,14 @@ async function leerTicket(f) {
   throw new Error(`${f.name}: solo se pueden adjuntar fotos o PDF.`);
 }
 // Enlace para abrir un archivo guardado (en la web real, el enlace que devuelva el Apps Script)
-const enlaceArchivo = a => a.url || (a._blob ||= dataABlobUrl(a.datos || ''));
+const enlaceArchivo = a => a.url || ARCH[a.id] || (a.datos ? (a._blob ||= dataABlobUrl(a.datos)) : '');
+// Abrir un ticket: la pestaña se abre al momento (si no, el navegador la bloquea) y se rellena cuando llega el archivo
+async function abrirArchivo(a) {
+  if (enlaceArchivo(a)) { window.open(enlaceArchivo(a), '_blank'); return; }
+  const w = window.open('', '_blank');
+  try { const u = await cargarArchivo(a); if (w) w.location.href = u; else location.href = u; }
+  catch (e) { if (w) w.close(); alert(e.message); }
+}
 $('p-contenido').addEventListener('change', async e => {
   const t = e.target;
   if (t.id !== 'b-ticket' && t.dataset.ticketG === undefined) return;
@@ -2520,6 +2542,7 @@ $('p-contenido').addEventListener('click', async e => {
   if (d.irCompra !== undefined) { P.sub = 'compra'; P.ambito = 'colegio'; pintarPanel(); return; }
   if (d.irListados !== undefined) { P.sub = 'listados'; P.lista = 'colegio'; P.modo = 'totales'; pintarPanel(); return; }
   if (d.irBalance !== undefined) { P.sub = 'balance'; pintarPanel(); return; }
+  if (d.verTicket !== undefined) { const g = gastosDe(camp)[Number(d.verTicket)]; if (g && g.ticket) abrirArchivo(g.ticket); return; }
   if (d.editarG !== undefined) { B.editando = Number(d.editarG); B.ticket = null; pintarSub(); $('b-concepto').focus(); $('b-nuevo').scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
   if (d.cancelarG !== undefined) { B.editando = null; B.ticket = null; pintarSub(); return; }
   if (d.quitarX !== undefined) {
@@ -3120,6 +3143,7 @@ function pintarReparto() {
       ${adj.length ? `<p class="muted small" style="margin-top:0">Son datos del alumnado: no las descargues ni las reenvíes.</p><div class="reparto-fotos">${adj.map(a => esImagen(a) ? `<img src="${esc(srcAdj(a))}" alt="Lista adjunta: ${esc(a.nombre)}">` : `<a class="btn sec" href="${esc(srcAdj(a))}" target="_blank" rel="noopener">📄 Abrir ${esc(a.nombre)}</a>`).join('')}</div>`
         : `<p class="muted" style="margin:0">${r.listasBorradas ? 'Pastoral ya ha borrado la lista de esta clase.' : 'El tutor o tutora no ha adjuntado ninguna lista.'}</p>`}
     </div>`;
+  pedirArchivos(adj, pintarReparto);
 }
 $('r-camp').onchange = pintarReparto;
 $('r-etapa').onchange = () => rellenarReparto('');
